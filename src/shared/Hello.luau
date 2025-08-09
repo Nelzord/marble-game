@@ -1,4 +1,4 @@
 return function()
 	print("Hello, world!")
-	print("Some change")
+	print("Some changes2")
 end

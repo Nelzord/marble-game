@@ -2,70 +2,42 @@
   "name": "MarbleGame",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Marbles": {
+        "$path": "src/ReplicatedStorage/Marbles"
+      },
+      "MarbleModels": {
+        "$path": "src/ReplicatedStorage/MarbleModels"
+      },
       "Shared": {
         "$path": "src/shared"
       }
     },
-
     "ServerScriptService": {
-      "Server": {
-        "$path": "src/server"
-      }
+      "$className": "ServerScriptService",
+      "$path": "src/ServerScriptService"
     },
-
     "StarterPlayer": {
+      "$className": "StarterPlayer",
       "StarterPlayerScripts": {
-        "Client": {
-          "$path": "src/client"
-        }
+        "$className": "StarterPlayerScripts",
+        "$path": "src/StarterPlayerScripts"
       }
     },
-
     "Workspace": {
-      "$properties": {
-        "FilteringEnabled": true
-      },
+      "$className": "Workspace",
       "Baseplate": {
         "$className": "Part",
         "$properties": {
+          "Name": "Baseplate",
           "Anchored": true,
-          "Color": [
-            0.38823,
-            0.37254,
-            0.38823
-          ],
           "Locked": true,
-          "Position": [
-            0,
-            -10,
-            0
-          ],
-          "Size": [
-            512,
-            20,
-            512
-          ]
+          "Material": "Grass",
+          "Color": [0.278431, 0.470588, 0.278431],
+          "Size": [512, 1, 512],
+          "Position": [0, 0, 0]
         }
-      }
-    },
-    "Lighting": {
-      "$properties": {
-        "Ambient": [
-          0,
-          0,
-          0
-        ],
-        "Brightness": 2,
-        "GlobalShadows": true,
-        "Outlines": false,
-        "Technology": "Voxel"
-      }
-    },
-    "SoundService": {
-      "$properties": {
-        "RespectFilteringEnabled": true
       }
     }
   }
