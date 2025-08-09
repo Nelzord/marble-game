@@ -8,6 +8,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
 
+-- Debug helper
+local DEBUG = false
+local function dprint(...)
+	if DEBUG then
+		print("[MarbleServer]", ...)
+	end
+end
+
 -- Ensure Remotes folder and events exist
 local function getOrCreateRemotes()
 	local folder = ReplicatedStorage:FindFirstChild("Remotes")
@@ -123,6 +131,16 @@ local function applyMarbleVisual(model: Model, marbleId: string)
 	model:SetAttribute("EquippedMarbleId", marbleId)
 end
 
+local function clearHRPTextures(model: Model)
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	if not hrp or not hrp:IsA("BasePart") then return end
+	for _, child in ipairs(hrp:GetChildren()) do
+		if child:IsA("Decal") or child:IsA("Texture") then
+			child:Destroy()
+		end
+	end
+end
+
 local function getRarityText(def): string
 	if def and def.rollable and def.dropDenominator and def.dropDenominator > 0 then
 		return string.format("1/%d", def.dropDenominator)
@@ -180,6 +198,7 @@ local function muteFootsteps(character: Model)
 end
 
 local function buildMarbleCharacter(player: Player, marbleId: string)
+	dprint("buildMarbleCharacter", player.Name, marbleId)
 	local model = Marbles.getModelClone(marbleId)
 	local character: Model
 	if model then
@@ -199,6 +218,9 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	hrp.Massless = false
 	hrp.AssemblyLinearVelocity = Vector3.zero
 	hrp.AssemblyAngularVelocity = Vector3.zero
+
+	-- Ensure no static decals on HRP
+	clearHRPTextures(character)
 
 	applyMarbleVisual(character, marbleId)
 	ensureNameplate(character, player, marbleId)
@@ -223,7 +245,6 @@ local function respawnEquipped(player: Player)
 	if spawningFlag[player] then return end
 	spawningFlag[player] = true
 	local data = getOrCreatePlayerData(player)
-	-- Destroy old character, then build a new one
 	local old = player.Character
 	if old then
 		old:Destroy()
@@ -255,6 +276,7 @@ Remotes.RollForMarble.OnServerEvent:Connect(function(player: Player)
 end)
 
 Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: string)
+	dprint("EquipMarble", player.Name, marbleId)
 	local data = getOrCreatePlayerData(player)
 	if type(marbleId) ~= "string" then return end
 	local def = Marbles.getById(marbleId)
@@ -266,6 +288,7 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 	-- In-place switch: update current character instead of respawn
 	local character = player.Character
 	if character and character.Parent then
+		clearHRPTextures(character)
 		applyMarbleVisual(character, marbleId)
 		ensureNameplate(character, player, marbleId)
 	end
@@ -282,7 +305,6 @@ Remotes.ActivateAbility.OnServerEvent:Connect(function(player: Player)
 	local ability = Marbles.getAbilityModule(def)
 	local character = player.Character
 	if character then
-		-- Invoke placeholder ability; modules decide what to do
 		pcall(function()
 			ability.ActivateAbility(player, character)
 		end)
@@ -294,9 +316,7 @@ Players.PlayerAdded:Connect(function(player)
 	data.equipped = data.equipped or DEFAULT_ID
 	sendInventory(player)
 	player.CharacterAdded:Connect(function(character)
-		-- If this is not our marble character, replace it
 		if character:GetAttribute("IsMarbleCharacter") then
-			-- Reassert network ownership on spawn
 			local hrp = character:FindFirstChild("HumanoidRootPart")
 			if hrp and hrp:IsA("BasePart") then
 				pcall(function()
@@ -309,7 +329,6 @@ Players.PlayerAdded:Connect(function(player)
 			respawnEquipped(player)
 		end)
 	end)
-	-- Force first marble character
 	respawnEquipped(player)
 end)
 

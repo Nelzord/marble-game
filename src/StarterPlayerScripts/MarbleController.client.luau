@@ -10,6 +10,20 @@ local player = Players.LocalPlayer
 
 local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
 
+local DEBUG = false
+local function dprint(...)
+	if DEBUG then
+		print("[MarbleClient]", ...)
+	end
+end
+
+local MOVEMENT_DEBUG = false
+local function mprint(...)
+	if MOVEMENT_DEBUG then
+		print("[MarbleMove]", ...)
+	end
+end
+
 local inputState = {
 	forward = 0,
 	right = 0,
@@ -78,12 +92,70 @@ end
 
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
+	dprint("applyCosmeticColor", id)
 	if type(id) ~= "string" then return end
 	local def = Marbles.getById(id)
 	if def and def.color then
 		cosmetic.Color = def.color
 	else
 		cosmetic.Color = Color3.fromRGB(230,230,230)
+	end
+end
+
+local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: BasePart)
+	local id = character:GetAttribute("EquippedMarbleId")
+	dprint("applyCosmeticTextures", id)
+	if type(id) ~= "string" then return end
+	local texturesRoot = ReplicatedStorage:FindFirstChild("MarbleTextures")
+	local folder = texturesRoot and texturesRoot:FindFirstChild(id) or nil
+	-- Clear existing
+	for _, ch in ipairs(cosmetic:GetChildren()) do
+		if ch:IsA("Decal") or ch:IsA("Texture") then ch:Destroy() end
+	end
+	local assets = {}
+	if folder then
+		for _, inst in ipairs(folder:GetChildren()) do
+			if inst:IsA("Decal") or inst:IsA("Texture") then
+				table.insert(assets, inst)
+			end
+		end
+	end
+	local DEFAULT_DECALS: { [string]: string } = {
+		Default = "rbxassetid://110926540048461",
+		Red = "rbxassetid://99977275020564",
+		Green = "rbxassetid://114474679212927",
+		Blue = "rbxassetid://128223600665334",
+	}
+	if #assets == 0 then
+		local fallback = DEFAULT_DECALS[id]
+		dprint("no assets found; using fallback?", fallback ~= nil)
+		if fallback then
+			for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+				local d = Instance.new("Decal")
+				d.Texture = fallback
+				d.Face = face
+				d.Parent = cosmetic
+			end
+		end
+		return
+	end
+	dprint("found", #assets, "assets for", id)
+	if #assets == 1 then
+		local src = assets[1]
+		for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+			local clone = src:Clone()
+			if clone:IsA("Decal") then
+				(clone :: Decal).Face = face
+			elseif clone:IsA("Texture") then
+				(clone :: Texture).Face = face
+			end
+			clone.Parent = cosmetic
+		end
+		return
+	end
+	for _, src in ipairs(assets) do
+		local clone = src:Clone()
+		clone.Parent = cosmetic
 	end
 end
 
@@ -130,6 +202,7 @@ end
 
 local function setupController(character: Model)
 	if boundCharacters[character] then return end
+	dprint("setupController for", character)
 
 	local hrp = waitForHRP(character, 5)
 	if not hrp then
@@ -158,8 +231,10 @@ local function setupController(character: Model)
 	-- Create visual marble that we rotate for effect
 	local cosmetic = ensureCosmeticBall(character, hrp)
 	applyCosmeticColorFromEquipped(character, cosmetic)
+	applyCosmeticTexturesFromEquipped(character, cosmetic)
 	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(function()
 		applyCosmeticColorFromEquipped(character, cosmetic)
+		applyCosmeticTexturesFromEquipped(character, cosmetic)
 	end)
 
 	-- Mute default character running/jump sounds for this character
@@ -177,6 +252,9 @@ local function setupController(character: Model)
 		return typeof(mult) == "number" and mult or 1
 	end
 
+	local logAccum = 0
+	local prevIsInput = false
+	local glideHoriz = Vector3.zero
 	local stepConn
 	stepConn = RunService.RenderStepped:Connect(function(dt)
 		if not hrp or not hrp.Parent then
@@ -184,7 +262,7 @@ local function setupController(character: Model)
 			return
 		end
 
-		-- Physics movement via smoothed linear velocity (horizontal only)
+		-- Physics movement via linear velocity (horizontal only)
 		local cameraNow = workspace.CurrentCamera
 		local dir = cameraNow and getMoveDirection(cameraNow) or Vector3.zero
 		local speed = baseSpeed * getSpeedMultiplier()
@@ -192,22 +270,50 @@ local function setupController(character: Model)
 		local currentVel = hrp.AssemblyLinearVelocity
 		local horiz = Vector3.new(currentVel.X, 0, currentVel.Z)
 
-		-- Ice-like accel/decel for long glide
+		-- Deceleration-only: instant target when input; otherwise, glide velocity decays
 		local isInput = targetHoriz.Magnitude > 0.01
-		local ACCEL = 50 -- slower to speed up
-		local DECEL = 8  -- very slow to slow down
-		local maxDelta = (isInput and ACCEL or DECEL) * dt
-		local delta = targetHoriz - horiz
-		local dMag = delta.Magnitude
-		local newHoriz
-		if dMag > maxDelta then
-			newHoriz = horiz + (delta.Unit * maxDelta)
+		local wrote = false
+		if isInput then
+			local newHoriz = targetHoriz
+			if newHoriz.Magnitude < 0.0001 then newHoriz = Vector3.zero end
+			glideHoriz = newHoriz
+			hrp.AssemblyLinearVelocity = Vector3.new(newHoriz.X, currentVel.Y, newHoriz.Z)
+			wrote = true
 		else
-			newHoriz = targetHoriz
+			-- Decay glide horizontally to simulate ice friction
+			local baseFactor = 0.985 -- per 60fps frame
+			local frames = math.clamp(dt * 60, 0, 5)
+			local reduce = character:GetAttribute("FrictionReduction")
+			local reduction = (typeof(reduce) == "number" and reduce or 0)
+			local perFrame = 1 - (1 - baseFactor) * (1 - reduction)
+			local factor = perFrame ^ frames
+			glideHoriz = glideHoriz * factor
+			if glideHoriz.Magnitude < 0.001 then
+				glideHoriz = Vector3.zero
+			end
+			if glideHoriz ~= Vector3.zero then
+				hrp.AssemblyLinearVelocity = Vector3.new(glideHoriz.X, currentVel.Y, glideHoriz.Z)
+				wrote = true
+			end
 		end
-		-- Snap very small speeds to zero (smaller threshold to glide longer)
-		if newHoriz.Magnitude < 0.01 then newHoriz = Vector3.zero end
-		hrp.AssemblyLinearVelocity = Vector3.new(newHoriz.X, currentVel.Y, newHoriz.Z)
+
+		-- Movement debug logs (rate-limited)
+		logAccum += dt
+		if MOVEMENT_DEBUG and logAccum >= 0.5 then
+			logAccum = 0
+			local mat = hrp.Material
+			local props = hrp.CustomPhysicalProperties
+			local friction, fw
+			pcall(function()
+				friction = props and (props :: any).Friction or nil
+				fw = props and (props :: any).FrictionWeight or nil
+			end)
+			mprint(string.format("input=%s wroteVel=%s horiz=%.2f target=%.2f glide=%.2f mat=%s fric=%s fw=%s", tostring(isInput), tostring(wrote), horiz.Magnitude, targetHoriz.Magnitude, glideHoriz.Magnitude, tostring(mat), tostring(friction), tostring(fw)))
+		end
+		if isInput ~= prevIsInput then
+			prevIsInput = isInput
+			mprint("input state changed:", isInput and "START" or "STOP")
+		end
 
 		-- Update cosmetic rotation to match traveled distance
 		local currentPos = hrp.Position
@@ -220,7 +326,6 @@ local function setupController(character: Model)
 			if radius <= 0 then radius = 2 end
 			local angle = dist / radius
 			local moveDir = deltaXZ.Unit
-			-- Rotation axis for rolling effect
 			local axis = Vector3.new(moveDir.Z, 0, -moveDir.X)
 			visualCFrame = CFrame.fromAxisAngle(axis, angle) * visualCFrame
 		end

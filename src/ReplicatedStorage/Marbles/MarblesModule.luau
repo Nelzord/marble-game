@@ -33,7 +33,7 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		name = "Red Marble",
 		dropDenominator = 2, -- equal weight with other colors
 		rollable = true,
-		abilityModule = "Default",
+		abilityModule = "Red",
 		color = Color3.fromRGB(220, 60, 60),
 	},
 	Blue = {
@@ -41,7 +41,7 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		name = "Blue Marble",
 		dropDenominator = 2,
 		rollable = true,
-		abilityModule = "Default",
+		abilityModule = "Blue",
 		color = Color3.fromRGB(60, 120, 220),
 	},
 	Green = {
@@ -49,7 +49,7 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		name = "Green Marble",
 		dropDenominator = 2,
 		rollable = true,
-		abilityModule = "Default",
+		abilityModule = "Green",
 		color = Color3.fromRGB(70, 200, 90),
 	},
 }

@@ -1,7 +1,7 @@
 -- Marble UI LocalScript
 -- Builds a simple UI with:
 -- - Roll for Marble button
--- - Inventory toggle button and list of owned marbles to equip
+-- - Inventory toggle button and grid of marbles to equip
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,9 +34,13 @@ rollButton.TextScaled = true
 rollButton.Size = UDim2.fromOffset(200, 56)
 rollButton.Position = UDim2.new(0.5, 0, 1, -24)
 rollButton.AnchorPoint = Vector2.new(0.5, 1)
-rollButton.BackgroundColor3 = Color3.fromRGB(28, 167, 76)
+rollButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 rollButton.TextColor3 = Color3.new(1,1,1)
+rollButton.Font = Enum.Font.GothamBold
 rollButton.Parent = screen
+local rollCorner = Instance.new("UICorner")
+rollCorner.CornerRadius = UDim.new(0, 8)
+rollCorner.Parent = rollButton
 
 local inventoryButton = Instance.new("TextButton")
 inventoryButton.Name = "InventoryButton"
@@ -45,9 +49,13 @@ inventoryButton.TextScaled = true
 inventoryButton.Size = UDim2.fromOffset(160, 40)
 inventoryButton.Position = UDim2.new(0, 16, 0, 16)
 inventoryButton.AnchorPoint = Vector2.new(0, 0)
-inventoryButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+inventoryButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 inventoryButton.TextColor3 = Color3.new(1,1,1)
+inventoryButton.Font = Enum.Font.GothamBold
 inventoryButton.Parent = screen
+local invBtnCorner = Instance.new("UICorner")
+invBtnCorner.CornerRadius = UDim.new(0, 8)
+invBtnCorner.Parent = inventoryButton
 
 local resultLabel = Instance.new("TextLabel")
 resultLabel.Name = "ResultLabel"
@@ -65,7 +73,7 @@ invFrame.Name = "InventoryFrame"
 invFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 invFrame.BackgroundTransparency = 0.2 -- semi-transparent
 invFrame.BorderSizePixel = 0
-invFrame.Size = UDim2.new(0, 640, 0, 420)
+invFrame.Size = UDim2.new(0, 720, 0, 520)
 invFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 invFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 invFrame.Visible = false
@@ -80,7 +88,7 @@ header.BackgroundTransparency = 1
 header.Size = UDim2.new(1, -24, 0, 40)
 header.Position = UDim2.new(0, 12, 0, 10)
 header.Font = Enum.Font.GothamBold
-header.TextXAlignment = Enum.TextXAlignment.Left
+header.TextXAlignment = Enum.TextXAlignment.Center
 header.Text = "Inventory"
 header.TextColor3 = Color3.new(1,1,1)
 header.TextSize = 24
@@ -95,11 +103,11 @@ closeButton.TextScaled = true
 closeButton.Size = UDim2.fromOffset(36, 36)
 closeButton.Position = UDim2.new(1, -12, 0, 12)
 closeButton.AnchorPoint = Vector2.new(1, 0)
-closeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+closeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 closeButton.TextColor3 = Color3.new(1,1,1)
 closeButton.Parent = invFrame
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.CornerRadius = UDim.new(0, 8)
 closeCorner.Parent = closeButton
 closeButton.MouseButton1Click:Connect(function()
 	invFrame.Visible = false
@@ -107,111 +115,217 @@ end)
 
 local list = Instance.new("ScrollingFrame")
 list.Name = "List"
-list.Size = UDim2.new(1, -24, 1, -64)
-list.Position = UDim2.new(0, 12, 0, 52)
+list.Size = UDim2.new(1, -24, 1, -80)
+list.Position = UDim2.new(0, 12, 0, 60)
 list.ScrollBarThickness = 8
 list.CanvasSize = UDim2.new(0, 0, 0, 0)
 list.BackgroundTransparency = 1
 list.Parent = invFrame
 
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 8)
-layout.FillDirection = Enum.FillDirection.Vertical
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Parent = list
+local grid = Instance.new("UIGridLayout")
+grid.FillDirection = Enum.FillDirection.Horizontal
+grid.FillDirectionMaxCells = 3 -- 3 columns
+grid.CellPadding = UDim2.fromOffset(10, 10)
+grid.CellSize = UDim2.fromOffset(200, 200)
+grid.SortOrder = Enum.SortOrder.LayoutOrder
+grid.Parent = list
 
 local function refreshCanvasSize()
-	local abs = layout.AbsoluteContentSize
-	list.CanvasSize = UDim2.new(0, 0, 0, abs.Y + 8)
+	local abs = grid.AbsoluteContentSize
+	list.CanvasSize = UDim2.new(0, 0, 0, abs.Y + 12)
 end
-layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshCanvasSize)
+grid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshCanvasSize)
 
 -- State
 local ownedSet: { [string]: boolean } = {}
 local equippedId: string? = nil
 
-local function formatOdds(def)
-	local denom = def.dropDenominator
-	local rollable = def.rollable and denom and denom > 0
-	if not rollable then
-		return "Not rollable"
+-- Ability descriptions by module name (simple mapping for now)
+local ABILITY_DESCRIPTIONS: { [string]: string } = {
+	Default = "No special ability.",
+	SpeedBoost = "Temporarily increases rolling speed.",
+	Red = "Red: A fiery burst that briefly increases acceleration.",
+	Blue = "Blue: A calming shield that reduces deceleration briefly.",
+	Green = "Green: A rejuvenating pulse that boosts control for a moment.",
+}
+
+-- Texture fallbacks (should match controller)
+local FALLBACK_DECALS: { [string]: string } = {
+	Default = "rbxassetid://110926540048461",
+	Red = "rbxassetid://99977275020564",
+	Green = "rbxassetid://114474679212927",
+	Blue = "rbxassetid://128223600665334",
+}
+
+local function applyTexturesToPart(part: BasePart, marbleId: string)
+	-- Clear existing
+	for _, ch in ipairs(part:GetChildren()) do
+		if ch:IsA("Decal") or ch:IsA("Texture") then ch:Destroy() end
 	end
-	local pct = 100 / denom
-	local pctStr = string.format("%.1f%%", pct)
-	return string.format("Odds: 1/%d (%s)", denom, pctStr)
+	-- Preferred from ReplicatedStorage
+	local texturesRoot = ReplicatedStorage:FindFirstChild("MarbleTextures")
+	local folder = texturesRoot and texturesRoot:FindFirstChild(marbleId)
+	local assets = {}
+	if folder then
+		for _, inst in ipairs(folder:GetChildren()) do
+			if inst:IsA("Decal") or inst:IsA("Texture") then
+				table.insert(assets, inst)
+			end
+		end
+	end
+	if #assets == 0 then
+		local fallback = FALLBACK_DECALS[marbleId]
+		if fallback then
+			for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+				local d = Instance.new("Decal")
+				d.Texture = fallback
+				d.Face = face
+				d.Parent = part
+			end
+		end
+		return
+	end
+	if #assets == 1 then
+		local src = assets[1]
+		for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+			local clone = src:Clone()
+			if clone:IsA("Decal") then
+				(clone :: Decal).Face = face
+			elseif clone:IsA("Texture") then
+				(clone :: Texture).Face = face
+			end
+			clone.Parent = part
+		end
+		return
+	end
+	for _, src in ipairs(assets) do
+		local clone = src:Clone()
+		clone.Parent = part
+	end
 end
 
-local function createMarbleRow(def)
+local function getRarityText(def): string
+	if def and def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+		return string.format(" (1/%d)", def.dropDenominator)
+	end
+	return ""
+end
+
+local function getRarityOnly(def): string
+	if def and def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+		return string.format("1/%d", def.dropDenominator)
+	end
+	return ""
+end
+
+local function createMarbleTile(def)
 	local isOwned = ownedSet[def.id] == true
-	local row = Instance.new("Frame")
-	row.Size = UDim2.new(1, -8, 0, 56)
-	row.BackgroundColor3 = (def.id == equippedId and isOwned) and Color3.fromRGB(38, 110, 180) or Color3.fromRGB(50, 50, 50)
-	row.BorderSizePixel = 0
+	local isEquipped = def.id == equippedId
 
-	local swatch = Instance.new("Frame")
-	swatch.Size = UDim2.fromOffset(36, 36)
-	swatch.Position = UDim2.new(0, 6, 0.5, 0)
-	swatch.AnchorPoint = Vector2.new(0, 0.5)
-	swatch.BackgroundColor3 = isOwned and (def.color or Color3.fromRGB(230,230,230)) or Color3.fromRGB(80,80,80)
-	swatch.BorderSizePixel = 0
-	swatch.Parent = row
+	local tile = Instance.new("Frame")
+	tile.Size = UDim2.fromOffset(200, 200)
+	tile.BackgroundColor3 = isEquipped and Color3.fromRGB(38, 110, 180) or Color3.fromRGB(40, 40, 40)
+	tile.BorderSizePixel = 0
 
-	local swCorner = Instance.new("UICorner")
-	swCorner.CornerRadius = UDim.new(1, 0)
-	swCorner.Parent = swatch
+	local corner2 = Instance.new("UICorner")
+	corner2.CornerRadius = UDim.new(0, 8)
+	corner2.Parent = tile
 
-	if not isOwned then
-		local q = Instance.new("TextLabel")
-		q.BackgroundTransparency = 1
-		q.Size = UDim2.fromScale(1,1)
-		q.TextScaled = true
-		q.Text = "?"
-		q.Font = Enum.Font.GothamBold
-		q.TextColor3 = Color3.new(1,1,1)
-		q.Parent = swatch
+	local viewport = Instance.new("ViewportFrame")
+	viewport.Size = UDim2.new(1, -16, 1, -56)
+	viewport.Position = UDim2.new(0, 8, 0, 8)
+	viewport.BackgroundTransparency = 1
+	viewport.BorderSizePixel = 0
+	viewport.Parent = tile
+
+	local world = Instance.new("WorldModel")
+	world.Parent = viewport
+
+	local sphere = Instance.new("Part")
+	sphere.Shape = Enum.PartType.Ball
+	sphere.Size = Vector3.new(6, 6, 6)
+	sphere.Anchored = true
+	sphere.CanCollide = false
+	sphere.Parent = world
+
+	if isOwned then
+		applyTexturesToPart(sphere, def.id)
+		if #sphere:GetChildren() == 0 and def.color then
+			sphere.Color = def.color
+		end
+	else
+		-- Locked appearance: dark swatch with big question mark
+		sphere.Color = Color3.fromRGB(60,60,60)
+		local q = Instance.new("BillboardGui")
+		q.Size = UDim2.fromOffset(120, 120)
+		q.AlwaysOnTop = true
+		q.Adornee = sphere
+		q.Parent = world
+		local ql = Instance.new("TextLabel")
+		ql.BackgroundTransparency = 1
+		ql.Text = "?"
+		ql.TextScaled = true
+		ql.Font = Enum.Font.GothamBold
+		ql.TextColor3 = Color3.new(1,1,1)
+		ql.Size = UDim2.fromScale(1,1)
+		ql.Parent = q
 	end
 
-	local nameButton = Instance.new("TextButton")
-	nameButton.Size = UDim2.new(1, -52, 0, 30)
-	nameButton.Position = UDim2.new(0, 46, 0, 6)
-	nameButton.BackgroundColor3 = Color3.fromRGB(0,0,0)
-	nameButton.BackgroundTransparency = isOwned and 0.4 or 0.7
-	nameButton.TextColor3 = isOwned and Color3.new(1,1,1) or Color3.fromRGB(200,200,200)
-	nameButton.AutoButtonColor = isOwned
-	nameButton.Text = (isOwned and (def.name .. (def.id == equippedId and "  (Equipped)" or "")) or "???  (Locked)")
-	nameButton.Parent = row
+	-- Camera
+	local cam = Instance.new("Camera")
+	viewport.CurrentCamera = cam
+	cam.Parent = viewport
+	local center = Vector3.new(0, 0, 0)
+	sphere.Position = center
+	cam.CFrame = CFrame.new(center + Vector3.new(0, 0, 12), center)
+
+	-- Name or rarity label
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Size = UDim2.new(1, -16, 0, 16)
+	nameLabel.Position = UDim2.new(0, 8, 1, -44)
+	nameLabel.Text = isOwned and (def.name .. getRarityText(def)) or getRarityOnly(def)
+	nameLabel.TextColor3 = Color3.new(1,1,1)
+	nameLabel.TextScaled = true
+	nameLabel.Parent = tile
+
+	-- Status label
+	local status = Instance.new("TextLabel")
+	status.BackgroundTransparency = 1
+	status.Size = UDim2.new(1, -16, 0, 20)
+	status.Position = UDim2.new(0, 8, 1, -24)
+	status.TextScaled = true
+	status.TextColor3 = isOwned and (isEquipped and Color3.fromRGB(180, 255, 180) or Color3.fromRGB(220, 220, 220)) or Color3.fromRGB(220, 180, 180)
+	status.Text = isOwned and (isEquipped and "Equipped" or "Not Equipped") or "Locked"
+	status.Parent = tile
+
+	-- Equip interaction (only if owned)
 	if isOwned then
-		nameButton.MouseButton1Click:Connect(function()
+		local equipButton = Instance.new("TextButton")
+		equipButton.BackgroundTransparency = 1
+		equipButton.Size = UDim2.fromScale(1, 1)
+		equipButton.Text = ""
+		equipButton.Parent = tile
+		equipButton.MouseButton1Click:Connect(function()
 			if def.id ~= equippedId then
 				EquipMarble:FireServer(def.id)
 			end
 		end)
 	end
 
-	local odds = Instance.new("TextLabel")
-	odds.BackgroundTransparency = 1
-	odds.TextXAlignment = Enum.TextXAlignment.Left
-	odds.Size = UDim2.new(1, -52, 0, 18)
-	odds.Position = UDim2.new(0, 46, 0, 34)
-	odds.TextColor3 = Color3.fromRGB(220,220,220)
-	odds.TextScaled = true
-	odds.Text = formatOdds(def)
-	odds.Parent = row
-
-	return row
+	return tile
 end
 
 local function rebuildInventoryUI()
-	-- Remove existing items but keep the layout
+	-- Clear existing tiles but keep grid
 	for _, child in ipairs(list:GetChildren()) do
-		if child ~= layout then
+		if child ~= grid then
 			child:Destroy()
 		end
 	end
 	for _, def in ipairs(Marbles.getAll()) do
-		local row = createMarbleRow(def)
-		row.Parent = list
+		local tile = createMarbleTile(def)
+		tile.Parent = list
 	end
 	refreshCanvasSize()
 end
