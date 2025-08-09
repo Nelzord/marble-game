@@ -4,8 +4,11 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
+
+local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
 
 local inputState = {
 	forward = 0,
@@ -73,6 +76,58 @@ local function ensureCosmeticBall(character: Model, hrp: BasePart): BasePart
 	return ball
 end
 
+local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
+	local id = character:GetAttribute("EquippedMarbleId")
+	if type(id) ~= "string" then return end
+	local def = Marbles.getById(id)
+	if def and def.color then
+		cosmetic.Color = def.color
+	else
+		cosmetic.Color = Color3.fromRGB(230,230,230)
+	end
+end
+
+local function muteFootstepsLocal(character: Model)
+	local function handleDescendant(descendant: Instance)
+		if descendant:IsA("Sound") then
+			local n = descendant.Name
+			if n == "Running" or n == "Run" or n == "Footsteps" or n == "Jumping" or n == "Jump" then
+				descendant.Volume = 0
+				descendant.Playing = false
+			end
+		elseif (descendant:IsA("LocalScript") or descendant:IsA("Script")) and descendant.Name == "RbxCharacterSounds" then
+			descendant:Destroy()
+		end
+	end
+	for _, d in ipairs(character:GetDescendants()) do
+		handleDescendant(d)
+	end
+	character.DescendantAdded:Connect(handleDescendant)
+end
+
+local function setupNameplateScaling(character: Model)
+	local gui = character:FindFirstChild("Nameplate")
+	if not gui or not gui:IsA("BillboardGui") then return end
+	local basePixels = 180 -- must match server base width
+	local baseDistance = 25 -- distance at which the size equals basePixels
+	local minScale = 0.6
+	local maxScale = 1.2
+	local cam = workspace.CurrentCamera
+
+	local function update()
+		if not cam then cam = workspace.CurrentCamera end
+		local adornee = gui.Adornee
+		if not adornee or not adornee.Parent then return end
+		local camPos = cam and cam.CFrame.Position or Vector3.zero
+		local dist = (adornee.Position - camPos).Magnitude
+		local scale = math.clamp(baseDistance / dist, minScale, maxScale)
+		gui.Size = UDim2.fromOffset(basePixels * scale, 36 * scale)
+	end
+
+	update()
+	RunService.RenderStepped:Connect(update)
+end
+
 local function setupController(character: Model)
 	if boundCharacters[character] then return end
 
@@ -102,6 +157,16 @@ local function setupController(character: Model)
 
 	-- Create visual marble that we rotate for effect
 	local cosmetic = ensureCosmeticBall(character, hrp)
+	applyCosmeticColorFromEquipped(character, cosmetic)
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(function()
+		applyCosmeticColorFromEquipped(character, cosmetic)
+	end)
+
+	-- Mute default character running/jump sounds for this character
+	muteFootstepsLocal(character)
+
+	-- Keep nameplate a constant on-screen size
+	setupNameplateScaling(character)
 
 	-- Track orientation for cosmetic rolling
 	local visualCFrame = CFrame.new()
@@ -113,25 +178,42 @@ local function setupController(character: Model)
 	end
 
 	local stepConn
-	stepConn = RunService.RenderStepped:Connect(function(_dt)
+	stepConn = RunService.RenderStepped:Connect(function(dt)
 		if not hrp or not hrp.Parent then
 			if stepConn then stepConn:Disconnect() end
 			return
 		end
 
-		-- Physics movement via linear velocity (no rotation of HRP)
+		-- Physics movement via smoothed linear velocity (horizontal only)
 		local cameraNow = workspace.CurrentCamera
 		local dir = cameraNow and getMoveDirection(cameraNow) or Vector3.zero
 		local speed = baseSpeed * getSpeedMultiplier()
-		local desiredHorizontal = dir * speed
+		local targetHoriz = dir * speed
 		local currentVel = hrp.AssemblyLinearVelocity
-		hrp.AssemblyLinearVelocity = Vector3.new(desiredHorizontal.X, currentVel.Y, desiredHorizontal.Z)
+		local horiz = Vector3.new(currentVel.X, 0, currentVel.Z)
+
+		-- Ice-like accel/decel for long glide
+		local isInput = targetHoriz.Magnitude > 0.01
+		local ACCEL = 50 -- slower to speed up
+		local DECEL = 8  -- very slow to slow down
+		local maxDelta = (isInput and ACCEL or DECEL) * dt
+		local delta = targetHoriz - horiz
+		local dMag = delta.Magnitude
+		local newHoriz
+		if dMag > maxDelta then
+			newHoriz = horiz + (delta.Unit * maxDelta)
+		else
+			newHoriz = targetHoriz
+		end
+		-- Snap very small speeds to zero (smaller threshold to glide longer)
+		if newHoriz.Magnitude < 0.01 then newHoriz = Vector3.zero end
+		hrp.AssemblyLinearVelocity = Vector3.new(newHoriz.X, currentVel.Y, newHoriz.Z)
 
 		-- Update cosmetic rotation to match traveled distance
 		local currentPos = hrp.Position
-		local delta = currentPos - lastPos
+		local deltaPos = currentPos - lastPos
 		lastPos = currentPos
-		local deltaXZ = Vector3.new(delta.X, 0, delta.Z)
+		local deltaXZ = Vector3.new(deltaPos.X, 0, deltaPos.Z)
 		local dist = deltaXZ.Magnitude
 		if dist > 0.0001 then
 			local radius = (hrp.Size.X + hrp.Size.Y + hrp.Size.Z) / 6

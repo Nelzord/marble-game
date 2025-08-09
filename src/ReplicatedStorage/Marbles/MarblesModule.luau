@@ -13,6 +13,7 @@ export type MarbleDefinition = {
 	dropDenominator: number?, -- 2 => 1/2, 3 => 1/3, etc. If nil or 0, not rollable
 	rollable: boolean?,
 	abilityModule: string?,
+	color: Color3?,
 }
 
 local MarblesModule = {}
@@ -25,27 +26,31 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		dropDenominator = 0,
 		rollable = false,
 		abilityModule = "Default",
+		color = Color3.fromRGB(230, 230, 230),
+	},
+	Red = {
+		id = "Red",
+		name = "Red Marble",
+		dropDenominator = 2, -- equal weight with other colors
+		rollable = true,
+		abilityModule = "Default",
+		color = Color3.fromRGB(220, 60, 60),
 	},
 	Blue = {
 		id = "Blue",
 		name = "Blue Marble",
-		dropDenominator = 2, -- 1/2
+		dropDenominator = 2,
 		rollable = true,
 		abilityModule = "Default",
+		color = Color3.fromRGB(60, 120, 220),
 	},
-	Speed = {
-		id = "Speed",
-		name = "Speed Marble",
-		dropDenominator = 5, -- 1/5
-		rollable = true,
-		abilityModule = "SpeedBoost",
-	},
-	Gold = {
-		id = "Gold",
-		name = "Golden Marble",
-		dropDenominator = 50, -- 1/50
+	Green = {
+		id = "Green",
+		name = "Green Marble",
+		dropDenominator = 2,
 		rollable = true,
 		abilityModule = "Default",
+		color = Color3.fromRGB(70, 200, 90),
 	},
 }
 

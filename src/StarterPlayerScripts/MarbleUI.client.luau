@@ -86,6 +86,25 @@ header.TextColor3 = Color3.new(1,1,1)
 header.TextSize = 24
 header.Parent = invFrame
 
+-- Close button (top-right)
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Text = "X"
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextScaled = true
+closeButton.Size = UDim2.fromOffset(36, 36)
+closeButton.Position = UDim2.new(1, -12, 0, 12)
+closeButton.AnchorPoint = Vector2.new(1, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+closeButton.TextColor3 = Color3.new(1,1,1)
+closeButton.Parent = invFrame
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeButton
+closeButton.MouseButton1Click:Connect(function()
+	invFrame.Visible = false
+end)
+
 local list = Instance.new("ScrollingFrame")
 list.Name = "List"
 list.Size = UDim2.new(1, -24, 1, -64)
@@ -112,28 +131,87 @@ layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshCanvasSize
 local ownedSet: { [string]: boolean } = {}
 local equippedId: string? = nil
 
+local function formatOdds(def)
+	local denom = def.dropDenominator
+	local rollable = def.rollable and denom and denom > 0
+	if not rollable then
+		return "Not rollable"
+	end
+	local pct = 100 / denom
+	local pctStr = string.format("%.1f%%", pct)
+	return string.format("Odds: 1/%d (%s)", denom, pctStr)
+end
+
+local function createMarbleRow(def)
+	local isOwned = ownedSet[def.id] == true
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -8, 0, 56)
+	row.BackgroundColor3 = (def.id == equippedId and isOwned) and Color3.fromRGB(38, 110, 180) or Color3.fromRGB(50, 50, 50)
+	row.BorderSizePixel = 0
+
+	local swatch = Instance.new("Frame")
+	swatch.Size = UDim2.fromOffset(36, 36)
+	swatch.Position = UDim2.new(0, 6, 0.5, 0)
+	swatch.AnchorPoint = Vector2.new(0, 0.5)
+	swatch.BackgroundColor3 = isOwned and (def.color or Color3.fromRGB(230,230,230)) or Color3.fromRGB(80,80,80)
+	swatch.BorderSizePixel = 0
+	swatch.Parent = row
+
+	local swCorner = Instance.new("UICorner")
+	swCorner.CornerRadius = UDim.new(1, 0)
+	swCorner.Parent = swatch
+
+	if not isOwned then
+		local q = Instance.new("TextLabel")
+		q.BackgroundTransparency = 1
+		q.Size = UDim2.fromScale(1,1)
+		q.TextScaled = true
+		q.Text = "?"
+		q.Font = Enum.Font.GothamBold
+		q.TextColor3 = Color3.new(1,1,1)
+		q.Parent = swatch
+	end
+
+	local nameButton = Instance.new("TextButton")
+	nameButton.Size = UDim2.new(1, -52, 0, 30)
+	nameButton.Position = UDim2.new(0, 46, 0, 6)
+	nameButton.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	nameButton.BackgroundTransparency = isOwned and 0.4 or 0.7
+	nameButton.TextColor3 = isOwned and Color3.new(1,1,1) or Color3.fromRGB(200,200,200)
+	nameButton.AutoButtonColor = isOwned
+	nameButton.Text = (isOwned and (def.name .. (def.id == equippedId and "  (Equipped)" or "")) or "???  (Locked)")
+	nameButton.Parent = row
+	if isOwned then
+		nameButton.MouseButton1Click:Connect(function()
+			if def.id ~= equippedId then
+				EquipMarble:FireServer(def.id)
+			end
+		end)
+	end
+
+	local odds = Instance.new("TextLabel")
+	odds.BackgroundTransparency = 1
+	odds.TextXAlignment = Enum.TextXAlignment.Left
+	odds.Size = UDim2.new(1, -52, 0, 18)
+	odds.Position = UDim2.new(0, 46, 0, 34)
+	odds.TextColor3 = Color3.fromRGB(220,220,220)
+	odds.TextScaled = true
+	odds.Text = formatOdds(def)
+	odds.Parent = row
+
+	return row
+end
+
 local function rebuildInventoryUI()
-	-- Remove existing buttons but keep the layout
+	-- Remove existing items but keep the layout
 	for _, child in ipairs(list:GetChildren()) do
 		if child ~= layout then
 			child:Destroy()
 		end
 	end
 	for _, def in ipairs(Marbles.getAll()) do
-		if ownedSet[def.id] then
-			local button = Instance.new("TextButton")
-			button.Size = UDim2.new(1, -8, 0, 44)
-			button.BackgroundColor3 = def.id == equippedId and Color3.fromRGB(38, 110, 180) or Color3.fromRGB(50, 50, 50)
-			button.TextColor3 = Color3.new(1,1,1)
-			button.AutoButtonColor = true
-			button.Text = (def.name .. (def.id == equippedId and "  (Equipped)" or ""))
-			button.Parent = list
-			button.MouseButton1Click:Connect(function()
-				if def.id ~= equippedId then
-					EquipMarble:FireServer(def.id)
-				end
-			end)
-		end
+		local row = createMarbleRow(def)
+		row.Parent = list
 	end
 	refreshCanvasSize()
 end
@@ -158,7 +236,7 @@ end)
 
 RollResult.OnClientEvent:Connect(function(result)
 	if result.success then
-		local suffix = result.new and " (New!)" or ""
+		local suffix = result.new and "  (Unlocked!)" or ""
 		resultLabel.Text = string.format("Rolled: %s%s", result.marbleName or result.marbleId or "?", suffix)
 	else
 		resultLabel.Text = result.message or "Roll failed"

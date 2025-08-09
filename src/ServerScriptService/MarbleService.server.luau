@@ -85,9 +85,17 @@ local function ensureHumanoid(model: Model): Humanoid
 	return hum
 end
 
+local function applyIcePhysics(part: BasePart)
+	-- Low friction and ice material for long glide
+	part.Material = Enum.Material.Ice
+	-- PhysicalProperties.new(density, friction, elasticity, frictionWeight?, elasticityWeight?)
+	part.CustomPhysicalProperties = PhysicalProperties.new(1, 0.02, 0, 0, 0)
+end
+
 local function ensureHRP(model: Model): BasePart
 	local hrp = model:FindFirstChild("HumanoidRootPart")
 	if hrp and hrp:IsA("BasePart") then
+		applyIcePhysics(hrp)
 		return hrp
 	end
 	local part = Instance.new("Part")
@@ -100,7 +108,75 @@ local function ensureHRP(model: Model): BasePart
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	part.Parent = model
+	applyIcePhysics(part)
 	return part
+end
+
+local function applyMarbleVisual(model: Model, marbleId: string)
+	local def = Marbles.getById(marbleId)
+	if not def then return end
+	-- If we are using the generated HRP, tint it
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp:IsA("BasePart") and def.color then
+		hrp.Color = def.color
+	end
+	model:SetAttribute("EquippedMarbleId", marbleId)
+end
+
+local function getRarityText(def): string
+	if def and def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+		return string.format("1/%d", def.dropDenominator)
+	end
+	return "Default"
+end
+
+local function ensureNameplate(character: Model, player: Player, marbleId: string)
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp or not hrp:IsA("BasePart") then return end
+	local def = Marbles.getById(marbleId)
+	local text = string.format("%s (%s)", player.Name, getRarityText(def))
+
+	local gui = character:FindFirstChild("Nameplate")
+	if not gui or not gui:IsA("BillboardGui") then
+		gui = Instance.new("BillboardGui")
+		gui.Name = "Nameplate"
+		gui.Size = UDim2.fromOffset(180, 36)
+		gui.StudsOffset = Vector3.new(0, 3.5, 0)
+		gui.AlwaysOnTop = true
+		gui.MaxDistance = 250
+		gui.Adornee = hrp
+		gui.Parent = character
+		local label = Instance.new("TextLabel")
+		label.Name = "Label"
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.TextScaled = true
+		label.Font = Enum.Font.GothamBold
+		label.TextColor3 = Color3.new(1,1,1)
+		label.Parent = gui
+	end
+	local label = gui:FindFirstChild("Label")
+	if label and label:IsA("TextLabel") then
+		label.Text = text
+	end
+end
+
+local function muteFootsteps(character: Model)
+	local function handleDescendant(descendant: Instance)
+		if descendant:IsA("Sound") then
+			local n = descendant.Name
+			if n == "Running" or n == "Run" or n == "Footsteps" or n == "Jumping" or n == "Jump" then
+				descendant.Volume = 0
+				descendant.Playing = false
+			end
+		elseif (descendant:IsA("LocalScript") or descendant:IsA("Script")) and descendant.Name == "RbxCharacterSounds" then
+			descendant:Destroy()
+		end
+	end
+	for _, d in ipairs(character:GetDescendants()) do
+		handleDescendant(d)
+	end
+	character.DescendantAdded:Connect(handleDescendant)
 end
 
 local function buildMarbleCharacter(player: Player, marbleId: string)
@@ -123,6 +199,10 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	hrp.Massless = false
 	hrp.AssemblyLinearVelocity = Vector3.zero
 	hrp.AssemblyAngularVelocity = Vector3.zero
+
+	applyMarbleVisual(character, marbleId)
+	ensureNameplate(character, player, marbleId)
+	muteFootsteps(character)
 
 	-- Position at a spawn if available
 	local spawnPos = Vector3.new(0, 10, 0)
@@ -183,7 +263,12 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 	if data.equipped == marbleId then return end
 	data.equipped = marbleId
 	sendInventory(player)
-	respawnEquipped(player)
+	-- In-place switch: update current character instead of respawn
+	local character = player.Character
+	if character and character.Parent then
+		applyMarbleVisual(character, marbleId)
+		ensureNameplate(character, player, marbleId)
+	end
 end)
 
 Remotes.RequestInventory.OnServerEvent:Connect(function(player: Player)
