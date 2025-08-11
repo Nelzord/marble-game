@@ -1,0 +1,2267 @@
+<roblox version="4">
+  <Item class="ReplicatedStorage" referent="0">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="1">
+      <Properties>
+        <string name="Name">MarbleModels</string>
+      </Properties>
+    </Item>
+    <Item class="Folder" referent="2">
+      <Properties>
+        <string name="Name">Marbles</string>
+      </Properties>
+      <Item class="Folder" referent="3">
+        <Properties>
+          <string name="Name">Abilities</string>
+        </Properties>
+        <Item class="ModuleScript" referent="4">
+          <Properties>
+            <string name="Name">Blue</string>
+            <string name="Source"><![CDATA[-- Blue marble ability: calming shield (placeholder)
+local Ability = {}
+
+function Ability.Description()
+	return "Blue: A calming shield that reduces deceleration briefly."
+end
+
+function Ability.Cooldown()
+	return 4 -- 4 second cooldown
+end
+
+function Ability.ActivateAbility(player: Player, character: Model)
+	-- Example: reduce friction effect by raising a multiplier the controller could interpret
+	local prev = character:GetAttribute("FrictionReduction")
+	if typeof(prev) == "number" and prev > 0 then return end
+	character:SetAttribute("FrictionReduction", 0.5)
+	task.delay(4, function()
+		if character then
+			character:SetAttribute("FrictionReduction", nil)
+		end
+	end)
+end
+
+function Ability.DeactivateAbility(player: Player, character: Model)
+	character:SetAttribute("FrictionReduction", nil)
+end
+
+return Ability ]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="5">
+          <Properties>
+            <string name="Name">Default</string>
+            <string name="Source"><![CDATA[-- Default ability module: does nothing. Keep this as a safe fallback.
+local Ability = {}
+
+function Ability.Description()
+	return "Default: No special ability."
+end
+
+function Ability.Cooldown()
+	return 0 -- No cooldown
+end
+
+function Ability.ActivateAbility(player: Player, character: Model)
+	-- No-op: Default marble has no special ability
+end
+
+function Ability.DeactivateAbility(player: Player, character: Model)
+	-- No-op
+end
+
+return Ability ]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="6">
+          <Properties>
+            <string name="Name">Green</string>
+            <string name="Source"><![CDATA[-- Green marble ability: rejuvenating pulse (placeholder)
+local Ability = {}
+
+function Ability.Description()
+	return "Green: A rejuvenating pulse that boosts control for a moment."
+end
+
+function Ability.Cooldown()
+	return 5 -- 5 second cooldown
+end
+
+function Ability.ActivateAbility(player: Player, character: Model)
+	-- Example: tiny control benefit via speed multiplier
+	local prev = character:GetAttribute("SpeedMultiplier")
+	if typeof(prev) == "number" and prev > 1 then return end
+	character:SetAttribute("SpeedMultiplier", 1.15)
+	task.delay(5, function()
+		if character then
+			character:SetAttribute("SpeedMultiplier", nil)
+		end
+	end)
+end
+
+function Ability.DeactivateAbility(player: Player, character: Model)
+	character:SetAttribute("SpeedMultiplier", nil)
+end
+
+return Ability ]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="7">
+          <Properties>
+            <string name="Name">Red</string>
+            <string name="Source"><![CDATA[-- Red marble ability: fiery burst (placeholder)
+local Ability = {}
+
+function Ability.Description()
+	return "Red: A fiery burst that briefly increases acceleration."
+end
+
+function Ability.Cooldown()
+	return 3 -- 3 second cooldown
+end
+
+function Ability.ActivateAbility(player: Player, character: Model)
+	-- Example: a short boost flag
+	local prev = character:GetAttribute("SpeedMultiplier")
+	if typeof(prev) == "number" and prev > 1 then return end
+	character:SetAttribute("SpeedMultiplier", 1.25)
+	task.delay(3, function()
+		if character then
+			character:SetAttribute("SpeedMultiplier", nil)
+		end
+	end)
+end
+
+function Ability.DeactivateAbility(player: Player, character: Model)
+	character:SetAttribute("SpeedMultiplier", nil)
+end
+
+return Ability ]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="8">
+          <Properties>
+            <string name="Name">SpeedBoost</string>
+            <string name="Source"><![CDATA[-- Sample ability placeholder. Replace with real effects later.
+-- Suggested idea: temporarily increase rolling force/speed for a few seconds.
+local Ability = {}
+
+-- Example state cache (session-only)
+local active: { [Player]: boolean } = {}
+
+function Ability.Description()
+	return "SpeedBoost: Temporarily increases rolling speed."
+end
+
+function Ability.Cooldown()
+	return 6 -- 6 second cooldown
+end
+
+function Ability.ActivateAbility(player: Player, character: Model)
+	if active[player] then return end
+	active[player] = true
+	-- Placeholder: insert your real ability logic here
+	-- e.g., set an Attribute on the character the client controller can read (like "SpeedMultiplier")
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		character:SetAttribute("SpeedMultiplier", 1.5)
+	end
+	task.delay(5, function()
+		Ability.DeactivateAbility(player, character)
+	end)
+end
+
+function Ability.DeactivateAbility(player: Player, character: Model)
+	active[player] = nil
+	if character then
+		character:SetAttribute("SpeedMultiplier", nil)
+	end
+end
+
+return Ability ]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="9">
+          <Properties>
+            <string name="Name">Spider</string>
+            <string name="Source"><![CDATA[-- Spider marble ability: web grappling
+local Ability = {}
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+-- Constants
+local WEB_RANGE = 100
+local WEB_SPEED = 80
+local GRAPPLE_SPEED = 120
+local WEB_DURATION = 5
+
+function Ability.Description()
+	return "Spider: Shoot a web to grapple and swing toward targets."
+end
+
+function Ability.Cooldown()
+	return 8 -- 8 second cooldown
+end
+
+function Ability.ActivateAbility(player: Player, character: Model)
+	print("[DEBUG] Spider.ActivateAbility called for player:", player.Name)
+	
+	if not character or not character:FindFirstChild("HumanoidRootPart") then
+		print("[DEBUG] No character or HumanoidRootPart found")
+		return
+	end
+	
+	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+	local humanoid = character:FindFirstChild("Humanoid")
+	
+	if not humanoidRootPart or not humanoid then
+		print("[DEBUG] No HumanoidRootPart or Humanoid found")
+		return
+	end
+	
+	print("[DEBUG] Character components found, checking grappling state")
+	
+	-- Check if already grappling
+	if character:GetAttribute("IsGrappling") then
+		print("[DEBUG] Already grappling, returning")
+		return
+	end
+	
+	print("[DEBUG] Not grappling, proceeding with web creation")
+	
+	-- Get mouse hit position for web target - handle safely
+	local targetPosition
+	local success, result = pcall(function()
+		local mouse = player:GetMouse()
+		if mouse and mouse.Hit then
+			return mouse.Hit.Position
+		else
+			-- Fallback: shoot web forward from character
+			return humanoidRootPart.Position + (humanoidRootPart.CFrame.LookVector * WEB_RANGE)
+		end
+	end)
+	
+	if success and result then
+		targetPosition = result
+		print("[DEBUG] Got mouse target position:", targetPosition)
+	else
+		-- Fallback: shoot web forward from character
+		targetPosition = humanoidRootPart.Position + (humanoidRootPart.CFrame.LookVector * WEB_RANGE)
+		print("[DEBUG] Using fallback target position:", targetPosition)
+	end
+	
+	-- Calculate distance to target
+	local distance = (targetPosition - humanoidRootPart.Position).Magnitude
+	print("[DEBUG] Distance to target:", distance)
+	
+	if distance > WEB_RANGE then
+		-- Target too far, adjust to max range
+		local direction = (targetPosition - humanoidRootPart.Position).Unit
+		targetPosition = humanoidRootPart.Position + (direction * WEB_RANGE)
+		distance = WEB_RANGE
+		print("[DEBUG] Adjusted target to max range:", distance)
+	end
+	
+	print("[DEBUG] Creating web visual effect")
+	
+	-- Create web visual effect
+	local web = Instance.new("Part")
+	web.Name = "SpiderWeb"
+	web.Material = Enum.Material.Nylon
+	web.Color = Color3.fromRGB(255, 255, 255)
+	web.Transparency = 0.3
+	web.Anchored = true
+	web.CanCollide = false
+	web.Size = Vector3.new(0.1, 0.1, distance)
+	web.CFrame = CFrame.lookAt(humanoidRootPart.Position, targetPosition) * CFrame.new(0, 0, -distance/2)
+	web.Parent = workspace
+	
+	print("[DEBUG] Web created, creating attachment")
+	
+	-- Create web attachment at target
+	local webAttachment = Instance.new("Part")
+	webAttachment.Name = "WebAttachment"
+	webAttachment.Material = Enum.Material.Nylon
+	webAttachment.Color = Color3.fromRGB(255, 255, 255)
+	webAttachment.Transparency = 0.2
+	webAttachment.Anchored = true
+	webAttachment.CanCollide = false
+	webAttachment.Size = Vector3.new(2, 2, 2)
+	webAttachment.Shape = Enum.PartType.Ball
+	webAttachment.Position = targetPosition
+	webAttachment.Parent = workspace
+	
+	print("[DEBUG] Setting grappling state")
+	
+	-- Set grappling state
+	character:SetAttribute("IsGrappling", true)
+	character:SetAttribute("WebTarget", targetPosition)
+	
+	-- Grapple toward the web
+	local grappleStartTime = tick()
+	local grappleDuration = distance / GRAPPLE_SPEED
+	
+	print("[DEBUG] Starting grapple movement, duration:", grappleDuration)
+	
+	-- Create connection for smooth grappling movement
+	local connection
+	connection = RunService.Heartbeat:Connect(function(deltaTime)
+		-- Safety check: ensure character still exists and is valid
+		if not character or not character.Parent or not character:FindFirstChild("HumanoidRootPart") then
+			if connection then 
+				connection:Disconnect() 
+				connection = nil
+			end
+			return
+		end
+		
+		-- Safety check: ensure humanoid root part is still valid
+		local currentHRP = character:FindFirstChild("HumanoidRootPart")
+		if not currentHRP or not currentHRP.Parent then
+			if connection then 
+				connection:Disconnect() 
+				connection = nil
+			end
+			return
+		end
+		
+		local elapsed = tick() - grappleStartTime
+		local progress = math.min(elapsed / grappleDuration, 1)
+		
+		-- Smooth easing function for natural movement
+		local easedProgress = 1 - (1 - progress) * (1 - progress)
+		
+		-- Calculate new position
+		local startPos = currentHRP.Position
+		local endPos = targetPosition
+		local newPos = startPos:Lerp(endPos, easedProgress)
+		
+		-- Move character safely
+		pcall(function()
+			currentHRP.CFrame = CFrame.new(newPos)
+		end)
+		
+		-- Check if grapple is complete
+		if progress >= 1 then
+			if connection then 
+				connection:Disconnect() 
+				connection = nil
+			end
+			character:SetAttribute("IsGrappling", false)
+			character:SetAttribute("WebTarget", nil)
+			
+			print("[DEBUG] Grapple complete, cleaning up web")
+			
+			-- Clean up web after delay
+			task.delay(WEB_DURATION, function()
+				if web and web.Parent then
+					web:Destroy()
+				end
+				if webAttachment and webAttachment.Parent then
+					webAttachment:Destroy()
+				end
+			end)
+		end
+	end)
+	
+	print("[DEBUG] Grapple connection created, setting cleanup timer")
+	
+	-- Clean up web if ability is deactivated early
+	task.delay(WEB_DURATION, function()
+		if web and web.Parent then
+			web:Destroy()
+		end
+		if webAttachment and webAttachment.Parent then
+			webAttachment:Destroy()
+		end
+	end)
+	
+	print("[DEBUG] Spider ability activation complete")
+end
+
+function Ability.DeactivateAbility(player: Player, character: Model)
+	if character then
+		character:SetAttribute("IsGrappling", false)
+		character:SetAttribute("WebTarget", nil)
+	end
+end
+
+return Ability ]]></string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="10">
+        <Properties>
+          <string name="Name">MarblesModule</string>
+          <string name="Source"><![CDATA[-- Central marble registry and helpers
+-- Place marble models under ReplicatedStorage/MarbleModels/<MarbleId> as Model instances.
+-- Abilities are in ReplicatedStorage/Marbles/Abilities/<AbilityModule>.luau
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local marblesFolder = ReplicatedStorage:WaitForChild("Marbles")
+local abilitiesFolder = marblesFolder:WaitForChild("Abilities")
+
+export type MarbleDefinition = {
+	id: string,
+	name: string,
+	dropDenominator: number?, -- 2 => 1/2, 3 => 1/3, etc. If nil or 0, not rollable
+	rollable: boolean?,
+	abilityModule: string?,
+	color: Color3?,
+}
+
+local MarblesModule = {}
+
+-- Define all marbles here. You can add more and point their model to ReplicatedStorage/MarbleModels/<id>
+local DEFINITIONS: { [string]: MarbleDefinition } = {
+	Default = {
+		id = "Default",
+		name = "Default Marble",
+		dropDenominator = 0,
+		rollable = false,
+		abilityModule = "Default",
+		color = Color3.fromRGB(230, 230, 230),
+	},
+	Red = {
+		id = "Red",
+		name = "Red Marble",
+		dropDenominator = 2, -- equal weight with other colors
+		rollable = true,
+		abilityModule = "Red",
+		color = Color3.fromRGB(220, 60, 60),
+	},
+	Blue = {
+		id = "Blue",
+		name = "Blue Marble",
+		dropDenominator = 2,
+		rollable = true,
+		abilityModule = "Blue",
+		color = Color3.fromRGB(60, 120, 220),
+	},
+	Green = {
+		id = "Green",
+		name = "Green Marble",
+		dropDenominator = 2,
+		rollable = true,
+		abilityModule = "Green",
+		color = Color3.fromRGB(70, 200, 90),
+	},
+	Spider = {
+		id = "Spider",
+		name = "Spider Marble",
+		dropDenominator = 5, -- 1/5 rarity
+		rollable = true,
+		abilityModule = "Spider",
+		color = Color3.fromRGB(40, 40, 40), -- Dark color for spider theme
+	},
+}
+
+function MarblesModule.getById(id: string): MarbleDefinition?
+	return DEFINITIONS[id]
+end
+
+function MarblesModule.getAll(): { MarbleDefinition }
+	local list = {}
+	for _, def in pairs(DEFINITIONS) do
+		table.insert(list, def)
+	end
+	-- Sort by drop chance and then name for a stable order
+	table.sort(list, function(a, b)
+		local ad = a.dropDenominator or math.huge
+		local bd = b.dropDenominator or math.huge
+		if ad ~= bd then
+			return ad < bd
+		end
+		return a.name < b.name
+	end)
+	return list
+end
+
+function MarblesModule.getRollable(): { MarbleDefinition }
+	local list = {}
+	for _, def in pairs(DEFINITIONS) do
+		if def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+			table.insert(list, def)
+		end
+	end
+	return list
+end
+
+-- Weighted roll: probability proportional to 1 / dropDenominator
+function MarblesModule.roll(): MarbleDefinition?
+	local candidates = {}
+	local totalWeight = 0
+	for _, def in pairs(DEFINITIONS) do
+		if def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+			local weight = 1 / def.dropDenominator
+			totalWeight += weight
+			table.insert(candidates, { def = def, weight = weight })
+		end
+	end
+	if totalWeight <= 0 or #candidates == 0 then
+		return nil
+	end
+	local r = math.random()
+	local cumulative = 0
+	for _, c in ipairs(candidates) do
+		cumulative += (c.weight / totalWeight)
+		if r <= cumulative then
+			return c.def
+		end
+	end
+	return candidates[#candidates].def
+end
+
+function MarblesModule.getAbilityModule(defOrId: MarbleDefinition | string)
+	local def: MarbleDefinition? = typeof(defOrId) == "table" and defOrId or DEFINITIONS[defOrId :: string]
+	if not def then
+		print("[DEBUG] No marble definition found, using Default")
+		return require(abilitiesFolder:WaitForChild("Default"))
+	end
+	
+	local moduleName = def.abilityModule or "Default"
+	print("[DEBUG] Trying to load ability module:", moduleName)
+	
+	local abilityScript = abilitiesFolder:FindFirstChild(moduleName)
+	if abilityScript then
+		print("[DEBUG] Found ability script:", abilityScript.Name)
+		local success, result = pcall(function()
+			return require(abilityScript)
+		end)
+		if success then
+			print("[DEBUG] Successfully loaded ability module:", moduleName)
+			return result
+		else
+			print("[DEBUG] Failed to require ability module:", moduleName, "Error:", result)
+			return require(abilitiesFolder:WaitForChild("Default"))
+		end
+	else
+		print("[DEBUG] Ability script not found:", moduleName, "using Default")
+		return require(abilitiesFolder:WaitForChild("Default"))
+	end
+end
+
+-- Clone a model for the marble if provided under ReplicatedStorage/MarbleModels/<id>
+-- If not found, the server will build a simple spherical character instead.
+function MarblesModule.getModelClone(defOrId: MarbleDefinition | string): Model?
+	local def: MarbleDefinition? = typeof(defOrId) == "table" and defOrId or DEFINITIONS[defOrId :: string]
+	if not def then return nil end
+	local modelsFolder = ReplicatedStorage:FindFirstChild("MarbleModels")
+	if modelsFolder then
+		local model = modelsFolder:FindFirstChild(def.id)
+		if model and model:IsA("Model") then
+			return model:Clone()
+		end
+	end
+	return nil
+end
+
+return MarblesModule ]]></string>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="11">
+      <Properties>
+        <string name="Name">Shared</string>
+      </Properties>
+      <Item class="ModuleScript" referent="12">
+        <Properties>
+          <string name="Name">Hello</string>
+          <string name="Source">return function()
+	print("Hello, world!")
+	print("Some changes2")
+end</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="13">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Script" referent="14">
+      <Properties>
+        <string name="Name">CoinService</string>
+        <token name="RunContext">0</token>
+        <string name="Source"><![CDATA[-- CoinService: spawns and manages collectible coins with persistence
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local DataStoreService = game:GetService("DataStoreService")
+
+local MAX_COINS = 20
+local SPAWN_INTERVAL = 10 -- seconds
+local DESPAWN_AFTER = 120 -- seconds
+
+local COIN_DEBUG = false
+local function clog(...)
+	if COIN_DEBUG then
+		print("[CoinService]", ...)
+	end
+end
+
+clog("initializing...")
+
+-- Create/fetch remotes
+local function getOrCreateRemotes()
+	local folder = ReplicatedStorage:FindFirstChild("Remotes")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Remotes"
+		folder.Parent = ReplicatedStorage
+	end
+	local function ensureEvent(name: string)
+		local evt = folder:FindFirstChild(name)
+		if not evt then
+			evt = Instance.new("RemoteEvent")
+			evt.Name = name
+			evt.Parent = folder
+		end
+		return evt :: RemoteEvent
+	end
+	return {
+		CoinCountUpdate = ensureEvent("CoinCountUpdate"),
+	}
+end
+
+local Remotes = getOrCreateRemotes()
+
+-- Persistence
+local coinsStore = DataStoreService:GetDataStore("MarbleCoins")
+local playerCoins: { [Player]: number } = {}
+
+local function getCoins(player: Player): number
+	return playerCoins[player] or 0
+end
+
+local function sendCoins(player: Player)
+	Remotes.CoinCountUpdate:FireClient(player, getCoins(player))
+end
+
+local function setCoins(player: Player, amount: number)
+	playerCoins[player] = amount
+	sendCoins(player)
+	-- Save async
+	task.spawn(function()
+		pcall(function()
+			coinsStore:SetAsync("coins_" .. player.UserId, amount)
+		end)
+	end)
+end
+
+local function addCoins(player: Player, delta: number)
+	setCoins(player, math.max(0, getCoins(player) + delta))
+end
+
+Players.PlayerAdded:Connect(function(player)
+	local amount = 0
+	local ok, err = pcall(function()
+		amount = coinsStore:GetAsync("coins_" .. player.UserId) or 0
+	end)
+	if not ok then
+		warn("[CoinService] DataStore GetAsync failed:", err)
+	end
+	playerCoins[player] = tonumber(amount) or 0
+	sendCoins(player)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	local amount = getCoins(player)
+	local ok, err = pcall(function()
+		coinsStore:SetAsync("coins_" .. player.UserId, amount)
+	end)
+	if not ok then
+		warn("[CoinService] DataStore SetAsync failed:", err)
+	end
+	playerCoins[player] = nil
+end)
+
+-- Coin spawning & movement
+export type CoinInfo = {
+	model: Model,
+	root: BasePart,
+	spawnTime: number,
+	basePos: Vector3,
+	phase: number,
+}
+
+local activeCoins: { CoinInfo } = {}
+
+local function getBaseplateBounds()
+	local baseplate = workspace:FindFirstChild("Baseplate")
+	if baseplate and baseplate:IsA("BasePart") then
+		local size = baseplate.Size
+		local pos = baseplate.Position
+		return pos, size
+	end
+	-- Fallback bounds
+	return Vector3.new(0, 0, 0), Vector3.new(256, 1, 256)
+end
+
+local function randomSpawnOverBase(): Vector3
+	local center, size = getBaseplateBounds()
+	local rx = (math.random() - 0.5) * (size.X - 6)
+	local rz = (math.random() - 0.5) * (size.Z - 6)
+	return Vector3.new(center.X + rx, center.Y + 5, center.Z + rz)
+end
+
+local function createCoin(): CoinInfo
+	local coin = Instance.new("Model")
+	coin.Name = "Coin"
+	coin.Parent = workspace
+
+	local root = Instance.new("Part")
+	root.Name = "CoinRoot"
+	root.Shape = Enum.PartType.Cylinder
+	root.Size = Vector3.new(0.5, 3, 3)
+	root.Color = Color3.fromRGB(255, 215, 0)
+	root.Material = Enum.Material.Metal
+	root.Anchored = true
+	root.CanCollide = false
+	root.Parent = coin
+
+	local basePos = randomSpawnOverBase()
+	coin:PivotTo(CFrame.new(basePos))
+
+	-- Touch collect sensor (anchored, invisible)
+	local sensor = Instance.new("Part")
+	sensor.Name = "CoinSensor"
+	sensor.Size = Vector3.new(4,4,4)
+	sensor.Transparency = 1
+	sensor.CanCollide = false
+	sensor.Anchored = true
+	sensor.CFrame = CFrame.new(basePos)
+	sensor.Parent = coin
+
+	sensor.Touched:Connect(function(hit)
+		local model = hit:FindFirstAncestorOfClass("Model")
+		if not model then return end
+		local player = Players:GetPlayerFromCharacter(model)
+		if not player then return end
+		addCoins(player, 1)
+		clog(string.format("Collected by %s at (%.1f, %.1f, %.1f)", player.Name, basePos.X, basePos.Y, basePos.Z))
+		-- Play pickup sound at coin position
+		local sfxPart = Instance.new("Part")
+		sfxPart.Name = "CoinSFX"
+		sfxPart.Anchored = true
+		sfxPart.CanCollide = false
+		sfxPart.CanQuery = false
+		sfxPart.CanTouch = false
+		sfxPart.Transparency = 1
+		sfxPart.Size = Vector3.new(1,1,1)
+		sfxPart.CFrame = CFrame.new(basePos)
+		sfxPart.Parent = workspace
+		local sound = Instance.new("Sound")
+		sound.SoundId = "rbxassetid://6792279908"
+		sound.Volume = 0.8
+		sound.RollOffMaxDistance = 100
+		sound.RollOffMode = Enum.RollOffMode.Inverse
+		sound.Parent = sfxPart
+		sound:Play()
+		task.delay(3, function()
+			if sfxPart then sfxPart:Destroy() end
+		end)
+		for i = #activeCoins, 1, -1 do
+			local info = activeCoins[i]
+			if info.model == coin then
+				coin:Destroy()
+				table.remove(activeCoins, i)
+				break
+			end
+		end
+	end)
+
+	local info: CoinInfo = {
+		model = coin,
+		root = root,
+		spawnTime = os.clock(),
+		basePos = basePos,
+		phase = math.random() * math.pi * 2,
+	}
+	table.insert(activeCoins, info)
+	clog(string.format("Spawned coin at (%.1f, %.1f, %.1f). Active=%d", basePos.X, basePos.Y, basePos.Z, #activeCoins))
+	return info
+end
+
+-- Animate coins (hover + rotate)
+RunService.Heartbeat:Connect(function(dt)
+	local t = os.clock()
+	for _, info in ipairs(activeCoins) do
+		local y = math.sin((t + info.phase) * 2) * 0.5
+		local rot = CFrame.Angles(0, (t * 2) % (math.pi * 2), 0)
+		info.model:PivotTo(CFrame.new(info.basePos + Vector3.new(0, y, 0)) * rot)
+	end
+end)
+
+-- Maintenance loop: spawn and despawn
+spawn(function()
+	clog("maintenance loop started")
+	while true do
+		-- Despawn old
+		local now = os.clock()
+		for i = #activeCoins, 1, -1 do
+			local info = activeCoins[i]
+			if now - info.spawnTime > DESPAWN_AFTER then
+				if info.model then info.model:Destroy() end
+				table.remove(activeCoins, i)
+				clog("Despawned old coin; Active=" .. #activeCoins)
+			end
+		end
+		-- Spawn new up to cap
+		while #activeCoins < MAX_COINS do
+			createCoin()
+		end
+		-- Wait interval before next spawn attempt
+		task.wait(SPAWN_INTERVAL)
+	end
+end) ]]></string>
+      </Properties>
+    </Item>
+    <Item class="Script" referent="15">
+      <Properties>
+        <string name="Name">MarbleService</string>
+        <token name="RunContext">0</token>
+        <string name="Source"><![CDATA[-- MarbleService: server-side game flow
+-- - Manages inventories (session only)
+-- - Handles rolling and equipping marbles via RemoteEvents
+-- - Spawns a spherical character per equipped marble
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
+
+-- Debug helper
+local DEBUG = false
+local function dprint(...)
+	if DEBUG then
+		print("[MarbleServer]", ...)
+	end
+end
+
+-- Ensure Remotes folder and events exist
+local function getOrCreateRemotes()
+	local folder = ReplicatedStorage:FindFirstChild("Remotes")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Remotes"
+		folder.Parent = ReplicatedStorage
+	end
+	local function ensureEvent(name: string)
+		local evt = folder:FindFirstChild(name)
+		if not evt then
+			evt = Instance.new("RemoteEvent")
+			evt.Name = name
+			evt.Parent = folder
+		end
+		return evt :: RemoteEvent
+	end
+
+	return {
+		InventoryUpdate = ensureEvent("InventoryUpdate"),
+		RollForMarble = ensureEvent("RollForMarble"),
+		RollResult = ensureEvent("RollResult"),
+		EquipMarble = ensureEvent("EquipMarble"),
+		RequestInventory = ensureEvent("RequestInventory"),
+		ActivateAbility = ensureEvent("ActivateAbility"),
+		AbilityCooldown = ensureEvent("AbilityCooldown"),
+	}
+end
+
+local Remotes = getOrCreateRemotes()
+
+-- Per-player in-memory data (session only). Replace with DataStore for persistence across sessions.
+export type PlayerData = {
+	owned: { [string]: boolean },
+	equipped: string,
+}
+
+local DEFAULT_ID = "Default"
+local playerData: { [Player]: PlayerData } = {}
+local spawningFlag: { [Player]: boolean } = {}
+
+-- Ability cooldown tracking
+local abilityCooldowns: { [Player]: number } = {}
+
+local function getOrCreatePlayerData(player: Player): PlayerData
+	local data = playerData[player]
+	if not data then
+		data = {
+			owned = { [DEFAULT_ID] = true },
+			equipped = DEFAULT_ID,
+		}
+		playerData[player] = data
+	end
+	return data
+end
+
+local function canUseAbility(player: Player): boolean
+	local lastUse = abilityCooldowns[player]
+	if not lastUse then return true end
+	
+	local data = getOrCreatePlayerData(player)
+	local def = Marbles.getById(data.equipped)
+	if not def then return false end
+	
+	local ability = Marbles.getAbilityModule(def)
+	local cooldown = ability.Cooldown and ability.Cooldown() or 0
+	if cooldown <= 0 then return true end
+	
+	return (tick() - lastUse) >= cooldown
+end
+
+local function startAbilityCooldown(player: Player)
+	local data = getOrCreatePlayerData(player)
+	local def = Marbles.getById(data.equipped)
+	if not def then return end
+	
+	local ability = Marbles.getAbilityModule(def)
+	local cooldown = ability.Cooldown and ability.Cooldown() or 0
+	if cooldown <= 0 then return end
+	
+	abilityCooldowns[player] = tick()
+	
+	-- Send cooldown info to client
+	Remotes.AbilityCooldown:FireClient(player, {
+		duration = cooldown,
+		startTime = tick(),
+	})
+end
+
+local function sendInventory(player: Player)
+	local data = getOrCreatePlayerData(player)
+	local ownedIds = {}
+	for id, has in pairs(data.owned) do
+		if has then table.insert(ownedIds, id) end
+	end
+	table.sort(ownedIds)
+	Remotes.InventoryUpdate:FireClient(player, {
+		owned = ownedIds,
+		equipped = data.equipped,
+	})
+end
+
+local function ensureHumanoid(model: Model): Humanoid
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if not hum then
+		hum = Instance.new("Humanoid")
+		hum.RequiresNeck = false
+		hum.NameDisplayDistance = 0
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		hum.Parent = model
+	end
+	return hum
+end
+
+local function applyIcePhysics(part: BasePart)
+	-- Low friction and ice material for long glide
+	part.Material = Enum.Material.Ice
+	-- PhysicalProperties.new(density, friction, elasticity, frictionWeight?, elasticityWeight?)
+	part.CustomPhysicalProperties = PhysicalProperties.new(1, 0.02, 0, 0, 0)
+end
+
+local function ensureHRP(model: Model): BasePart
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp:IsA("BasePart") then
+		applyIcePhysics(hrp)
+		return hrp
+	end
+	local part = Instance.new("Part")
+	part.Name = "HumanoidRootPart"
+	part.Shape = Enum.PartType.Ball
+	part.Material = Enum.Material.SmoothPlastic
+	part.Size = Vector3.new(4, 4, 4)
+	part.Color = Color3.fromRGB(230, 230, 230)
+	part.CustomPhysicalProperties = PhysicalProperties.new(1, 0.3, 0.5)
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+	part.Parent = model
+	applyIcePhysics(part)
+	return part
+end
+
+local function applyMarbleVisual(model: Model, marbleId: string)
+	local def = Marbles.getById(marbleId)
+	if not def then return end
+	-- If we are using the generated HRP, tint it
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp:IsA("BasePart") and def.color then
+		hrp.Color = def.color
+	end
+	model:SetAttribute("EquippedMarbleId", marbleId)
+end
+
+local function clearHRPTextures(model: Model)
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	if not hrp or not hrp:IsA("BasePart") then return end
+	for _, child in ipairs(hrp:GetChildren()) do
+		if child:IsA("Decal") or child:IsA("Texture") then
+			child:Destroy()
+		end
+	end
+end
+
+local function getRarityText(def): string
+	if def and def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+		return string.format("1/%d", def.dropDenominator)
+	end
+	return "Default"
+end
+
+local function ensureNameplate(character: Model, player: Player, marbleId: string)
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp or not hrp:IsA("BasePart") then return end
+	local def = Marbles.getById(marbleId)
+	local text = string.format("%s (%s)", player.Name, getRarityText(def))
+
+	local gui = character:FindFirstChild("Nameplate")
+	if not gui or not gui:IsA("BillboardGui") then
+		gui = Instance.new("BillboardGui")
+		gui.Name = "Nameplate"
+		gui.Size = UDim2.fromOffset(180, 36)
+		gui.StudsOffset = Vector3.new(0, 3.5, 0)
+		gui.AlwaysOnTop = true
+		gui.MaxDistance = 250
+		gui.Adornee = hrp
+		gui.Parent = character
+		local label = Instance.new("TextLabel")
+		label.Name = "Label"
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.TextScaled = true
+		label.Font = Enum.Font.GothamBold
+		label.TextColor3 = Color3.new(1,1,1)
+		label.Parent = gui
+	end
+	local label = gui:FindFirstChild("Label")
+	if label and label:IsA("TextLabel") then
+		label.Text = text
+	end
+end
+
+local function muteFootsteps(character: Model)
+	local function handleDescendant(descendant: Instance)
+		if descendant:IsA("Sound") then
+			local n = descendant.Name
+			if n == "Running" or n == "Run" or n == "Footsteps" or n == "Jumping" or n == "Jump" then
+				descendant.Volume = 0
+				descendant.Playing = false
+			end
+		elseif (descendant:IsA("LocalScript") or descendant:IsA("Script")) and descendant.Name == "RbxCharacterSounds" then
+			descendant:Destroy()
+		end
+	end
+	for _, d in ipairs(character:GetDescendants()) do
+		handleDescendant(d)
+	end
+	character.DescendantAdded:Connect(handleDescendant)
+end
+
+local function buildMarbleCharacter(player: Player, marbleId: string)
+	dprint("buildMarbleCharacter", player.Name, marbleId)
+	local model = Marbles.getModelClone(marbleId)
+	local character: Model
+	if model then
+		character = model
+	else
+		character = Instance.new("Model")
+	end
+	character:SetAttribute("IsMarbleCharacter", true)
+	character.Name = player.Name
+	character.Parent = workspace
+
+	local hrp = ensureHRP(character)
+	local hum = ensureHumanoid(character)
+	character.PrimaryPart = hrp
+	-- Make sure it can roll
+	hrp.CanCollide = true
+	hrp.Massless = false
+	hrp.AssemblyLinearVelocity = Vector3.zero
+	hrp.AssemblyAngularVelocity = Vector3.zero
+
+	-- Ensure no static decals on HRP
+	clearHRPTextures(character)
+
+	applyMarbleVisual(character, marbleId)
+	ensureNameplate(character, player, marbleId)
+	muteFootsteps(character)
+
+	-- Position at a spawn if available
+	local spawnPos = Vector3.new(0, 10, 0)
+	local spawnLocation = workspace:FindFirstChildOfClass("SpawnLocation")
+	if spawnLocation then
+		spawnPos = (spawnLocation :: any).Position + Vector3.new(0, 5, 0)
+	end
+	character:PivotTo(CFrame.new(spawnPos))
+
+	player.Character = character
+	-- Give client physics ownership for responsive control
+	pcall(function()
+		hrp:SetNetworkOwner(player)
+	end)
+end
+
+local function respawnEquipped(player: Player)
+	if spawningFlag[player] then return end
+	spawningFlag[player] = true
+	local data = getOrCreatePlayerData(player)
+	local old = player.Character
+	if old then
+		old:Destroy()
+	end
+	buildMarbleCharacter(player, data.equipped)
+	spawningFlag[player] = nil
+end
+
+-- Remote connections
+Remotes.RollForMarble.OnServerEvent:Connect(function(player: Player)
+	local data = getOrCreatePlayerData(player)
+	local rolled = Marbles.roll()
+	if not rolled then
+		Remotes.RollResult:FireClient(player, {
+			success = false,
+			message = "No marbles available to roll.",
+		})
+		return
+	end
+	local newlyUnlocked = not data.owned[rolled.id]
+	data.owned[rolled.id] = true
+	Remotes.RollResult:FireClient(player, {
+		success = true,
+		marbleId = rolled.id,
+		marbleName = rolled.name,
+		new = newlyUnlocked,
+	})
+	sendInventory(player)
+end)
+
+Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: string)
+	dprint("EquipMarble", player.Name, marbleId)
+	local data = getOrCreatePlayerData(player)
+	if type(marbleId) ~= "string" then return end
+	local def = Marbles.getById(marbleId)
+	if not def then return end
+	if not data.owned[marbleId] then return end
+	if data.equipped == marbleId then return end
+	data.equipped = marbleId
+	sendInventory(player)
+	-- In-place switch: update current character instead of respawn
+	local character = player.Character
+	if character and character.Parent then
+		clearHRPTextures(character)
+		applyMarbleVisual(character, marbleId)
+		ensureNameplate(character, player, marbleId)
+	end
+end)
+
+Remotes.RequestInventory.OnServerEvent:Connect(function(player: Player)
+	sendInventory(player)
+end)
+
+Remotes.ActivateAbility.OnServerEvent:Connect(function(player: Player)
+	print("[DEBUG] ActivateAbility called by player:", player.Name)
+	
+	-- Check cooldown
+	if not canUseAbility(player) then
+		print("[DEBUG] Player on cooldown, returning")
+		return
+	end
+	
+	local data = getOrCreatePlayerData(player)
+	local def = Marbles.getById(data.equipped)
+	print("[DEBUG] Equipped marble definition:", def and def.id or "nil")
+	
+	if not def then 
+		print("[DEBUG] No marble definition found, returning")
+		return 
+	end
+	
+	local ability = Marbles.getAbilityModule(def)
+	print("[DEBUG] Ability module:", ability and "loaded" or "failed to load")
+	print("[DEBUG] Ability module type:", typeof(ability))
+	
+	local character = player.Character
+	if character then
+		print("[DEBUG] Character found, activating ability")
+		-- Start cooldown before activating ability
+		startAbilityCooldown(player)
+		
+		local success, error = pcall(function()
+			ability.ActivateAbility(player, character)
+		end)
+		
+		if not success then
+			print("[DEBUG] Ability activation failed with error:", error)
+		else
+			print("[DEBUG] Ability activation successful")
+		end
+	else
+		print("[DEBUG] No character found")
+	end
+end)
+
+Players.PlayerAdded:Connect(function(player)
+	local data = getOrCreatePlayerData(player)
+	data.equipped = data.equipped or DEFAULT_ID
+	sendInventory(player)
+	player.CharacterAdded:Connect(function(character)
+		if character:GetAttribute("IsMarbleCharacter") then
+			local hrp = character:FindFirstChild("HumanoidRootPart")
+			if hrp and hrp:IsA("BasePart") then
+				pcall(function()
+					hrp:SetNetworkOwner(player)
+				end)
+			end
+			return
+		end
+		task.defer(function()
+			respawnEquipped(player)
+		end)
+	end)
+	respawnEquipped(player)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	playerData[player] = nil
+	spawningFlag[player] = nil
+	abilityCooldowns[player] = nil
+end) ]]></string>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="16">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="17">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="LocalScript" referent="18">
+        <Properties>
+          <string name="Name">CoinHUD</string>
+          <string name="Source"><![CDATA[-- Coin HUD: shows coin count at top-right
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local CoinCountUpdate: RemoteEvent = remotes:WaitForChild("CoinCountUpdate")
+
+local screen = Instance.new("ScreenGui")
+screen.Name = "CoinHUD"
+screen.ResetOnSpawn = false
+screen.IgnoreGuiInset = false
+screen.Parent = playerGui
+
+local label = Instance.new("TextLabel")
+label.BackgroundTransparency = 0.2
+label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+label.TextColor3 = Color3.new(1,1,1)
+label.Font = Enum.Font.GothamBold
+label.TextScaled = true
+label.Size = UDim2.fromOffset(160, 40)
+label.Position = UDim2.new(1, -20, 0, 20)
+label.AnchorPoint = Vector2.new(1, 0)
+label.Text = "Coins: 0"
+label.Parent = screen
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = label
+
+CoinCountUpdate.OnClientEvent:Connect(function(count: number)
+	label.Text = string.format("Coins: %d", count or 0)
+end) ]]></string>
+        </Properties>
+      </Item>
+      <Item class="LocalScript" referent="19">
+        <Properties>
+          <string name="Name">MarbleController</string>
+          <string name="Source"><![CDATA[-- Marble rolling controller (client-side)
+-- Default Roblox camera; visual marble rotates around player while physics uses linear velocity
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
+
+local DEBUG = false
+local function dprint(...)
+	if DEBUG then
+		print("[MarbleClient]", ...)
+	end
+end
+
+local MOVEMENT_DEBUG = false
+local function mprint(...)
+	if MOVEMENT_DEBUG then
+		print("[MarbleMove]", ...)
+	end
+end
+
+local inputState = {
+	forward = 0,
+	right = 0,
+}
+
+local boundCharacters: { [Model]: boolean } = {}
+
+local baseSpeed = 24 -- movement magnitude; abilities can scale via SpeedMultiplier
+
+local function getMoveDirection(camera: Camera): Vector3
+	local cf = camera.CFrame
+	local forward = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z)
+	if forward.Magnitude > 0 then forward = forward.Unit end
+	local right = Vector3.new(cf.RightVector.X, 0, cf.RightVector.Z)
+	if right.Magnitude > 0 then right = right.Unit end
+	local dir = forward * inputState.forward + right * inputState.right
+	if dir.Magnitude > 1 then dir = dir.Unit end
+	return dir
+end
+
+local function bindInputs()
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed then return end
+		if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.Up then inputState.forward = 1 end
+		if input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.Down then inputState.forward = -1 end
+		if input.KeyCode == Enum.KeyCode.D or input.KeyCode == Enum.KeyCode.Right then inputState.right = 1 end
+		if input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.Left then inputState.right = -1 end
+	end)
+	UserInputService.InputEnded:Connect(function(input, _processed)
+		if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.Up then if inputState.forward == 1 then inputState.forward = 0 end end
+		if input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.Down then if inputState.forward == -1 then inputState.forward = 0 end end
+		if input.KeyCode == Enum.KeyCode.D or input.KeyCode == Enum.KeyCode.Right then if inputState.right == 1 then inputState.right = 0 end end
+		if input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.Left then if inputState.right == -1 then inputState.right = 0 end end
+	end)
+end
+
+local function waitForHRP(character: Model, timeoutSeconds: number?): BasePart?
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp:IsA("BasePart") then
+		return hrp
+	end
+	local ok = character:WaitForChild("HumanoidRootPart", timeoutSeconds or 5)
+	if ok and ok:IsA("BasePart") then
+		return ok
+	end
+	return nil
+end
+
+local function ensureCosmeticBall(character: Model, hrp: BasePart): BasePart
+	local existing = character:FindFirstChild("CosmeticBall")
+	if existing and existing:IsA("BasePart") then
+		return existing
+	end
+	local ball = Instance.new("Part")
+	ball.Name = "CosmeticBall"
+	ball.Shape = Enum.PartType.Ball
+	ball.Material = Enum.Material.SmoothPlastic
+	ball.Color = Color3.fromRGB(230, 230, 230)
+	ball.Size = hrp.Size
+	ball.CanCollide = false
+	ball.Massless = true
+	ball.Anchored = false
+	ball.Parent = character
+	return ball
+end
+
+local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
+	local id = character:GetAttribute("EquippedMarbleId")
+	dprint("applyCosmeticColor", id)
+	if type(id) ~= "string" then return end
+	local def = Marbles.getById(id)
+	if def and def.color then
+		cosmetic.Color = def.color
+	else
+		cosmetic.Color = Color3.fromRGB(230,230,230)
+	end
+end
+
+local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: BasePart)
+	local id = character:GetAttribute("EquippedMarbleId")
+	dprint("applyCosmeticTextures", id)
+	if type(id) ~= "string" then return end
+	local texturesRoot = ReplicatedStorage:FindFirstChild("MarbleTextures")
+	local folder = texturesRoot and texturesRoot:FindFirstChild(id) or nil
+	-- Clear existing
+	for _, ch in ipairs(cosmetic:GetChildren()) do
+		if ch:IsA("Decal") or ch:IsA("Texture") then ch:Destroy() end
+	end
+	local assets = {}
+	if folder then
+		for _, inst in ipairs(folder:GetChildren()) do
+			if inst:IsA("Decal") or inst:IsA("Texture") then
+				table.insert(assets, inst)
+			end
+		end
+	end
+	local DEFAULT_DECALS: { [string]: string } = {
+		Default = "rbxassetid://110926540048461",
+		Red = "rbxassetid://99977275020564",
+		Green = "rbxassetid://114474679212927",
+		Blue = "rbxassetid://128223600665334",
+	}
+	if #assets == 0 then
+		local fallback = DEFAULT_DECALS[id]
+		dprint("no assets found; using fallback?", fallback ~= nil)
+		if fallback then
+			for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+				local d = Instance.new("Decal")
+				d.Texture = fallback
+				d.Face = face
+				d.Parent = cosmetic
+			end
+		end
+		return
+	end
+	dprint("found", #assets, "assets for", id)
+	if #assets == 1 then
+		local src = assets[1]
+		for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+			local clone = src:Clone()
+			if clone:IsA("Decal") then
+				(clone :: Decal).Face = face
+			elseif clone:IsA("Texture") then
+				(clone :: Texture).Face = face
+			end
+			clone.Parent = cosmetic
+		end
+		return
+	end
+	for _, src in ipairs(assets) do
+		local clone = src:Clone()
+		clone.Parent = cosmetic
+	end
+end
+
+local function muteFootstepsLocal(character: Model)
+	local function handleDescendant(descendant: Instance)
+		if descendant:IsA("Sound") then
+			local n = descendant.Name
+			if n == "Running" or n == "Run" or n == "Footsteps" or n == "Jumping" or n == "Jump" then
+				descendant.Volume = 0
+				descendant.Playing = false
+			end
+		elseif (descendant:IsA("LocalScript") or descendant:IsA("Script")) and descendant.Name == "RbxCharacterSounds" then
+			descendant:Destroy()
+		end
+	end
+	for _, d in ipairs(character:GetDescendants()) do
+		handleDescendant(d)
+	end
+	character.DescendantAdded:Connect(handleDescendant)
+end
+
+local function setupNameplateScaling(character: Model)
+	local gui = character:FindFirstChild("Nameplate")
+	if not gui or not gui:IsA("BillboardGui") then return end
+	local basePixels = 180 -- must match server base width
+	local baseDistance = 25 -- distance at which the size equals basePixels
+	local minScale = 0.6
+	local maxScale = 1.2
+	local cam = workspace.CurrentCamera
+
+	local function update()
+		if not cam then cam = workspace.CurrentCamera end
+		local adornee = gui.Adornee
+		if not adornee or not adornee.Parent then return end
+		local camPos = cam and cam.CFrame.Position or Vector3.zero
+		local dist = (adornee.Position - camPos).Magnitude
+		local scale = math.clamp(baseDistance / dist, minScale, maxScale)
+		gui.Size = UDim2.fromOffset(basePixels * scale, 36 * scale)
+	end
+
+	update()
+	RunService.RenderStepped:Connect(update)
+end
+
+local function setupController(character: Model)
+	if boundCharacters[character] then return end
+	dprint("setupController for", character)
+
+	local hrp = waitForHRP(character, 5)
+	if not hrp then
+		local conn
+		conn = character.ChildAdded:Connect(function(child)
+			if child.Name == "HumanoidRootPart" and child:IsA("BasePart") then
+				conn:Disconnect()
+				setupController(character)
+			end
+		end)
+		return
+	end
+	boundCharacters[character] = true
+
+	-- Ensure default Roblox camera follows Humanoid
+	local hum = character:FindFirstChildOfClass("Humanoid")
+	local cam = workspace.CurrentCamera
+	if cam and hum then
+		cam.CameraType = Enum.CameraType.Custom
+		cam.CameraSubject = hum
+	end
+
+	-- Make physical root invisible; cosmetic ball will be visible
+	hrp.Transparency = 1
+
+	-- Create visual marble that we rotate for effect
+	local cosmetic = ensureCosmeticBall(character, hrp)
+	applyCosmeticColorFromEquipped(character, cosmetic)
+	applyCosmeticTexturesFromEquipped(character, cosmetic)
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(function()
+		applyCosmeticColorFromEquipped(character, cosmetic)
+		applyCosmeticTexturesFromEquipped(character, cosmetic)
+	end)
+
+	-- Mute default character running/jump sounds for this character
+	muteFootstepsLocal(character)
+
+	-- Keep nameplate a constant on-screen size
+	setupNameplateScaling(character)
+
+	-- Track orientation for cosmetic rolling
+	local visualCFrame = CFrame.new()
+	local lastPos = hrp.Position
+
+	local function getSpeedMultiplier(): number
+		local mult = character:GetAttribute("SpeedMultiplier")
+		return typeof(mult) == "number" and mult or 1
+	end
+
+	local logAccum = 0
+	local prevIsInput = false
+	local glideHoriz = Vector3.zero
+	local stepConn
+	stepConn = RunService.RenderStepped:Connect(function(dt)
+		if not hrp or not hrp.Parent then
+			if stepConn then stepConn:Disconnect() end
+			return
+		end
+
+		-- Physics movement via linear velocity (horizontal only)
+		local cameraNow = workspace.CurrentCamera
+		local dir = cameraNow and getMoveDirection(cameraNow) or Vector3.zero
+		local speed = baseSpeed * getSpeedMultiplier()
+		local targetHoriz = dir * speed
+		local currentVel = hrp.AssemblyLinearVelocity
+		local horiz = Vector3.new(currentVel.X, 0, currentVel.Z)
+
+		-- Deceleration-only: instant target when input; otherwise, glide velocity decays
+		local isInput = targetHoriz.Magnitude > 0.01
+		local wrote = false
+		if isInput then
+			local newHoriz = targetHoriz
+			if newHoriz.Magnitude < 0.0001 then newHoriz = Vector3.zero end
+			glideHoriz = newHoriz
+			hrp.AssemblyLinearVelocity = Vector3.new(newHoriz.X, currentVel.Y, newHoriz.Z)
+			wrote = true
+		else
+			-- Decay glide horizontally to simulate ice friction
+			local baseFactor = 0.985 -- per 60fps frame
+			local frames = math.clamp(dt * 60, 0, 5)
+			local reduce = character:GetAttribute("FrictionReduction")
+			local reduction = (typeof(reduce) == "number" and reduce or 0)
+			local perFrame = 1 - (1 - baseFactor) * (1 - reduction)
+			local factor = perFrame ^ frames
+			glideHoriz = glideHoriz * factor
+			if glideHoriz.Magnitude < 0.001 then
+				glideHoriz = Vector3.zero
+			end
+			if glideHoriz ~= Vector3.zero then
+				hrp.AssemblyLinearVelocity = Vector3.new(glideHoriz.X, currentVel.Y, glideHoriz.Z)
+				wrote = true
+			end
+		end
+
+		-- Movement debug logs (rate-limited)
+		logAccum += dt
+		if MOVEMENT_DEBUG and logAccum >= 0.5 then
+			logAccum = 0
+			local mat = hrp.Material
+			local props = hrp.CustomPhysicalProperties
+			local friction, fw
+			pcall(function()
+				friction = props and (props :: any).Friction or nil
+				fw = props and (props :: any).FrictionWeight or nil
+			end)
+			mprint(string.format("input=%s wroteVel=%s horiz=%.2f target=%.2f glide=%.2f mat=%s fric=%s fw=%s", tostring(isInput), tostring(wrote), horiz.Magnitude, targetHoriz.Magnitude, glideHoriz.Magnitude, tostring(mat), tostring(friction), tostring(fw)))
+		end
+		if isInput ~= prevIsInput then
+			prevIsInput = isInput
+			mprint("input state changed:", isInput and "START" or "STOP")
+		end
+
+		-- Update cosmetic rotation to match traveled distance
+		local currentPos = hrp.Position
+		local deltaPos = currentPos - lastPos
+		lastPos = currentPos
+		local deltaXZ = Vector3.new(deltaPos.X, 0, deltaPos.Z)
+		local dist = deltaXZ.Magnitude
+		if dist > 0.0001 then
+			local radius = (hrp.Size.X + hrp.Size.Y + hrp.Size.Z) / 6
+			if radius <= 0 then radius = 2 end
+			local angle = dist / radius
+			local moveDir = deltaXZ.Unit
+			local axis = Vector3.new(moveDir.Z, 0, -moveDir.X)
+			visualCFrame = CFrame.fromAxisAngle(axis, angle) * visualCFrame
+		end
+		cosmetic.CFrame = CFrame.new(hrp.Position) * visualCFrame
+	end)
+
+	character.AncestryChanged:Connect(function(_, parent)
+		if not parent and stepConn then
+			stepConn:Disconnect()
+		end
+	end)
+end
+
+local function onCharacterAdded(character: Model)
+	setupController(character)
+end
+
+bindInputs()
+
+if player.Character then
+	onCharacterAdded(player.Character)
+end
+player.CharacterAdded:Connect(onCharacterAdded) ]]></string>
+        </Properties>
+      </Item>
+      <Item class="LocalScript" referent="20">
+        <Properties>
+          <string name="Name">MarbleUI</string>
+          <string name="Source"><![CDATA[-- Marble UI LocalScript
+-- Builds a simple UI with:
+-- - Roll for Marble button
+-- - Power button with cooldown
+-- - Inventory toggle button and grid of marbles to equip
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+
+local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+local RemotesFolder = ReplicatedStorage:WaitForChild("Remotes")
+local RollForMarble: RemoteEvent = RemotesFolder:WaitForChild("RollForMarble")
+local EquipMarble: RemoteEvent = RemotesFolder:WaitForChild("EquipMarble")
+local InventoryUpdate: RemoteEvent = RemotesFolder:WaitForChild("InventoryUpdate")
+local RollResult: RemoteEvent = RemotesFolder:WaitForChild("RollResult")
+local RequestInventory: RemoteEvent = RemotesFolder:WaitForChild("RequestInventory")
+local ActivateAbility: RemoteEvent = RemotesFolder:WaitForChild("ActivateAbility")
+local AbilityCooldown: RemoteEvent = RemotesFolder:WaitForChild("AbilityCooldown")
+
+local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
+
+-- Debug: Log all available marbles and their definitions
+print("=== Marble Definitions ===")
+local allMarbles = Marbles.getAll()
+for _, marble in ipairs(allMarbles) do
+	print(string.format("Marble: %s, abilityModule: %s, rollable: %s", 
+		marble.id, 
+		marble.abilityModule or "nil", 
+		tostring(marble.rollable)))
+end
+print("=== End Marble Definitions ===")
+
+-- Function to update power button based on equipped marble (defined early to avoid nil errors)
+local function updatePowerButtonForMarble()
+	if isPowerOnCooldown then
+		print("updatePowerButtonForMarble: on cooldown, returning")
+		return -- Don't override cooldown state
+	end
+	
+	print("updatePowerButtonForMarble: starting update")
+	print("equippedId:", equippedId)
+	
+	local equippedMarble = equippedId and Marbles.getById(equippedId)
+	print("equippedMarble:", equippedMarble)
+	
+	if equippedMarble then
+		print("equippedMarble.id:", equippedMarble.id)
+		print("equippedMarble.name:", equippedMarble.name)
+		print("equippedMarble.abilityModule:", equippedMarble.abilityModule)
+		print("equippedMarble.abilityModule type:", typeof(equippedMarble.abilityModule))
+		print("equippedMarble.abilityModule ~= 'Default':", equippedMarble.abilityModule ~= "Default")
+		
+		-- Check if it's exactly "Default" string
+		if equippedMarble.abilityModule == "Default" then
+			print("abilityModule is exactly 'Default' string")
+		elseif equippedMarble.abilityModule == "Spider" then
+			print("abilityModule is exactly 'Spider' string")
+		else
+			print("abilityModule is something else:", equippedMarble.abilityModule)
+		end
+	else
+		print("No equipped marble found")
+	end
+	
+	if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+		print("Setting power button to ENABLED")
+		powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+		powerButton.Text = "Power (E)"
+		powerButton.TextColor3 = Color3.new(1, 1, 1)
+	else
+		print("Setting power button to DISABLED")
+		-- No ability or default marble
+		powerButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		powerButton.Text = "Power (None)"
+		powerButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+	end
+end
+
+-- Power button cooldown system (defined early to avoid nil errors)
+local powerCooldownTime = 0
+local powerCooldownDuration = 0
+local isPowerOnCooldown = false
+
+local function startPowerCooldown(duration: number)
+	powerCooldownDuration = duration
+	powerCooldownTime = tick()
+	isPowerOnCooldown = true
+	updatePowerButtonCooldown()
+	
+	-- Update cooldown every frame
+	local connection
+	connection = game:GetService("RunService").Heartbeat:Connect(function()
+		if not isPowerOnCooldown then
+			connection:Disconnect()
+			return
+		end
+		updatePowerButtonCooldown()
+	end)
+end
+
+local function updatePowerButtonCooldown()
+	if not isPowerOnCooldown then
+		powerCooldown.Visible = false
+		cooldownText.Visible = false
+		
+		-- Check if equipped marble has an ability
+		local equippedMarble = equippedId and Marbles.getById(equippedId)
+		if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+			powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+			powerButton.Text = "Power (E)"
+			powerButton.TextColor3 = Color3.new(1, 1, 1)
+		else
+			-- No ability or default marble
+			powerButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			powerButton.Text = "Power (None)"
+			powerButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+		end
+		return
+	end
+	
+	local remaining = powerCooldownTime + powerCooldownDuration - tick()
+	if remaining <= 0 then
+		isPowerOnCooldown = false
+		updatePowerButtonCooldown()
+		return
+	end
+	
+	-- Update cooldown visual
+	local progress = remaining / powerCooldownDuration
+	powerCooldown.BackgroundTransparency = 0.7
+	cooldownText.Text = string.format("%.1fs", remaining)
+	cooldownText.Visible = true
+	powerCooldown.Visible = true
+	powerButton.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+	powerButton.Text = "Cooldown"
+end
+
+-- UI construction
+local screen = Instance.new("ScreenGui")
+screen.Name = "MarbleUI"
+screen.ResetOnSpawn = false
+screen.IgnoreGuiInset = false
+screen.Parent = playerGui
+
+-- Inventory open SFX
+local invOpenSfx = Instance.new("Sound")
+invOpenSfx.Name = "InventoryOpenSfx"
+invOpenSfx.SoundId = "rbxassetid://127877437691780"
+invOpenSfx.Volume = 0.6
+invOpenSfx.Parent = screen
+
+-- Power button with cooldown
+local powerButton = Instance.new("TextButton")
+powerButton.Name = "PowerButton"
+powerButton.Text = "Power (E)"
+powerButton.TextScaled = true
+powerButton.Size = UDim2.fromOffset(200, 56)
+powerButton.Position = UDim2.new(0.5, -110, 1, -24)
+powerButton.AnchorPoint = Vector2.new(0.5, 1)
+powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+powerButton.TextColor3 = Color3.new(1,1,1)
+powerButton.Font = Enum.Font.GothamBold
+powerButton.Parent = screen
+local powerCorner = Instance.new("UICorner")
+powerCorner.CornerRadius = UDim.new(0, 8)
+powerCorner.Parent = powerButton
+
+-- Cooldown overlay for power button
+local powerCooldown = Instance.new("Frame")
+powerCooldown.Name = "CooldownOverlay"
+powerCooldown.Size = UDim2.new(1, 0, 1, 0)
+powerCooldown.Position = UDim2.new(0, 0, 0, 0)
+powerCooldown.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+powerCooldown.BackgroundTransparency = 0.7
+powerCooldown.Visible = false
+powerCooldown.Parent = powerButton
+local cooldownCorner = Instance.new("UICorner")
+cooldownCorner.CornerRadius = UDim.new(0, 8)
+cooldownCorner.Parent = powerCooldown
+
+-- Cooldown text
+local cooldownText = Instance.new("TextLabel")
+cooldownText.Name = "CooldownText"
+cooldownText.Size = UDim2.new(1, 0, 1, 0)
+cooldownText.Position = UDim2.new(0, 0, 0, 0)
+cooldownText.BackgroundTransparency = 1
+cooldownText.Text = ""
+cooldownText.TextScaled = true
+cooldownText.TextColor3 = Color3.new(1, 1, 1)
+cooldownText.Font = Enum.Font.GothamBold
+cooldownText.Visible = false
+cooldownText.Parent = powerButton
+
+local rollButton = Instance.new("TextButton")
+rollButton.Name = "RollButton"
+rollButton.Text = "Roll for Marble"
+rollButton.TextScaled = true
+rollButton.Size = UDim2.fromOffset(200, 56)
+rollButton.Position = UDim2.new(0.5, 110, 1, -24)
+rollButton.AnchorPoint = Vector2.new(0.5, 1)
+rollButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+rollButton.TextColor3 = Color3.new(1,1,1)
+rollButton.Font = Enum.Font.GothamBold
+rollButton.Parent = screen
+local rollCorner = Instance.new("UICorner")
+rollCorner.CornerRadius = UDim.new(0, 8)
+rollCorner.Parent = rollButton
+
+local inventoryButton = Instance.new("TextButton")
+inventoryButton.Name = "InventoryButton"
+inventoryButton.Text = "Inventory"
+inventoryButton.TextScaled = true
+inventoryButton.Size = UDim2.fromOffset(160, 40)
+inventoryButton.Position = UDim2.new(0, 16, 0, 16)
+inventoryButton.AnchorPoint = Vector2.new(0, 0)
+inventoryButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+inventoryButton.TextColor3 = Color3.new(1,1,1)
+inventoryButton.Font = Enum.Font.GothamBold
+inventoryButton.Parent = screen
+local invBtnCorner = Instance.new("UICorner")
+invBtnCorner.CornerRadius = UDim.new(0, 8)
+invBtnCorner.Parent = inventoryButton
+
+local resultLabel = Instance.new("TextLabel")
+resultLabel.Name = "ResultLabel"
+resultLabel.Text = ""
+resultLabel.TextScaled = true
+resultLabel.BackgroundTransparency = 1
+resultLabel.TextColor3 = Color3.new(1,1,1)
+resultLabel.Size = UDim2.fromOffset(480, 40)
+resultLabel.Position = UDim2.new(0.5, 0, 1, -88)
+resultLabel.AnchorPoint = Vector2.new(0.5, 1)
+resultLabel.Parent = screen
+
+local invFrame = Instance.new("Frame")
+invFrame.Name = "InventoryFrame"
+invFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+invFrame.BackgroundTransparency = 0.2 -- semi-transparent
+invFrame.BorderSizePixel = 0
+invFrame.Size = UDim2.new(0, 720, 0, 520)
+invFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+invFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+invFrame.Visible = false
+invFrame.Parent = screen
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = invFrame
+
+local header = Instance.new("TextLabel")
+header.BackgroundTransparency = 1
+header.Size = UDim2.new(1, -24, 0, 40)
+header.Position = UDim2.new(0, 12, 0, 10)
+header.Font = Enum.Font.GothamBold
+header.TextXAlignment = Enum.TextXAlignment.Center
+header.Text = "Inventory"
+header.TextColor3 = Color3.new(1,1,1)
+header.TextSize = 24
+header.Parent = invFrame
+
+-- Close button (top-right)
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Text = "X"
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextScaled = true
+closeButton.Size = UDim2.fromOffset(36, 36)
+closeButton.Position = UDim2.new(1, -12, 0, 12)
+closeButton.AnchorPoint = Vector2.new(1, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+closeButton.TextColor3 = Color3.new(1,1,1)
+closeButton.Parent = invFrame
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeButton
+closeButton.MouseButton1Click:Connect(function()
+	invFrame.Visible = false
+end)
+
+local list = Instance.new("ScrollingFrame")
+list.Name = "List"
+list.Size = UDim2.new(1, -24, 1, -80)
+list.Position = UDim2.new(0, 12, 0, 60)
+list.ScrollBarThickness = 8
+list.CanvasSize = UDim2.new(0, 0, 0, 0)
+list.BackgroundTransparency = 1
+list.Parent = invFrame
+
+local grid = Instance.new("UIGridLayout")
+grid.FillDirection = Enum.FillDirection.Horizontal
+grid.FillDirectionMaxCells = 3 -- 3 columns
+grid.CellPadding = UDim2.fromOffset(10, 10)
+grid.CellSize = UDim2.fromOffset(200, 200)
+grid.SortOrder = Enum.SortOrder.LayoutOrder
+grid.Parent = list
+
+local function refreshCanvasSize()
+	local abs = grid.AbsoluteContentSize
+	list.CanvasSize = UDim2.new(0, 0, 0, abs.Y + 12)
+end
+grid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshCanvasSize)
+
+-- State
+local ownedSet: { [string]: boolean } = {}
+local equippedId: string? = nil
+
+-- Ability descriptions by module name (simple mapping for now)
+local ABILITY_DESCRIPTIONS: { [string]: string } = {
+	Default = "No special ability.",
+	SpeedBoost = "Temporarily increases rolling speed.",
+	Red = "Red: A fiery burst that briefly increases acceleration.",
+	Blue = "Blue: A calming shield that reduces deceleration briefly.",
+	Green = "Green: A rejuvenating pulse that boosts control for a moment.",
+	Spider = "Spider: Shoot a web to grapple and swing toward targets.",
+}
+
+-- Texture fallbacks (should match controller)
+local FALLBACK_DECALS: { [string]: string } = {
+	Default = "rbxassetid://110926540048461",
+	Red = "rbxassetid://99977275020564",
+	Green = "rbxassetid://114474679212927",
+	Blue = "rbxassetid://128223600665334",
+	Spider = "rbxassetid://105354663033087",
+}
+
+local function applyTexturesToPart(part: BasePart, marbleId: string)
+	-- Clear existing
+	for _, ch in ipairs(part:GetChildren()) do
+		if ch:IsA("Decal") or ch:IsA("Texture") then ch:Destroy() end
+	end
+	-- Preferred from ReplicatedStorage
+	local texturesRoot = ReplicatedStorage:FindFirstChild("MarbleTextures")
+	local folder = texturesRoot and texturesRoot:FindFirstChild(marbleId)
+	local assets = {}
+	if folder then
+		for _, inst in ipairs(folder:GetChildren()) do
+			if inst:IsA("Decal") or inst:IsA("Texture") then
+				table.insert(assets, inst)
+			end
+		end
+	end
+	if #assets == 0 then
+		local fallback = FALLBACK_DECALS[marbleId]
+		if fallback then
+			for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+				local d = Instance.new("Decal")
+				d.Texture = fallback
+				d.Face = face
+				d.Parent = part
+			end
+		end
+		return
+	end
+	if #assets == 1 then
+		local src = assets[1]
+		for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+			local clone = src:Clone()
+			if clone:IsA("Decal") then
+				(clone :: Decal).Face = face
+			elseif clone:IsA("Texture") then
+				(clone :: Texture).Face = face
+			end
+			clone.Parent = part
+		end
+		return
+	end
+	for _, src in ipairs(assets) do
+		local clone = src:Clone()
+		clone.Parent = part
+	end
+end
+
+local function getRarityText(def): string
+	if def and def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+		return string.format(" (1/%d)", def.dropDenominator)
+	end
+	return ""
+end
+
+local function getRarityOnly(def): string
+	if def and def.rollable and def.dropDenominator and def.dropDenominator > 0 then
+		return string.format("1/%d", def.dropDenominator)
+	end
+	return ""
+end
+
+local function createMarbleTile(def)
+	local isOwned = ownedSet[def.id] == true
+	local isEquipped = def.id == equippedId
+
+	local tile = Instance.new("Frame")
+	tile.Size = UDim2.fromOffset(200, 200)
+	tile.BackgroundColor3 = isEquipped and Color3.fromRGB(38, 110, 180) or Color3.fromRGB(40, 40, 40)
+	tile.BorderSizePixel = 0
+
+	local corner2 = Instance.new("UICorner")
+	corner2.CornerRadius = UDim.new(0, 8)
+	corner2.Parent = tile
+
+	local viewport = Instance.new("ViewportFrame")
+	viewport.Size = UDim2.new(1, -16, 1, -56)
+	viewport.Position = UDim2.new(0, 8, 0, 8)
+	viewport.BackgroundTransparency = 1
+	viewport.BorderSizePixel = 0
+	viewport.Parent = tile
+
+	local world = Instance.new("WorldModel")
+	world.Parent = viewport
+
+	local sphere = Instance.new("Part")
+	sphere.Shape = Enum.PartType.Ball
+	sphere.Size = Vector3.new(6, 6, 6)
+	sphere.Anchored = true
+	sphere.CanCollide = false
+	sphere.Parent = world
+
+	if isOwned then
+		applyTexturesToPart(sphere, def.id)
+		if #sphere:GetChildren() == 0 and def.color then
+			sphere.Color = def.color
+		end
+	else
+		-- Locked appearance: dark swatch with big question mark
+		sphere.Color = Color3.fromRGB(60,60,60)
+		local q = Instance.new("BillboardGui")
+		q.Size = UDim2.fromOffset(120, 120)
+		q.AlwaysOnTop = true
+		q.Adornee = sphere
+		q.Parent = world
+		local ql = Instance.new("TextLabel")
+		ql.BackgroundTransparency = 1
+		ql.Text = "?"
+		ql.TextScaled = true
+		ql.Font = Enum.Font.GothamBold
+		ql.TextColor3 = Color3.new(1,1,1)
+		ql.Size = UDim2.fromScale(1,1)
+		ql.Parent = q
+	end
+
+	-- Camera
+	local cam = Instance.new("Camera")
+	viewport.CurrentCamera = cam
+	cam.Parent = viewport
+	local center = Vector3.new(0, 0, 0)
+	sphere.Position = center
+	cam.CFrame = CFrame.new(center + Vector3.new(0, 0, 12), center)
+
+	-- Name or rarity label
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Size = UDim2.new(1, -16, 0, 16)
+	nameLabel.Position = UDim2.new(0, 8, 1, -44)
+	nameLabel.Text = isOwned and (def.name .. getRarityText(def)) or getRarityOnly(def)
+	nameLabel.TextColor3 = Color3.new(1,1,1)
+	nameLabel.TextScaled = true
+	nameLabel.Parent = tile
+
+	-- Status label
+	local status = Instance.new("TextLabel")
+	status.BackgroundTransparency = 1
+	status.Size = UDim2.new(1, -16, 0, 20)
+	status.Position = UDim2.new(0, 8, 1, -24)
+	status.TextScaled = true
+	status.TextColor3 = isOwned and (isEquipped and Color3.fromRGB(180, 255, 180) or Color3.fromRGB(220, 220, 220)) or Color3.fromRGB(220, 180, 180)
+	status.Text = isOwned and (isEquipped and "Equipped" or "Not Equipped") or "Locked"
+	status.Parent = tile
+
+	-- Equip interaction (only if owned)
+	if isOwned then
+		local equipButton = Instance.new("TextButton")
+		equipButton.BackgroundTransparency = 1
+		equipButton.Size = UDim2.fromScale(1, 1)
+		equipButton.Text = ""
+		equipButton.Parent = tile
+		equipButton.MouseButton1Click:Connect(function()
+			if def.id ~= equippedId then
+				EquipMarble:FireServer(def.id)
+			end
+		end)
+	end
+
+	return tile
+end
+
+local function rebuildInventoryUI()
+	-- Clear existing tiles but keep grid
+	for _, child in ipairs(list:GetChildren()) do
+		if child ~= grid then
+			child:Destroy()
+		end
+	end
+	for _, def in ipairs(Marbles.getAll()) do
+		local tile = createMarbleTile(def)
+		tile.Parent = list
+	end
+	refreshCanvasSize()
+end
+
+-- Event wiring
+rollButton.MouseButton1Click:Connect(function()
+	RollForMarble:FireServer()
+end)
+
+inventoryButton.MouseButton1Click:Connect(function()
+	local newVisible = not invFrame.Visible
+	invFrame.Visible = newVisible
+	if newVisible then
+		pcall(function()
+			invOpenSfx:Play()
+		end)
+	end
+end)
+
+InventoryUpdate.OnClientEvent:Connect(function(payload)
+	print("InventoryUpdate received")
+	print("payload.owned:", payload.owned)
+	print("payload.equipped:", payload.equipped)
+	
+	ownedSet = {}
+	for _, id in ipairs(payload.owned :: {string}) do
+		ownedSet[id] = true
+		print("Added to ownedSet:", id)
+	end
+	equippedId = payload.equipped
+	print("equippedId set to:", equippedId)
+	
+	-- Debug: Check what marble definition we get for Spider
+	if equippedId == "Spider" then
+		local spiderDef = Marbles.getById("Spider")
+		print("Spider marble definition:", spiderDef)
+		if spiderDef then
+			print("Spider abilityModule:", spiderDef.abilityModule)
+			print("Spider abilityModule ~= 'Default':", spiderDef.abilityModule ~= "Default")
+		end
+	end
+	
+	rebuildInventoryUI()
+	updatePowerButtonForMarble() -- Update power button based on new equipped marble
+end)
+
+RollResult.OnClientEvent:Connect(function(result)
+	if result.success then
+		local suffix = result.new and "  (Unlocked!)" or ""
+		resultLabel.Text = string.format("Rolled: %s%s", result.marbleName or result.marbleId or "?", suffix)
+	else
+		resultLabel.Text = result.message or "Roll failed"
+	end
+	task.delay(4, function()
+		if resultLabel then resultLabel.Text = "" end
+	end)
+end)
+
+-- Handle ability cooldown from server
+AbilityCooldown.OnClientEvent:Connect(function(cooldownData)
+	startPowerCooldown(cooldownData.duration)
+end)
+
+-- Power button click handler
+powerButton.MouseButton1Click:Connect(function()
+	if not isPowerOnCooldown then
+		-- Check if equipped marble has an ability
+		local equippedMarble = equippedId and Marbles.getById(equippedId)
+		if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+			ActivateAbility:FireServer()
+		end
+	end
+end)
+
+-- Ability activation keybind (E key)
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.E then
+		if not isPowerOnCooldown then
+			-- Check if equipped marble has an ability
+			local equippedMarble = equippedId and Marbles.getById(equippedId)
+			if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+				ActivateAbility:FireServer()
+			end
+		end
+	end
+end)
+
+-- Request initial inventory
+RequestInventory:FireServer()
+
+-- Set initial power button state (will be updated when inventory is received)
+task.wait(0.1) -- Small delay to ensure inventory is processed
+updatePowerButtonForMarble() ]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="21">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <bool name="NeedsPivotMigration">false</bool>
+    </Properties>
+    <Item class="Part" referent="22">
+      <Properties>
+        <string name="Name">Baseplate</string>
+        <bool name="Anchored">true</bool>
+        <Color3uint8 name="Color3uint8">4683847</Color3uint8>
+        <bool name="Locked">true</bool>
+        <token name="Material">1280</token>
+        <Vector3 name="Position">
+          <X>0</X>
+          <Y>0</Y>
+          <Z>0</Z>
+        </Vector3>
+        <Vector3 name="size">
+          <X>512</X>
+          <Y>1</Y>
+          <Z>512</Z>
+        </Vector3>
+      </Properties>
+    </Item>
+  </Item>
+</roblox>

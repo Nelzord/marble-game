@@ -1,6 +1,7 @@
 -- Marble UI LocalScript
 -- Builds a simple UI with:
 -- - Roll for Marble button
+-- - Power button with cooldown
 -- - Inventory toggle button and grid of marbles to equip
 
 local Players = game:GetService("Players")
@@ -8,7 +9,38 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 
 local localPlayer = Players.LocalPlayer
+print("LocalPlayer found:", localPlayer ~= nil)
+
+-- Wait for PlayerGui to be ready
+print("Waiting for PlayerGui...")
 local playerGui = localPlayer:WaitForChild("PlayerGui")
+print("PlayerGui found:", playerGui ~= nil)
+print("PlayerGui Parent:", playerGui and playerGui.Parent ~= nil)
+
+-- Additional safety check for PlayerGui
+if not playerGui then
+	error("PlayerGui not found after WaitForChild!")
+end
+
+-- Wait a bit more to ensure PlayerGui is fully initialized
+task.wait(0.1)
+print("PlayerGui after delay:", playerGui ~= nil, "Parent:", playerGui and playerGui.Parent ~= nil)
+
+-- Check if PlayerGui is in the right place
+print("PlayerGui ClassName:", playerGui and playerGui.ClassName)
+print("PlayerGui Name:", playerGui and playerGui.Name)
+print("PlayerGui Parent ClassName:", playerGui and playerGui.Parent and playerGui.Parent.ClassName)
+print("PlayerGui Parent Name:", playerGui and playerGui.Parent and playerGui.Parent.Name)
+
+-- Check if we're in the right context
+print("Current script context:", script.ClassName)
+print("Script Parent:", script.Parent and script.Parent.Name)
+print("Script Parent ClassName:", script.Parent and script.Parent.ClassName)
+
+-- Verify StarterGui service
+local starterGui = game:GetService("StarterGui")
+print("StarterGui service found:", starterGui ~= nil)
+print("StarterGui Parent:", starterGui and starterGui.Parent ~= nil)
 
 local RemotesFolder = ReplicatedStorage:WaitForChild("Remotes")
 local RollForMarble: RemoteEvent = RemotesFolder:WaitForChild("RollForMarble")
@@ -17,32 +49,832 @@ local InventoryUpdate: RemoteEvent = RemotesFolder:WaitForChild("InventoryUpdate
 local RollResult: RemoteEvent = RemotesFolder:WaitForChild("RollResult")
 local RequestInventory: RemoteEvent = RemotesFolder:WaitForChild("RequestInventory")
 local ActivateAbility: RemoteEvent = RemotesFolder:WaitForChild("ActivateAbility")
+local AbilityCooldown: RemoteEvent = RemotesFolder:WaitForChild("AbilityCooldown")
 
 local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
 
+-- State variables
+local ownedSet: { [string]: boolean } = {}
+local equippedId: string? = nil
+local powerCooldownTime = 0
+local powerCooldownDuration = 0
+local isPowerOnCooldown = false
+local pendingCooldown: { duration: number, startTime: number }? = nil -- Queue for cooldowns that arrive before UI is ready
+local pendingInventoryUpdate: { owned: {string}, equipped: string }? = nil -- Queue for inventory updates that arrive before UI is ready
+local updatePowerButtonCooldown_lastLogTime: number? = nil -- For throttling cooldown log messages
+
+-- UI element variables (declared early to fix scope issues)
+local screen: ScreenGui? = nil
+local powerButton: TextButton? = nil
+local powerCooldown: Frame? = nil
+local cooldownText: TextLabel? = nil
+local textShadow: TextLabel? = nil
+local rollButton: TextButton? = nil
+local inventoryButton: TextButton? = nil
+local resultLabel: TextLabel? = nil
+local invFrame: Frame? = nil
+
+-- Cooldown connection
+local cooldownConnection: RBXScriptConnection? = nil
+
+-- Debug: Log all available marbles and their definitions
+print("=== Marble Definitions ===")
+local allMarbles = Marbles.getAll()
+for _, marble in ipairs(allMarbles) do
+	print(string.format("Marble: %s, abilityModule: %s, rollable: %s", 
+		marble.id, 
+		marble.abilityModule or "nil", 
+		tostring(marble.rollable)))
+end
+print("=== End Marble Definitions ===")
+
+-- Function to process any pending cooldowns when UI becomes ready
+local function processPendingCooldown()
+	if pendingCooldown and (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("Processing pending cooldown:", pendingCooldown.duration, "seconds")
+		local duration = pendingCooldown.duration
+		local startTime = pendingCooldown.startTime
+		pendingCooldown = nil
+		
+		-- Start the cooldown with the stored values
+		powerCooldownDuration = duration
+		powerCooldownTime = startTime
+		isPowerOnCooldown = true
+		
+		print("COOLDOWN LOG: Processing pending cooldown - Duration:", duration, "Start Time:", startTime, "Current Time:", tick())
+		
+		-- Update the UI to show the cooldown
+		updatePowerButtonCooldown()
+	end
+end
+
+-- Function to process any pending inventory updates when UI becomes ready
+local function processPendingInventoryUpdate()
+	if pendingInventoryUpdate and (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("Processing pending inventory update for equipped marble:", pendingInventoryUpdate.equipped)
+		
+		-- Apply the pending inventory update
+		ownedSet = {}
+		for _, id in ipairs(pendingInventoryUpdate.owned) do
+			ownedSet[id] = true
+			print("Added to ownedSet:", id)
+		end
+		equippedId = pendingInventoryUpdate.equipped
+		print("equippedId set to:", equippedId)
+		
+		-- Note: rebuildInventoryUI is defined later, skipping for now
+		print("Note: Skipping inventory UI rebuild due to scope issues")
+		
+		-- Update the power button
+		updatePowerButtonForMarble()
+		
+		-- Clear the pending update
+		pendingInventoryUpdate = nil
+	end
+end
+
+-- Function to update power button based on equipped marble (defined early to avoid nil errors)
+local function updatePowerButtonForMarble()
+	print("updatePowerButtonForMarble - start")
+	
+	-- Safety check: only run if UI elements exist
+	if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("updatePowerButtonForMarble: UI not ready, skipping...")
+		return
+	end
+	
+	print("updatePowerButtonForMarble: UI elements ready, powerButton exists:", powerButton ~= nil)
+	print("updatePowerButtonForMarble: powerCooldown exists:", powerCooldown ~= nil)
+	print("updatePowerButtonForMarble: cooldownText exists:", cooldownText ~= nil)
+	print("updatePowerButtonForMarble: textShadow exists:", textShadow ~= nil)
+	
+	-- Process any pending cooldowns now that UI is ready
+	-- Use the local function directly instead of checking if it exists
+	processPendingCooldown()
+	
+	-- Process any pending inventory updates now that UI is ready
+	-- Use the local function directly instead of checking if it exists
+	processPendingInventoryUpdate()
+	
+	if isPowerOnCooldown then
+		print("updatePowerButtonForMarble: on cooldown, returning")
+		return -- Don't override cooldown state
+	end
+	
+	print("updatePowerButtonForMarble: starting update")
+	print("equippedId:", equippedId)
+	
+	-- Safety check: ensure Marbles module is available
+	if not Marbles or not Marbles.getById then
+		print("updatePowerButtonForMarble: Marbles module not available, skipping")
+		return
+	end
+	
+	local equippedMarble = equippedId and Marbles.getById(equippedId)
+	print("equippedMarble:", equippedMarble)
+	
+	if equippedMarble then
+		print("equippedMarble.id:", equippedMarble.id)
+		print("equippedMarble.name:", equippedMarble.name)
+		print("equippedMarble.abilityModule:", equippedMarble.abilityModule)
+		print("equippedMarble.abilityModule type:", typeof(equippedMarble.abilityModule))
+		print("equippedMarble.abilityModule ~= 'Default':", equippedMarble.abilityModule ~= "Default")
+		
+		-- Check if it's exactly "Default" string
+		if equippedMarble.abilityModule == "Default" then
+			print("abilityModule is exactly 'Default' string")
+		elseif equippedMarble.abilityModule == "Spider" then
+			print("abilityModule is exactly 'Spider' string")
+		elseif equippedMarble.abilityModule == "Red" then
+			print("abilityModule is exactly 'Red' string")
+		else
+			print("abilityModule is something else:", equippedMarble.abilityModule)
+		end
+	else
+		print("No equipped marble found")
+	end
+	
+	-- Check if equipped marble has abilities (Spider, Red, etc.)
+	if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+		print("Setting power button to ENABLED")
+		-- Final safety check before accessing powerButton
+		if powerButton and powerButton.Parent then
+			powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+			powerButton.Text = "Power (E)"
+			powerButton.TextColor3 = Color3.new(1, 1, 1)
+		else
+			print("updatePowerButtonForMarble: powerButton became invalid during execution")
+		end
+	else
+		print("Setting power button to DISABLED")
+		-- No ability or default marble
+		-- Final safety check before accessing powerButton
+		if powerButton and powerButton.Parent then
+			powerButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			powerButton.Text = "Power (None)"
+			powerButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+		else
+			print("updatePowerButtonForMarble: powerButton became invalid during execution")
+		end
+	end
+	
+end
+
+-- Function to update power button cooldown display (defined before startPowerCooldown)
+local function updatePowerButtonCooldown()
+	-- Safety check: only run if UI elements exist
+	if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		return
+	end
+	
+	-- First, check if cooldown should actually be finished based on time
+	local remaining = powerCooldownTime + powerCooldownDuration - tick()
+	if remaining <= 0 and isPowerOnCooldown then
+		print("Cooldown time expired, resetting state")
+		print("COOLDOWN LOG: Cooldown time expired - Remaining time:", remaining, "seconds")
+		print("COOLDOWN LOG: Cooldown duration was:", powerCooldownDuration, "seconds")
+		print("COOLDOWN LOG: Cooldown start time was:", powerCooldownTime)
+		print("COOLDOWN LOG: Current time is:", tick())
+		
+		isPowerOnCooldown = false
+		powerCooldownTime = 0
+		powerCooldownDuration = 0
+		
+		-- Clean up connection
+		if cooldownConnection then
+			print("COOLDOWN LOG: Cleaning up cooldown connection (cooldown expired)")
+			cooldownConnection:Disconnect()
+			cooldownConnection = nil
+		end
+		
+		-- Hide cooldown UI elements
+		if powerCooldown and powerCooldown.Parent then
+			powerCooldown.Visible = false
+		end
+		if cooldownText and cooldownText.Parent then
+			cooldownText.Visible = false
+		end
+		if textShadow and textShadow.Parent then
+			textShadow.Visible = false
+		end
+		
+		-- Update button to normal state
+		local equippedMarble = equippedId and Marbles.getById(equippedId)
+		if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+			-- Final safety check before accessing powerButton
+			if powerButton and powerButton.Parent then
+				powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+				powerButton.Text = "Power (E)"
+				powerButton.TextColor3 = Color3.new(1, 1, 1)
+			end
+		else
+			-- No ability or default marble
+			-- Final safety check before accessing powerButton
+			if powerButton and powerButton.Parent then
+				powerButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+				powerButton.Text = "Power (None)"
+				powerButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+			end
+		end
+		return
+	end
+	
+	-- Safety check: prevent infinite recursion
+	if not isPowerOnCooldown then
+		print("COOLDOWN LOG: No cooldown active, hiding cooldown UI elements")
+		-- Final safety check before accessing UI elements
+		if powerCooldown and powerCooldown.Parent then
+			powerCooldown.Visible = false
+		end
+		if cooldownText and cooldownText.Parent then
+			cooldownText.Visible = false
+		end
+		if textShadow and textShadow.Parent then
+			textShadow.Visible = false
+		end
+		
+		-- Clean up connection
+		if cooldownConnection then
+			print("COOLDOWN LOG: Cleaning up cooldown connection (no cooldown active)")
+			cooldownConnection:Disconnect()
+			cooldownConnection = nil
+		end
+		
+		-- Check if equipped marble has an ability
+		local equippedMarble = equippedId and Marbles.getById(equippedId)
+		if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+			-- Final safety check before accessing powerButton
+			if powerButton and powerButton.Parent then
+				powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+				powerButton.Text = "Power (E)"
+				powerButton.TextColor3 = Color3.new(1, 1, 1)
+			end
+		else
+			-- No ability or default marble
+			-- Final safety check before accessing powerButton
+			if powerButton and powerButton.Parent then
+				powerButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+				powerButton.Text = "Power (None)"
+				powerButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+			end
+		end
+		return
+	end
+	
+	local progress = remaining / powerCooldownDuration
+	-- Final safety check before accessing UI elements
+	if powerCooldown and powerCooldown.Parent then
+		powerCooldown.Size = UDim2.new(1, 0, progress, 0)
+		powerCooldown.Position = UDim2.new(0, 0, 1 - progress, 0)
+		powerCooldown.AnchorPoint = Vector2.new(0, 1)
+	end
+	
+	local timeText = string.format("%.1fs", remaining)
+	if cooldownText and cooldownText.Parent then
+		cooldownText.Text = timeText
+		cooldownText.Visible = true
+	end
+	if textShadow and textShadow.Parent then
+		textShadow.Text = timeText
+		textShadow.Visible = true
+	end
+	
+	-- Set cooldown state for button
+	if powerCooldown and powerCooldown.Parent then
+		powerCooldown.Visible = true
+	end
+	if powerButton and powerButton.Parent then
+		powerButton.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+		powerButton.Text = timeText -- Show countdown on button instead of just "Cooldown"
+	end
+	
+	-- Log cooldown progress (only every 0.5 seconds to avoid spam)
+	local currentTime = tick()
+	-- Use a static variable for lastLogTime instead of trying to add it to the function
+	if not updatePowerButtonCooldown_lastLogTime or (currentTime - updatePowerButtonCooldown_lastLogTime) >= 0.5 then
+		print("COOLDOWN LOG: Progress update - Remaining:", string.format("%.1f", remaining), "seconds, Progress:", string.format("%.1f%%", progress * 100))
+		updatePowerButtonCooldown_lastLogTime = currentTime
+	end
+end
+
+-- Function to check if UI is fully ready
+local function isUIReady()
+	local powerButtonReady = powerButton and powerButton.Parent
+	local powerCooldownReady = powerCooldown and powerCooldown.Parent
+	local cooldownTextReady = cooldownText and cooldownText.Parent
+	local textShadowReady = textShadow and textShadow.Parent
+	
+	-- Debug output for troubleshooting
+	if not powerButtonReady or not powerCooldownReady or not cooldownTextReady or not textShadowReady then
+		print("isUIReady check failed:")
+		print("  powerButton:", powerButton ~= nil, "Parent:", powerButton and powerButton.Parent ~= nil)
+		print("  powerCooldown:", powerCooldown ~= nil, "Parent:", powerCooldown and powerCooldown.Parent ~= nil)
+		print("  cooldownText:", cooldownText ~= nil, "Parent:", cooldownText and cooldownText.Parent ~= nil)
+		print("  textShadow:", textShadow ~= nil, "Parent:", textShadow and textShadow.Parent ~= nil)
+	end
+	
+	return powerButtonReady and powerCooldownReady and cooldownTextReady and textShadowReady
+end
+
+-- Function to recreate power button UI elements if they become invalid
+local function recreatePowerButtonUI()
+	print("recreatePowerButtonUI: Recreating power button UI elements...")
+	
+	-- Check if screen exists
+	if not screen or not screen.Parent then
+		print("recreatePowerButtonUI: Screen not available, cannot recreate UI")
+		return false
+	end
+	
+	-- Clean up old elements if they exist
+	if powerButton then
+		powerButton:Destroy()
+		powerButton = nil
+	end
+	if powerCooldown then
+		powerCooldown:Destroy()
+		powerCooldown = nil
+	end
+	if cooldownText then
+		cooldownText:Destroy()
+		cooldownText = nil
+	end
+	if textShadow then
+		textShadow:Destroy()
+		textShadow = nil
+	end
+	
+	-- Recreate power button
+	print("Recreating power button...")
+	powerButton = Instance.new("TextButton")
+	powerButton.Name = "PowerButton"
+	powerButton.Text = "Power (E)"
+	powerButton.TextScaled = true
+	powerButton.Size = UDim2.fromOffset(200, 56)
+	powerButton.Position = UDim2.new(0.5, -110, 1, -24)
+	powerButton.AnchorPoint = Vector2.new(0.5, 1)
+	powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+	powerButton.TextColor3 = Color3.new(1,1,1)
+	powerButton.Font = Enum.Font.GothamBold
+	powerButton.Parent = screen
+	
+	local powerCorner = Instance.new("UICorner")
+	powerCorner.CornerRadius = UDim.new(0, 8)
+	powerCorner.Parent = powerButton
+	
+	-- Recreate cooldown overlay
+	print("Recreating cooldown overlay...")
+	powerCooldown = Instance.new("Frame")
+	powerCooldown.Name = "CooldownOverlay"
+	powerCooldown.Size = UDim2.new(1, 0, 1, 0)
+	powerCooldown.Position = UDim2.new(0, 0, 0, 0)
+	powerCooldown.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+	powerCooldown.BackgroundTransparency = 0.4
+	powerCooldown.Visible = false
+	powerCooldown.Parent = powerButton
+	
+	local cooldownCorner = Instance.new("UICorner")
+	cooldownCorner.CornerRadius = UDim.new(0, 8)
+	cooldownCorner.Parent = powerCooldown
+	
+	-- Recreate cooldown text
+	print("Recreating cooldown text...")
+	cooldownText = Instance.new("TextLabel")
+	cooldownText.Name = "CooldownText"
+	cooldownText.Size = UDim2.new(1, 0, 1, 0)
+	cooldownText.Position = UDim2.new(0, 0, 0, 0)
+	cooldownText.BackgroundTransparency = 1
+	cooldownText.Text = ""
+	cooldownText.TextScaled = true
+	cooldownText.TextColor3 = Color3.new(1, 1, 1)
+	cooldownText.Font = Enum.Font.GothamBold
+	cooldownText.Visible = false
+	cooldownText.Parent = powerButton
+	
+	-- Recreate text shadow
+	print("Recreating text shadow...")
+	textShadow = Instance.new("TextLabel")
+	textShadow.Name = "TextShadow"
+	textShadow.Size = UDim2.new(1, 0, 1, 0)
+	textShadow.Position = UDim2.new(0, 1, 0, 1)
+	textShadow.BackgroundTransparency = 1
+	textShadow.Text = ""
+	textShadow.TextScaled = true
+	textShadow.TextColor3 = Color3.new(0, 0, 0)
+	textShadow.Font = Enum.Font.GothamBold
+	textShadow.Visible = false
+	textShadow.Parent = powerButton
+	textShadow.ZIndex = cooldownText.ZIndex - 1
+	
+	-- Reconnect the click handler
+	powerButton.MouseButton1Click:Connect(function()
+		if not isPowerOnCooldown then
+			print("COOLDOWN LOG: Power button clicked - No cooldown active, checking for ability")
+			-- Check if equipped marble has an ability
+			local equippedMarble = equippedId and Marbles.getById(equippedId)
+			if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+				print("COOLDOWN LOG: Activating ability for marble:", equippedMarble.id, "Ability module:", equippedMarble.abilityModule)
+				ActivateAbility:FireServer()
+			else
+				print("COOLDOWN LOG: Power button clicked but no ability available - Marble:", equippedId, "Ability module:", equippedMarble and equippedMarble.abilityModule or "nil")
+			end
+		else
+			print("COOLDOWN LOG: Power button clicked but on cooldown - Remaining time:", powerCooldownTime + powerCooldownDuration - tick(), "seconds")
+		end
+	end)
+	
+	print("recreatePowerButtonUI: Power button UI elements recreated successfully")
+	return true
+end
+
+-- Function to wait for UI to be ready
+local function waitForUIReady()
+	local maxAttempts = 50 -- Wait up to 5 seconds
+	local attempts = 0
+	
+	print("waitForUIReady: Starting wait loop...")
+	
+	while not isUIReady() and attempts < maxAttempts do
+		attempts = attempts + 1
+		print("Waiting for UI to be ready, attempt:", attempts, "/", maxAttempts)
+		
+		-- Check each element individually
+		print("  powerButton:", powerButton ~= nil, "Parent:", powerButton and powerButton.Parent ~= nil)
+		print("  powerCooldown:", powerCooldown ~= nil, "Parent:", powerCooldown and powerCooldown.Parent ~= nil)
+		print("  cooldownText:", cooldownText ~= nil, "Parent:", cooldownText and cooldownText.Parent ~= nil)
+		print("  textShadow:", textShadow ~= nil, "Parent:", textShadow and textShadow.Parent ~= nil)
+		
+		-- Additional debugging for the screen
+		print("  screen:", screen ~= nil, "Parent:", screen and screen.Parent ~= nil)
+		if screen then
+			print("  screen.Parent:", screen.Parent)
+			if screen.Parent then
+				print("  screen.Parent.Name:", screen.Parent.Name)
+				print("  screen.Parent.ClassName:", screen.Parent.ClassName)
+			end
+		end
+		
+		task.wait(0.1)
+	end
+	
+	if isUIReady() then
+		print("UI is now ready!")
+		return true
+	else
+		print("UI failed to become ready after", maxAttempts, "attempts")
+		return false
+	end
+end
+
 -- UI construction
-local screen = Instance.new("ScreenGui")
+print("=== Starting UI Construction ===")
+print("playerGui exists:", playerGui ~= nil)
+print("playerGui Parent:", playerGui and playerGui.Parent ~= nil)
+
+screen = Instance.new("ScreenGui")
 screen.Name = "MarbleUI"
 screen.ResetOnSpawn = false
 screen.IgnoreGuiInset = false
-screen.Parent = playerGui
+print("ScreenGui created:", screen ~= nil)
 
-local rollButton = Instance.new("TextButton")
+print("Setting screen.Parent to playerGui...")
+screen.Parent = playerGui
+print("screen.Parent set:", screen.Parent ~= nil)
+print("screen.Parent == playerGui:", screen.Parent == playerGui)
+
+-- Inventory open SFX
+local invOpenSfx = Instance.new("Sound")
+invOpenSfx.Name = "InventoryOpenSfx"
+invOpenSfx.SoundId = "rbxassetid://127877437691780"
+invOpenSfx.Volume = 0.6
+invOpenSfx.Parent = screen
+print("Sound created and parented")
+
+-- Power button with cooldown
+print("Creating power button...")
+powerButton = Instance.new("TextButton")
+powerButton.Name = "PowerButton"
+powerButton.Text = "Power (E)"
+powerButton.TextScaled = true
+powerButton.Size = UDim2.fromOffset(200, 56)
+powerButton.Position = UDim2.new(0.5, -110, 1, -24)
+powerButton.AnchorPoint = Vector2.new(0.5, 1)
+powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+powerButton.TextColor3 = Color3.new(1,1,1)
+powerButton.Font = Enum.Font.GothamBold
+print("powerButton created:", powerButton ~= nil)
+
+print("Setting powerButton.Parent to screen...")
+powerButton.Parent = screen
+print("powerButton.Parent set:", powerButton.Parent ~= nil)
+print("powerButton.Parent == screen:", powerButton.Parent == screen)
+
+local powerCorner = Instance.new("UICorner")
+powerCorner.CornerRadius = UDim.new(0, 8)
+powerCorner.Parent = powerButton
+print("powerCorner created and parented")
+
+-- Cooldown overlay for power button
+print("Creating cooldown overlay...")
+powerCooldown = Instance.new("Frame")
+powerCooldown.Name = "CooldownOverlay"
+powerCooldown.Size = UDim2.new(1, 0, 1, 0)
+powerCooldown.Position = UDim2.new(0, 0, 0, 0)
+powerCooldown.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+powerCooldown.BackgroundTransparency = 0.4
+powerCooldown.Visible = false
+print("powerCooldown created:", powerCooldown ~= nil)
+
+print("Setting powerCooldown.Parent to powerButton...")
+powerCooldown.Parent = powerButton
+print("powerCooldown.Parent set:", powerCooldown.Parent ~= nil)
+print("powerCooldown.Parent == powerButton:", powerCooldown.Parent == powerButton)
+
+local cooldownCorner = Instance.new("UICorner")
+cooldownCorner.CornerRadius = UDim.new(0, 8)
+cooldownCorner.Parent = powerCooldown
+print("cooldownCorner created and parented")
+
+-- Cooldown text
+print("Creating cooldown text...")
+cooldownText = Instance.new("TextLabel")
+cooldownText.Name = "CooldownText"
+cooldownText.Size = UDim2.new(1, 0, 1, 0)
+cooldownText.Position = UDim2.new(0, 0, 0, 0)
+cooldownText.BackgroundTransparency = 1
+cooldownText.Text = ""
+cooldownText.TextScaled = true
+cooldownText.TextColor3 = Color3.new(1, 1, 1)
+cooldownText.Font = Enum.Font.GothamBold
+cooldownText.Visible = false
+print("cooldownText created:", cooldownText ~= nil)
+
+print("Setting cooldownText.Parent to powerButton...")
+cooldownText.Parent = powerButton
+print("cooldownText.Parent set:", cooldownText.Parent ~= nil)
+print("cooldownText.Parent == powerButton:", cooldownText.Parent == powerButton)
+
+-- Add text shadow for better visibility
+print("Creating text shadow...")
+textShadow = Instance.new("TextLabel")
+textShadow.Name = "TextShadow"
+textShadow.Size = UDim2.new(1, 0, 1, 0)
+textShadow.Position = UDim2.new(0, 1, 0, 1)
+textShadow.BackgroundTransparency = 1
+textShadow.Text = ""
+textShadow.TextScaled = true
+textShadow.TextColor3 = Color3.new(0, 0, 0)
+textShadow.Font = Enum.Font.GothamBold
+textShadow.Visible = false
+print("textShadow created:", textShadow ~= nil)
+
+print("Setting textShadow.Parent to powerButton...")
+textShadow.Parent = powerButton
+print("textShadow.Parent set:", textShadow.Parent ~= nil)
+print("textShadow.Parent == powerButton:", textShadow.Parent == powerButton)
+
+textShadow.ZIndex = cooldownText.ZIndex - 1
+print("textShadow ZIndex set")
+
+print("=== UI Construction Complete ===")
+
+-- Debug: Confirm UI elements are created
+print("UI elements created:")
+print("  powerButton:", powerButton ~= nil)
+print("  powerCooldown:", powerCooldown ~= nil)
+print("  cooldownText:", cooldownText ~= nil)
+print("  textShadow:", textShadow ~= nil)
+
+-- Additional verification of parenting
+print("=== Parenting Verification ===")
+print("screen exists:", screen ~= nil, "Parent:", screen and screen.Parent ~= nil)
+if screen and screen.Parent then
+	print("screen.Parent.Name:", screen.Parent.Name)
+	print("screen.Parent.ClassName:", screen.Parent.ClassName)
+end
+
+print("powerButton exists:", powerButton ~= nil, "Parent:", powerButton and powerButton.Parent ~= nil)
+if powerButton and powerButton.Parent then
+	print("powerButton.Parent.Name:", powerButton.Parent.Name)
+	print("powerButton.Parent.ClassName:", powerButton.Parent.ClassName)
+end
+
+print("powerCooldown exists:", powerCooldown ~= nil, "Parent:", powerCooldown and powerCooldown.Parent ~= nil)
+if powerCooldown and powerCooldown.Parent then
+	print("powerCooldown.Parent.Name:", powerCooldown.Parent.Name)
+	print("powerCooldown.Parent.ClassName:", powerCooldown.Parent.ClassName)
+end
+
+print("cooldownText exists:", cooldownText ~= nil, "Parent:", cooldownText and cooldownText.Parent ~= nil)
+if cooldownText and cooldownText.Parent then
+	print("cooldownText.Parent.Name:", cooldownText.Parent.Name)
+	print("cooldownText.Parent.ClassName:", cooldownText.Parent.ClassName)
+end
+
+print("textShadow exists:", textShadow ~= nil, "Parent:", textShadow and textShadow.Parent ~= nil)
+if textShadow and textShadow.Parent then
+	print("textShadow.Parent.Name:", textShadow.Parent.Name)
+	print("textShadow.Parent.ClassName:", textShadow.Parent.ClassName)
+end
+
+print("=== End Parenting Verification ===")
+
+print("=== UI Construction Complete ===")
+
+-- Power button cooldown system (now defined after UI elements are created)
+local cooldownConnection: RBXScriptConnection? = nil
+
+local function startPowerCooldown(duration: number)
+	print("startPowerCooldown called with duration:", duration)
+	print("COOLDOWN LOG: Starting cooldown - Duration:", duration, "Current Time:", tick())
+	
+	-- If UI is not ready, queue the cooldown instead of waiting
+	if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("startPowerCooldown: UI not ready, queuing cooldown")
+		print("COOLDOWN LOG: UI not ready, queuing cooldown for later processing")
+		pendingCooldown = {
+			duration = duration,
+			startTime = tick()
+		}
+		return
+	end
+	
+	print("startPowerCooldown: UI is ready, proceeding with cooldown")
+	print("COOLDOWN LOG: UI ready, proceeding with cooldown initialization")
+	
+	-- Clean up any existing connection
+	if cooldownConnection then
+		print("COOLDOWN LOG: Cleaning up existing cooldown connection")
+		cooldownConnection:Disconnect()
+		cooldownConnection = nil
+	end
+	
+	-- Reset cooldown state
+	isPowerOnCooldown = false
+	
+	powerCooldownDuration = duration
+	powerCooldownTime = tick()
+	isPowerOnCooldown = true
+	
+	print("COOLDOWN LOG: Cooldown state set - Duration:", powerCooldownDuration, "Start Time:", powerCooldownTime, "Is On Cooldown:", isPowerOnCooldown)
+	
+	-- Additional safety check before calling updatePowerButtonCooldown
+	if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("startPowerCooldown: UI became unavailable after setting cooldown state, resetting")
+		isPowerOnCooldown = false
+		return
+	end
+	
+	updatePowerButtonCooldown()
+	
+	-- Only create heartbeat connection if UI elements are still ready
+	if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("COOLDOWN LOG: Creating heartbeat connection for cooldown updates")
+		-- Update cooldown every frame
+		cooldownConnection = game:GetService("RunService").Heartbeat:Connect(function()
+			if not isPowerOnCooldown then
+				print("COOLDOWN LOG: Cooldown finished, disconnecting heartbeat")
+				if cooldownConnection then
+					cooldownConnection:Disconnect()
+					cooldownConnection = nil
+				end
+				return
+			end
+			
+			-- Check if cooldown time has actually expired
+			local remaining = powerCooldownTime + powerCooldownDuration - tick()
+			if remaining <= 0 then
+				print("COOLDOWN LOG: Cooldown time expired in heartbeat, resetting state")
+				isPowerOnCooldown = false
+				powerCooldownTime = 0
+				powerCooldownDuration = 0
+				
+				-- Disconnect the connection
+				if cooldownConnection then
+					cooldownConnection:Disconnect()
+					cooldownConnection = nil
+				end
+				
+				-- Update the UI
+				updatePowerButtonCooldown()
+				return
+			end
+			
+			-- Update the cooldown display every frame
+			updatePowerButtonCooldown()
+		end)
+	else
+		print("UI elements disappeared during cooldown start, resetting state")
+		print("COOLDOWN LOG: UI elements disappeared during cooldown start, resetting state")
+		isPowerOnCooldown = false
+		return
+	end
+	
+	-- Safety timeout: force reset cooldown after duration + 1 second
+	task.delay(duration + 1, function()
+		if isPowerOnCooldown then
+			print("Safety timeout: forcing cooldown reset")
+			print("COOLDOWN LOG: Safety timeout triggered, forcing cooldown reset")
+			isPowerOnCooldown = false
+			if cooldownConnection then
+				cooldownConnection:Disconnect()
+				cooldownConnection = nil
+			end
+			-- Only update if UI elements still exist
+			if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+				updatePowerButtonCooldown()
+			else
+				print("Safety timeout: UI not ready, skipping update")
+			end
+		end
+	end)
+	
+	print("COOLDOWN LOG: Cooldown initialization complete - Duration:", duration, "Start Time:", powerCooldownTime, "Expected End Time:", powerCooldownTime + duration)
+end
+
+-- Cleanup function for cooldown system
+local function cleanupCooldown()
+	-- Safety check: only run if UI elements exist
+	if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("cleanupCooldown: UI not ready, skipping")
+		return
+	end
+	
+	print("cleanupCooldown: cleaning up cooldown state")
+	print("COOLDOWN LOG: Manual cleanup triggered - Current state - Is On Cooldown:", isPowerOnCooldown, "Duration:", powerCooldownDuration, "Start Time:", powerCooldownTime)
+	
+	if cooldownConnection then
+		print("COOLDOWN LOG: Disconnecting cooldown connection during cleanup")
+		cooldownConnection:Disconnect()
+		cooldownConnection = nil
+	end
+	
+	isPowerOnCooldown = false
+	powerCooldown.Visible = false
+	cooldownText.Visible = false
+	textShadow.Visible = false
+	
+	-- Reset cooldown variables
+	powerCooldownTime = 0
+	powerCooldownDuration = 0
+	
+	-- Clear any pending cooldown
+	pendingCooldown = nil
+	
+	print("cleanupCooldown: cooldown state reset complete")
+	print("COOLDOWN LOG: Cleanup complete - All cooldown state reset to default values")
+end
+
+-- Force reset function for debugging
+local function forceResetCooldown()
+	print("forceResetCooldown: forcing cooldown reset")
+	print("COOLDOWN LOG: Force reset triggered - Current state - Is On Cooldown:", isPowerOnCooldown, "Duration:", powerCooldownDuration, "Start Time:", powerCooldownTime)
+	
+	isPowerOnCooldown = false
+	powerCooldownTime = 0
+	powerCooldownDuration = 0
+	pendingCooldown = nil
+	
+	if cooldownConnection then
+		print("COOLDOWN LOG: Disconnecting cooldown connection during force reset")
+		cooldownConnection:Disconnect()
+		cooldownConnection = nil
+	end
+	
+	-- Only update UI if elements exist
+	if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		updatePowerButtonCooldown()
+	end
+	
+	print("forceResetCooldown: reset complete")
+	print("COOLDOWN LOG: Force reset complete - All cooldown state reset to default values")
+end
+
+print("Creating roll button...")
+rollButton = Instance.new("TextButton")
 rollButton.Name = "RollButton"
 rollButton.Text = "Roll for Marble"
 rollButton.TextScaled = true
 rollButton.Size = UDim2.fromOffset(200, 56)
-rollButton.Position = UDim2.new(0.5, 0, 1, -24)
+rollButton.Position = UDim2.new(0.5, 110, 1, -24)
 rollButton.AnchorPoint = Vector2.new(0.5, 1)
 rollButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 rollButton.TextColor3 = Color3.new(1,1,1)
 rollButton.Font = Enum.Font.GothamBold
+print("rollButton created:", rollButton ~= nil)
+
+print("Setting rollButton.Parent to screen...")
 rollButton.Parent = screen
+print("rollButton.Parent set:", rollButton.Parent ~= nil)
+print("rollButton.Parent == screen:", rollButton.Parent == screen)
+
 local rollCorner = Instance.new("UICorner")
 rollCorner.CornerRadius = UDim.new(0, 8)
 rollCorner.Parent = rollButton
+print("rollCorner created and parented")
 
-local inventoryButton = Instance.new("TextButton")
+print("Creating inventory button...")
+inventoryButton = Instance.new("TextButton")
 inventoryButton.Name = "InventoryButton"
 inventoryButton.Text = "Inventory"
 inventoryButton.TextScaled = true
@@ -52,12 +884,20 @@ inventoryButton.AnchorPoint = Vector2.new(0, 0)
 inventoryButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 inventoryButton.TextColor3 = Color3.new(1,1,1)
 inventoryButton.Font = Enum.Font.GothamBold
+print("inventoryButton created:", inventoryButton ~= nil)
+
+print("Setting inventoryButton.Parent to screen...")
 inventoryButton.Parent = screen
+print("inventoryButton.Parent set:", inventoryButton.Parent ~= nil)
+print("inventoryButton.Parent == screen:", inventoryButton.Parent == screen)
+
 local invBtnCorner = Instance.new("UICorner")
 invBtnCorner.CornerRadius = UDim.new(0, 8)
 invBtnCorner.Parent = inventoryButton
+print("invBtnCorner created and parented")
 
-local resultLabel = Instance.new("TextLabel")
+print("Creating result label...")
+resultLabel = Instance.new("TextLabel")
 resultLabel.Name = "ResultLabel"
 resultLabel.Text = ""
 resultLabel.TextScaled = true
@@ -66,9 +906,15 @@ resultLabel.TextColor3 = Color3.new(1,1,1)
 resultLabel.Size = UDim2.fromOffset(480, 40)
 resultLabel.Position = UDim2.new(0.5, 0, 1, -88)
 resultLabel.AnchorPoint = Vector2.new(0.5, 1)
-resultLabel.Parent = screen
+print("resultLabel created:", resultLabel ~= nil)
 
-local invFrame = Instance.new("Frame")
+print("Setting resultLabel.Parent to screen...")
+resultLabel.Parent = screen
+print("resultLabel.Parent set:", resultLabel.Parent ~= nil)
+print("resultLabel.Parent == screen:", resultLabel.Parent == screen)
+
+print("Creating inventory frame...")
+invFrame = Instance.new("Frame")
 invFrame.Name = "InventoryFrame"
 invFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 invFrame.BackgroundTransparency = 0.2 -- semi-transparent
@@ -77,7 +923,12 @@ invFrame.Size = UDim2.new(0, 720, 0, 520)
 invFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 invFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 invFrame.Visible = false
+print("invFrame created:", invFrame ~= nil)
+
+print("Setting invFrame.Parent to screen...")
 invFrame.Parent = screen
+print("invFrame.Parent set:", invFrame.Parent ~= nil)
+print("invFrame.Parent == screen:", invFrame.Parent == screen)
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
@@ -131,14 +982,16 @@ grid.SortOrder = Enum.SortOrder.LayoutOrder
 grid.Parent = list
 
 local function refreshCanvasSize()
+	-- Safety check: ensure required UI elements exist
+	if not list or not grid then
+		print("refreshCanvasSize: Required UI elements (list or grid) not available, skipping")
+		return
+	end
+	
 	local abs = grid.AbsoluteContentSize
 	list.CanvasSize = UDim2.new(0, 0, 0, abs.Y + 12)
 end
 grid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshCanvasSize)
-
--- State
-local ownedSet: { [string]: boolean } = {}
-local equippedId: string? = nil
 
 -- Ability descriptions by module name (simple mapping for now)
 local ABILITY_DESCRIPTIONS: { [string]: string } = {
@@ -147,6 +1000,7 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Red = "Red: A fiery burst that briefly increases acceleration.",
 	Blue = "Blue: A calming shield that reduces deceleration briefly.",
 	Green = "Green: A rejuvenating pulse that boosts control for a moment.",
+	Spider = "Spider: Shoot a web to grapple and swing toward targets.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -155,6 +1009,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Red = "rbxassetid://99977275020564",
 	Green = "rbxassetid://114474679212927",
 	Blue = "rbxassetid://128223600665334",
+	Spider = "rbxassetid://105354663033087",
 }
 
 local function applyTexturesToPart(part: BasePart, marbleId: string)
@@ -317,6 +1172,18 @@ local function createMarbleTile(def)
 end
 
 local function rebuildInventoryUI()
+	-- Safety check: ensure required UI elements exist
+	if not list or not grid then
+		print("rebuildInventoryUI: Required UI elements (list or grid) not available, skipping")
+		return
+	end
+	
+	-- Safety check: ensure Marbles module is available
+	if not Marbles or not Marbles.getAll then
+		print("rebuildInventoryUI: Marbles module not available, skipping")
+		return
+	end
+	
 	-- Clear existing tiles but keep grid
 	for _, child in ipairs(list:GetChildren()) do
 		if child ~= grid then
@@ -336,16 +1203,60 @@ rollButton.MouseButton1Click:Connect(function()
 end)
 
 inventoryButton.MouseButton1Click:Connect(function()
-	invFrame.Visible = not invFrame.Visible
+	local newVisible = not invFrame.Visible
+	invFrame.Visible = newVisible
+	if newVisible then
+		pcall(function()
+			invOpenSfx:Play()
+		end)
+	end
 end)
 
 InventoryUpdate.OnClientEvent:Connect(function(payload)
+	print("InventoryUpdate received")
+	print("payload.owned:", payload.owned)
+	print("payload.equipped:", payload.equipped)
+	
+	-- If UI is not ready, store the update for later processing
+	if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		print("InventoryUpdate: UI not ready, storing update for later processing")
+		pendingInventoryUpdate = {
+			owned = payload.owned,
+			equipped = payload.equipped
+		}
+		return
+	end
+	
+	-- UI is ready, process the update immediately
+	print("InventoryUpdate: UI is ready, processing update immediately")
+	
 	ownedSet = {}
 	for _, id in ipairs(payload.owned :: {string}) do
 		ownedSet[id] = true
+		print("Added to ownedSet:", id)
 	end
 	equippedId = payload.equipped
+	print("equippedId set to:", equippedId)
+	
+	-- Debug: Check what marble definition we get for Spider
+	if equippedId == "Spider" then
+		if Marbles and Marbles.getById then
+			local spiderDef = Marbles.getById("Spider")
+			print("Spider marble definition:", spiderDef)
+			if spiderDef then
+				print("Spider abilityModule:", spiderDef.abilityModule)
+				print("Spider abilityModule ~= 'Default':", spiderDef.abilityModule ~= "Default")
+			end
+		else
+			print("Marbles module not available for Spider debug check")
+		end
+	end
+	
 	rebuildInventoryUI()
+	
+	-- UI is ready, update the power button immediately
+	print("InventoryUpdate: UI is ready, updating power button immediately")
+	updatePowerButtonForMarble()
 end)
 
 RollResult.OnClientEvent:Connect(function(result)
@@ -360,14 +1271,162 @@ RollResult.OnClientEvent:Connect(function(result)
 	end)
 end)
 
--- Ability activation keybind (F)
+-- Handle ability cooldown from server
+AbilityCooldown.OnClientEvent:Connect(function(cooldownData)
+	print("AbilityCooldown received:", cooldownData.duration, "seconds")
+	print("COOLDOWN LOG: Server cooldown event received - Duration:", cooldownData.duration, "seconds, Current Time:", tick())
+	print("COOLDOWN LOG: Current cooldown state - Is On Cooldown:", isPowerOnCooldown, "Current Duration:", powerCooldownDuration, "Current Start Time:", powerCooldownTime)
+	
+	startPowerCooldown(cooldownData.duration)
+end)
+
+-- Power button click handler
+powerButton.MouseButton1Click:Connect(function()
+	if not isPowerOnCooldown then
+		print("COOLDOWN LOG: Power button clicked - No cooldown active, checking for ability")
+		-- Check if equipped marble has an ability
+		local equippedMarble = equippedId and Marbles.getById(equippedId)
+		if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+			print("COOLDOWN LOG: Activating ability for marble:", equippedMarble.id, "Ability module:", equippedMarble.abilityModule)
+			ActivateAbility:FireServer()
+		else
+			print("COOLDOWN LOG: Power button clicked but no ability available - Marble:", equippedId, "Ability module:", equippedMarble and equippedMarble.abilityModule or "nil")
+		end
+	else
+		print("COOLDOWN LOG: Power button clicked but on cooldown - Remaining time:", powerCooldownTime + powerCooldownDuration - tick(), "seconds")
+	end
+end)
+
+-- Ability activation keybind (E key)
 local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then return end
-	if input.KeyCode == Enum.KeyCode.F then
-		ActivateAbility:FireServer()
+	if input.KeyCode == Enum.KeyCode.E then
+		if not isPowerOnCooldown then
+			local equippedMarble = equippedId and Marbles.getById(equippedId)
+			if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+				print("COOLDOWN LOG: Activating ability via E key for marble:", equippedMarble.id, "Ability module:", equippedMarble.abilityModule)
+				ActivateAbility:FireServer()
+			else
+				print("COOLDOWN LOG: E key pressed but no ability available - Marble:", equippedId, "Ability module:", equippedMarble and equippedMarble.abilityModule or "nil")
+			end
+		else
+			-- Check if cooldown should actually be finished
+			local remaining = powerCooldownTime + powerCooldownDuration - tick()
+			if remaining <= 0 then
+				print("COOLDOWN LOG: Cooldown time expired but state not reset, forcing reset")
+				-- Force reset the cooldown state
+				isPowerOnCooldown = false
+				powerCooldownTime = 0
+				powerCooldownDuration = 0
+				if cooldownConnection then
+					cooldownConnection:Disconnect()
+					cooldownConnection = nil
+				end
+				-- Update the UI
+				updatePowerButtonCooldown()
+				-- Now try to activate the ability
+				local equippedMarble = equippedId and Marbles.getById(equippedId)
+				if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
+					print("COOLDOWN LOG: Activating ability after cooldown reset for marble:", equippedMarble.id, "Ability module:", equippedMarble.abilityModule)
+					ActivateAbility:FireServer()
+				end
+			else
+				print("COOLDOWN LOG: E key pressed but on cooldown - Remaining time:", remaining, "seconds")
+			end
+		end
+	end
+	
+	-- Debug: Force reset cooldown with R key
+	if input.KeyCode == Enum.KeyCode.R then
+		print("R key pressed - forcing cooldown reset")
+		print("COOLDOWN LOG: R key pressed - Manual cooldown reset triggered")
+		forceResetCooldown()
 	end
 end)
 
 -- Request initial inventory
-RequestInventory:FireServer() 
+
+-- Comprehensive UI element check and initialization
+print("=== Comprehensive UI Element Check ===")
+print("screen exists:", screen ~= nil, "Parent:", screen and screen.Parent ~= nil)
+print("powerButton exists:", powerButton ~= nil, "Parent:", powerButton and powerButton.Parent ~= nil)
+print("powerCooldown exists:", powerCooldown ~= nil, "Parent:", powerCooldown and powerCooldown.Parent ~= nil)
+print("cooldownText exists:", cooldownText ~= nil, "Parent:", cooldownText and cooldownText.Parent ~= nil)
+print("textShadow exists:", textShadow ~= nil, "Parent:", textShadow and textShadow.Parent ~= nil)
+print("rollButton exists:", rollButton ~= nil, "Parent:", rollButton and rollButton.Parent ~= nil)
+print("inventoryButton exists:", inventoryButton ~= nil, "Parent:", inventoryButton and inventoryButton.Parent ~= nil)
+print("resultLabel exists:", resultLabel ~= nil, "Parent:", resultLabel and resultLabel.Parent ~= nil)
+print("invFrame exists:", invFrame ~= nil, "Parent:", invFrame and invFrame.Parent ~= nil)
+
+-- Check if elements are visible in the game
+if screen and screen.Parent then
+	print("✓ ScreenGui is properly parented to PlayerGui")
+else
+	print("✗ ScreenGui is NOT properly parented!")
+end
+
+if powerButton and powerButton.Parent then
+	print("✓ Power button is properly parented")
+else
+	print("✗ Power button is NOT properly parented!")
+end
+
+if rollButton and rollButton.Parent then
+	print("✓ Roll button is properly parented")
+else
+	print("✗ Roll button is NOT properly parented!")
+end
+
+print("=== End Comprehensive Check ===")
+
+-- Wait for UI to be fully ready
+print("Waiting for UI to be fully ready...")
+if waitForUIReady() then
+	print("UI is fully ready and initialized!")
+	-- Now that UI is ready, process any pending updates
+	processPendingCooldown()
+	processPendingInventoryUpdate()
+	-- Update the power button to process any pending updates
+	updatePowerButtonForMarble()
+else
+	print("WARNING: UI failed to become ready!")
+end
+
+RequestInventory:FireServer()
+
+-- Debug: Final check of UI elements
+print("=== Final UI Element Check ===")
+print("powerButton exists:", powerButton ~= nil)
+print("powerCooldown exists:", powerCooldown ~= nil)
+print("cooldownText exists:", cooldownText ~= nil)
+print("textShadow exists:", textShadow ~= nil)
+print("UI Ready:", isUIReady())
+print("=== End Final Check ===")
+
+-- Final verification that cooldown system is ready
+if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+	print("✓ Cooldown system is ready and initialized")
+	print("✓ UI elements are properly created and parented")
+	print("✓ Ready to handle ability cooldowns")
+else
+	print("✗ WARNING: Cooldown system is NOT ready!")
+	print("✗ UI elements may not be properly initialized")
+end
+
+-- Set up periodic UI health check
+task.spawn(function()
+	while true do
+		task.wait(5) -- Check every 5 seconds
+		
+		-- Only check if we're supposed to have UI elements
+		if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+			if not isUIReady() then
+				print("UI health check: UI elements are invalid, skipping recreation...")
+			end
+		end
+	end
+end)
+
+-- Note: updatePowerButtonForMarble() will be called when InventoryUpdate is received
+-- after the UI elements are created, so we don't need to call it here 

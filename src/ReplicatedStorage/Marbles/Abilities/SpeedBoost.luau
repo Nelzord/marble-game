@@ -5,6 +5,14 @@ local Ability = {}
 -- Example state cache (session-only)
 local active: { [Player]: boolean } = {}
 
+function Ability.Description()
+	return "SpeedBoost: Temporarily increases rolling speed."
+end
+
+function Ability.Cooldown()
+	return 6 -- 6 second cooldown
+end
+
 function Ability.ActivateAbility(player: Player, character: Model)
 	if active[player] then return end
 	active[player] = true

@@ -156,6 +156,27 @@ local function createCoin(): CoinInfo
 		if not player then return end
 		addCoins(player, 1)
 		clog(string.format("Collected by %s at (%.1f, %.1f, %.1f)", player.Name, basePos.X, basePos.Y, basePos.Z))
+		-- Play pickup sound at coin position
+		local sfxPart = Instance.new("Part")
+		sfxPart.Name = "CoinSFX"
+		sfxPart.Anchored = true
+		sfxPart.CanCollide = false
+		sfxPart.CanQuery = false
+		sfxPart.CanTouch = false
+		sfxPart.Transparency = 1
+		sfxPart.Size = Vector3.new(1,1,1)
+		sfxPart.CFrame = CFrame.new(basePos)
+		sfxPart.Parent = workspace
+		local sound = Instance.new("Sound")
+		sound.SoundId = "rbxassetid://6792279908"
+		sound.Volume = 0.8
+		sound.RollOffMaxDistance = 100
+		sound.RollOffMode = Enum.RollOffMode.Inverse
+		sound.Parent = sfxPart
+		sound:Play()
+		task.delay(3, function()
+			if sfxPart then sfxPart:Destroy() end
+		end)
 		for i = #activeCoins, 1, -1 do
 			local info = activeCoins[i]
 			if info.model == coin then

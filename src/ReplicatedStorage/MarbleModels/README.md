@@ -10,4 +10,5 @@ MarbleIds used in this project (you can add more):
 - Default (optional model; server can build a simple sphere if missing)
 - Blue
 - Speed
-- Gold 
+- Gold
+- Spider 

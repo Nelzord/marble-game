@@ -41,6 +41,7 @@ local function getOrCreateRemotes()
 		EquipMarble = ensureEvent("EquipMarble"),
 		RequestInventory = ensureEvent("RequestInventory"),
 		ActivateAbility = ensureEvent("ActivateAbility"),
+		AbilityCooldown = ensureEvent("AbilityCooldown"),
 	}
 end
 
@@ -56,6 +57,9 @@ local DEFAULT_ID = "Default"
 local playerData: { [Player]: PlayerData } = {}
 local spawningFlag: { [Player]: boolean } = {}
 
+-- Ability cooldown tracking
+local abilityCooldowns: { [Player]: number } = {}
+
 local function getOrCreatePlayerData(player: Player): PlayerData
 	local data = playerData[player]
 	if not data then
@@ -66,6 +70,39 @@ local function getOrCreatePlayerData(player: Player): PlayerData
 		playerData[player] = data
 	end
 	return data
+end
+
+local function canUseAbility(player: Player): boolean
+	local lastUse = abilityCooldowns[player]
+	if not lastUse then return true end
+	
+	local data = getOrCreatePlayerData(player)
+	local def = Marbles.getById(data.equipped)
+	if not def then return false end
+	
+	local ability = Marbles.getAbilityModule(def)
+	local cooldown = ability.Cooldown and ability.Cooldown() or 0
+	if cooldown <= 0 then return true end
+	
+	return (tick() - lastUse) >= cooldown
+end
+
+local function startAbilityCooldown(player: Player)
+	local data = getOrCreatePlayerData(player)
+	local def = Marbles.getById(data.equipped)
+	if not def then return end
+	
+	local ability = Marbles.getAbilityModule(def)
+	local cooldown = ability.Cooldown and ability.Cooldown() or 0
+	if cooldown <= 0 then return end
+	
+	abilityCooldowns[player] = tick()
+	
+	-- Send cooldown info to client
+	Remotes.AbilityCooldown:FireClient(player, {
+		duration = cooldown,
+		startTime = tick(),
+	})
 end
 
 local function sendInventory(player: Player)
@@ -299,15 +336,44 @@ Remotes.RequestInventory.OnServerEvent:Connect(function(player: Player)
 end)
 
 Remotes.ActivateAbility.OnServerEvent:Connect(function(player: Player)
+	print("[DEBUG] ActivateAbility called by player:", player.Name)
+	
+	-- Check cooldown
+	if not canUseAbility(player) then
+		print("[DEBUG] Player on cooldown, returning")
+		return
+	end
+	
 	local data = getOrCreatePlayerData(player)
 	local def = Marbles.getById(data.equipped)
-	if not def then return end
+	print("[DEBUG] Equipped marble definition:", def and def.id or "nil")
+	
+	if not def then 
+		print("[DEBUG] No marble definition found, returning")
+		return 
+	end
+	
 	local ability = Marbles.getAbilityModule(def)
+	print("[DEBUG] Ability module:", ability and "loaded" or "failed to load")
+	print("[DEBUG] Ability module type:", typeof(ability))
+	
 	local character = player.Character
 	if character then
-		pcall(function()
+		print("[DEBUG] Character found, activating ability")
+		-- Start cooldown before activating ability
+		startAbilityCooldown(player)
+		
+		local success, error = pcall(function()
 			ability.ActivateAbility(player, character)
 		end)
+		
+		if not success then
+			print("[DEBUG] Ability activation failed with error:", error)
+		else
+			print("[DEBUG] Ability activation successful")
+		end
+	else
+		print("[DEBUG] No character found")
 	end
 end)
 
@@ -335,4 +401,5 @@ end)
 Players.PlayerRemoving:Connect(function(player)
 	playerData[player] = nil
 	spawningFlag[player] = nil
+	abilityCooldowns[player] = nil
 end) 

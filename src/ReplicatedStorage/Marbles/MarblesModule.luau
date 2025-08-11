@@ -52,6 +52,14 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Green",
 		color = Color3.fromRGB(70, 200, 90),
 	},
+	Spider = {
+		id = "Spider",
+		name = "Spider Marble",
+		dropDenominator = 5, -- 1/5 rarity
+		rollable = true,
+		abilityModule = "Spider",
+		color = Color3.fromRGB(40, 40, 40), -- Dark color for spider theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?
@@ -113,14 +121,30 @@ end
 function MarblesModule.getAbilityModule(defOrId: MarbleDefinition | string)
 	local def: MarbleDefinition? = typeof(defOrId) == "table" and defOrId or DEFINITIONS[defOrId :: string]
 	if not def then
+		print("[DEBUG] No marble definition found, using Default")
 		return require(abilitiesFolder:WaitForChild("Default"))
 	end
+	
 	local moduleName = def.abilityModule or "Default"
+	print("[DEBUG] Trying to load ability module:", moduleName)
+	
 	local abilityScript = abilitiesFolder:FindFirstChild(moduleName)
 	if abilityScript then
-		return require(abilityScript)
+		print("[DEBUG] Found ability script:", abilityScript.Name)
+		local success, result = pcall(function()
+			return require(abilityScript)
+		end)
+		if success then
+			print("[DEBUG] Successfully loaded ability module:", moduleName)
+			return result
+		else
+			print("[DEBUG] Failed to require ability module:", moduleName, "Error:", result)
+			return require(abilitiesFolder:WaitForChild("Default"))
+		end
+	else
+		print("[DEBUG] Ability script not found:", moduleName, "using Default")
+		return require(abilitiesFolder:WaitForChild("Default"))
 	end
-	return require(abilitiesFolder:WaitForChild("Default"))
 end
 
 -- Clone a model for the marble if provided under ReplicatedStorage/MarbleModels/<id>
