@@ -1333,58 +1333,32 @@ local function createRollAnimationUI()
 	rollAnimationFrame = Instance.new("Frame")
 	rollAnimationFrame.Name = "RollAnimationFrame"
 	rollAnimationFrame.Size = UDim2.new(0, 600, 0, 120)
-	rollAnimationFrame.Position = UDim2.new(0.5, 0, 0, -20)
+	rollAnimationFrame.Position = UDim2.new(0.5, 0, 0, -40)
 	rollAnimationFrame.AnchorPoint = Vector2.new(0.5, 0)
-	rollAnimationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	rollAnimationFrame.BackgroundTransparency = 0.5 -- Make main frame translucent too
+	rollAnimationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	rollAnimationFrame.BackgroundTransparency = 0.2 -- semi-transparent like inventory and coins
 	rollAnimationFrame.BorderSizePixel = 0
 	rollAnimationFrame.Visible = false
 	rollAnimationFrame.ZIndex = 10
 	rollAnimationFrame.Parent = screen
 	
-	-- Add ticket-style border with rounded corners
-	local border = Instance.new("Frame")
-	border.Name = "TicketBorder"
-	border.Size = UDim2.new(1, 0, 1, 0)
-	border.Position = UDim2.new(0, 0, 0, 0)
-	border.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold border
-	border.BorderSizePixel = 0
-	border.ZIndex = 9
-	border.Parent = rollAnimationFrame
+	-- Add rounded corners to match inventory and coins style
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = rollAnimationFrame
 	
-	local borderCorner = Instance.new("UICorner")
-	borderCorner.CornerRadius = UDim.new(0, 16)
-	borderCorner.Parent = border
-	
-	-- Inner frame with more translucent background
-	local innerFrame = Instance.new("Frame")
-	innerFrame.Name = "InnerFrame"
-	innerFrame.Size = UDim2.new(1, -8, 1, -8)
-	innerFrame.Position = UDim2.new(0, 4, 0, 4)
-	innerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	innerFrame.BackgroundTransparency = 0.7 -- More translucent so players can clearly see behind the panel
-	innerFrame.BorderSizePixel = 0
-	innerFrame.ZIndex = 10
-	innerFrame.Parent = rollAnimationFrame
-	
-	local innerCorner = Instance.new("UICorner")
-	innerCorner.CornerRadius = UDim.new(0, 12)
-	innerCorner.Parent = innerFrame
-	
-	-- Move all child elements to innerFrame instead of rollAnimationFrame
-	local function createElementInInnerFrame(elementType, properties)
+	-- Create elements directly in the rollAnimationFrame
+	local function createElementInFrame(elementType, properties)
 		local element = Instance.new(elementType)
 		for property, value in pairs(properties) do
 			element[property] = value
 		end
-		element.Parent = innerFrame
+		element.Parent = rollAnimationFrame
 		return element
 	end
 	
-	-- Corner is now applied to the inner frame
-	
 	-- Title (left side)
-	local title = createElementInInnerFrame("TextLabel", {
+	local title = createElementInFrame("TextLabel", {
 		Name = "Title",
 		Text = "ROLLING FOR MARBLE...",
 		TextScaled = true,
@@ -1397,20 +1371,20 @@ local function createRollAnimationUI()
 	})
 	
 	-- Ticket icon (center-right)
-	local ticketIcon = createElementInInnerFrame("TextLabel", {
+	local ticketIcon = createElementInFrame("TextLabel", {
 		Name = "TicketIcon",
 		Text = "🎫",
 		TextScaled = true,
 		Size = UDim2.new(0, 30, 0, 30),
 		Position = UDim2.new(0.5, -15, 0, 15),
 		BackgroundTransparency = 1,
-		TextColor3 = Color3.fromRGB(255, 215, 0),
+		TextColor3 = Color3.new(1, 1, 1), -- White color to match theme
 		Font = Enum.Font.GothamBold,
 		ZIndex = 11
 	})
 	
 	-- Close button (top-right)
-	local closeButton = createElementInInnerFrame("TextButton", {
+	local closeButton = createElementInFrame("TextButton", {
 		Name = "CloseButton",
 		Text = "X",
 		TextScaled = true,
@@ -1439,20 +1413,20 @@ local function createRollAnimationUI()
 	end)
 	
 	-- Rolling text (main display - center)
-	rollAnimationText = createElementInInnerFrame("TextLabel", {
+	rollAnimationText = createElementInFrame("TextLabel", {
 		Name = "RollingText",
 		Text = "",
 		TextScaled = true,
 		Size = UDim2.new(0.6, 0, 0, 50),
 		Position = UDim2.new(0.2, 0, 0.5, -25),
 		BackgroundTransparency = 1,
-		TextColor3 = Color3.fromRGB(255, 215, 0), -- Gold color
+		TextColor3 = Color3.new(1, 1, 1), -- White color to match theme
 		Font = Enum.Font.GothamBold,
 		ZIndex = 11
 	})
 	
 	-- Text shadow (thicker for better visibility on translucent background)
-	rollAnimationShadow = createElementInInnerFrame("TextLabel", {
+	rollAnimationShadow = createElementInFrame("TextLabel", {
 		Name = "RollingTextShadow",
 		Text = "",
 		TextScaled = true,
@@ -1465,11 +1439,11 @@ local function createRollAnimationUI()
 	})
 	
 	-- Progress bar (bottom)
-	local progressBar = createElementInInnerFrame("Frame", {
+	local progressBar = createElementInFrame("Frame", {
 		Name = "ProgressBar",
 		Size = UDim2.new(0, 0, 0, 6),
 		Position = UDim2.new(0, 20, 1, -30),
-		BackgroundColor3 = Color3.fromRGB(255, 215, 0),
+		BackgroundColor3 = Color3.fromRGB(100, 100, 100), -- Grey color to match theme
 		BorderSizePixel = 0,
 		ZIndex = 11
 	})
@@ -1479,7 +1453,7 @@ local function createRollAnimationUI()
 	progressCorner.Parent = progressBar
 	
 	-- Progress bar background
-	local progressBg = createElementInInnerFrame("Frame", {
+	local progressBg = createElementInFrame("Frame", {
 		Name = "ProgressBackground",
 		Size = UDim2.new(1, -40, 0, 6),
 		Position = UDim2.new(0, 20, 1, -30),
@@ -1493,7 +1467,7 @@ local function createRollAnimationUI()
 	progressBgCorner.Parent = progressBg
 	
 	-- Result display (same area as rolling text, will replace it)
-	local resultDisplay = createElementInInnerFrame("TextLabel", {
+	local resultDisplay = createElementInFrame("TextLabel", {
 		Name = "ResultDisplay",
 		Text = "",
 		TextScaled = true,
@@ -1516,8 +1490,7 @@ local function startRollAnimation()
 	local frame, progressBar = createRollAnimationUI()
 	frame.Visible = true
 	
-	-- Get reference to inner frame for fade out
-	local innerFrame = frame:FindFirstChild("InnerFrame")
+	-- Frame reference for fade out
 	
 	-- Get all rollable marbles
 	local rollableMarbles = Marbles.getRollable()
@@ -1547,7 +1520,7 @@ local function startRollAnimation()
 	particles.Position = UDim2.new(0, 0, 0, 0)
 	particles.BackgroundTransparency = 1
 	particles.ZIndex = 9
-	particles.Parent = innerFrame
+	particles.Parent = frame
 	
 	-- Create floating particles (optimized for horizontal layout)
 	for i = 1, 12 do -- Reduced particles for horizontal layout
@@ -1642,9 +1615,9 @@ local function startRollAnimation()
 			-- Final reveal phase with pulsing effect
 			if rollAnimationText then
 				rollAnimationText.Text = "REVEALING..."
-				-- Pulsing gold color
+				-- Pulsing white color
 				local pulse = math.abs(math.sin(currentTime * 8)) * 0.3 + 0.7
-				rollAnimationText.TextColor3 = Color3.fromRGB(255 * pulse, 215 * pulse, 0)
+				rollAnimationText.TextColor3 = Color3.fromRGB(255 * pulse, 255 * pulse, 255 * pulse)
 			end
 			if rollAnimationShadow then
 				rollAnimationShadow.Text = "REVEALING..."
@@ -1690,36 +1663,30 @@ local function startRollAnimation()
 			end
 			
 			-- Show result with celebration effect
-			local innerFrame = frame:FindFirstChild("InnerFrame")
-			if innerFrame then
-				print("Found innerFrame")
-				local resultDisplay = innerFrame:FindFirstChild("ResultDisplay")
-				if resultDisplay then
-					print("Found resultDisplay, making it visible")
-					print("ResultDisplay text:", resultDisplay.Text)
-					resultDisplay.Visible = true
-					-- Don't change the text - it should already contain the stored result from the server
+			local resultDisplay = frame:FindFirstChild("ResultDisplay")
+			if resultDisplay then
+				print("Found resultDisplay, making it visible")
+				print("ResultDisplay text:", resultDisplay.Text)
+				resultDisplay.Visible = true
+				-- Don't change the text - it should already contain the stored result from the server
+				
+				-- Celebration animation
+				local celebrationStart = tick()
+				local celebrationConnection
+				celebrationConnection = game:GetService("RunService").Heartbeat:Connect(function()
+					local celebrationElapsed = tick() - celebrationStart
+					local celebrationProgress = math.min(celebrationElapsed / 1.5, 1)
 					
-					-- Celebration animation
-					local celebrationStart = tick()
-					local celebrationConnection
-					celebrationConnection = game:GetService("RunService").Heartbeat:Connect(function()
-						local celebrationElapsed = tick() - celebrationStart
-						local celebrationProgress = math.min(celebrationElapsed / 1.5, 1)
-						
-						-- Bounce effect
-						local bounce = math.sin(celebrationElapsed * 10) * (1 - celebrationProgress) * 10
-						resultDisplay.Position = UDim2.new(0.2, 0, 0.5, -25 + bounce)
-						
-						if celebrationProgress >= 1 then
-							celebrationConnection:Disconnect()
-						end
-					end)
-				else
-					print("ERROR: resultDisplay not found in innerFrame")
-				end
+					-- Bounce effect
+					local bounce = math.sin(celebrationElapsed * 10) * (1 - celebrationProgress) * 10
+					resultDisplay.Position = UDim2.new(0.2, 0, 0.5, -25 + bounce)
+					
+					if celebrationProgress >= 1 then
+						celebrationConnection:Disconnect()
+					end
+				end)
 			else
-				print("ERROR: innerFrame not found in frame")
+				print("ERROR: resultDisplay not found in frame")
 			end
 			
 			-- Fade out after delay
@@ -1734,7 +1701,6 @@ local function startRollAnimation()
 						local fadeProgress = math.min(fadeElapsed / fadeTime, 1)
 						
 						frame.BackgroundTransparency = 0.2 + (fadeProgress * 0.8)
-						innerFrame.BackgroundTransparency = 0.2 + (fadeProgress * 0.8)
 						
 						if fadeProgress >= 1 then
 							fadeConnection:Disconnect()
@@ -1835,7 +1801,7 @@ RollResult.OnClientEvent:Connect(function(result)
 	
 		-- Store the result but don't show it yet - wait for animation to complete
 	if rollAnimationFrame and rollAnimationFrame.Parent then
-		local resultDisplay = rollAnimationFrame:FindFirstChild("InnerFrame"):FindFirstChild("ResultDisplay")
+		local resultDisplay = rollAnimationFrame:FindFirstChild("ResultDisplay")
 		if resultDisplay then
 			-- Store the result text but keep it hidden
 			if result.success then
