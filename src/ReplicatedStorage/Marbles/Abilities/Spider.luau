@@ -172,7 +172,7 @@ function Ability.ActivateAbility(player: Player, character: Model)
 			print("SPIDER ABILITY LOG: Grapple complete, cleaning up web")
 			
 			-- Clean up web after delay
-			task.delay(WEB_DURATION, function()
+			local webCleanupTimer = task.delay(WEB_DURATION, function()
 				if web and web.Parent then
 					web:Destroy()
 				end
@@ -180,6 +180,9 @@ function Ability.ActivateAbility(player: Player, character: Model)
 					webAttachment:Destroy()
 				end
 			end)
+			
+			-- Store the timer reference so we can cancel it if needed
+			character:SetAttribute("SpiderWebCleanupTimer", webCleanupTimer)
 		end
 	end)
 	

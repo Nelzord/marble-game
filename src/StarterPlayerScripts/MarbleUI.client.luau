@@ -220,16 +220,90 @@ local function updatePowerButtonForMarble()
 	
 end
 
+-- Function to check if cooldown should still be active based on time
+local function shouldCooldownBeActive()
+	if not isPowerOnCooldown then
+		return false
+	end
+	
+	local remaining = powerCooldownTime + powerCooldownDuration - tick()
+	return remaining > 0.1 -- Use the same buffer as other checks
+end
+
+-- Function to check if cooldown should be preserved when UI is unavailable
+local function shouldPreserveCooldown()
+	return shouldCooldownBeActive() and (powerCooldownTime > 0 or powerCooldownDuration > 0)
+end
+
+-- Function to safely reset cooldown state (only when appropriate)
+local function safeResetCooldown()
+	if shouldPreserveCooldown() then
+		print("COOLDOWN LOG: Attempted to reset cooldown but it should be preserved, skipping reset")
+		return false
+	end
+	
+	print("COOLDOWN LOG: Safely resetting cooldown state")
+	isPowerOnCooldown = false
+	powerCooldownTime = 0
+	powerCooldownDuration = 0
+	if cooldownConnection then
+		cooldownConnection:Disconnect()
+		cooldownConnection = nil
+	end
+	return true
+end
+
+-- Function to validate cooldown state consistency
+local function validateCooldownState()
+	if isPowerOnCooldown then
+		local remaining = powerCooldownTime + powerCooldownDuration - tick()
+		if remaining <= 0 then
+			print("COOLDOWN LOG: State validation failed - cooldown marked as active but time expired")
+			print("COOLDOWN LOG: Forcing cooldown reset due to state inconsistency")
+			isPowerOnCooldown = false
+			powerCooldownTime = 0
+			powerCooldownDuration = 0
+			if cooldownConnection then
+				cooldownConnection:Disconnect()
+				cooldownConnection = nil
+			end
+			-- Only update UI if elements are available
+			if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+				updatePowerButtonCooldown()
+			else
+				print("COOLDOWN LOG: UI not ready during validation, skipping update")
+			end
+			return false
+		end
+		return true
+	else
+		if powerCooldownTime > 0 or powerCooldownDuration > 0 then
+			print("COOLDOWN LOG: State validation failed - cooldown marked as inactive but has time values")
+			print("COOLDOWN LOG: Resetting time values to maintain consistency")
+			powerCooldownTime = 0
+			powerCooldownDuration = 0
+			return false
+		end
+		return true
+	end
+end
+
 -- Function to update power button cooldown display (defined before startPowerCooldown)
 local function updatePowerButtonCooldown()
 	-- Safety check: only run if UI elements exist
 	if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+		-- If UI elements are not available but cooldown should be active, preserve the state
+		if shouldPreserveCooldown() then
+			print("COOLDOWN LOG: UI not ready but cooldown should be preserved, maintaining state")
+			return
+		end
 		return
 	end
 	
 	-- First, check if cooldown should actually be finished based on time
 	local remaining = powerCooldownTime + powerCooldownDuration - tick()
-	if remaining <= 0 and isPowerOnCooldown then
+	-- Add a small buffer (0.1 seconds) to prevent premature cooldown resets
+	if remaining <= 0.1 and isPowerOnCooldown then
 		print("Cooldown time expired, resetting state")
 		print("COOLDOWN LOG: Cooldown time expired - Remaining time:", remaining, "seconds")
 		print("COOLDOWN LOG: Cooldown duration was:", powerCooldownDuration, "seconds")
@@ -246,6 +320,9 @@ local function updatePowerButtonCooldown()
 			cooldownConnection:Disconnect()
 			cooldownConnection = nil
 		end
+		
+		-- Validate cooldown state consistency
+		validateCooldownState()
 		
 		-- Hide cooldown UI elements
 		if powerCooldown and powerCooldown.Parent then
@@ -282,6 +359,7 @@ local function updatePowerButtonCooldown()
 	-- Safety check: prevent infinite recursion
 	if not isPowerOnCooldown then
 		print("COOLDOWN LOG: No cooldown active, hiding cooldown UI elements")
+		print("COOLDOWN LOG: Debug info - powerCooldownTime:", powerCooldownTime, "powerCooldownDuration:", powerCooldownDuration, "Current time:", tick())
 		-- Final safety check before accessing UI elements
 		if powerCooldown and powerCooldown.Parent then
 			powerCooldown.Visible = false
@@ -299,6 +377,9 @@ local function updatePowerButtonCooldown()
 			cooldownConnection:Disconnect()
 			cooldownConnection = nil
 		end
+		
+		-- Validate cooldown state consistency
+		validateCooldownState()
 		
 		-- Check if equipped marble has an ability
 		local equippedMarble = equippedId and Marbles.getById(equippedId)
@@ -484,6 +565,13 @@ local function recreatePowerButtonUI()
 	end)
 	
 	print("recreatePowerButtonUI: Power button UI elements recreated successfully")
+	
+	-- If there was an active cooldown, restore it
+	if shouldPreserveCooldown() then
+		print("COOLDOWN LOG: Restoring cooldown UI after recreation")
+		updatePowerButtonCooldown()
+	end
+	
 	return true
 end
 
@@ -716,6 +804,9 @@ local function startPowerCooldown(duration: number)
 	powerCooldownTime = tick()
 	isPowerOnCooldown = true
 	
+	-- Validate cooldown state consistency
+	validateCooldownState()
+	
 	print("COOLDOWN LOG: Cooldown state set - Duration:", powerCooldownDuration, "Start Time:", powerCooldownTime, "Is On Cooldown:", isPowerOnCooldown)
 	
 	-- Additional safety check before calling updatePowerButtonCooldown
@@ -743,25 +834,35 @@ local function startPowerCooldown(duration: number)
 			
 			-- Check if cooldown time has actually expired
 			local remaining = powerCooldownTime + powerCooldownDuration - tick()
-			if remaining <= 0 then
+			-- Add a small buffer (0.1 seconds) to prevent premature cooldown resets
+			if remaining <= 0.1 then
 				print("COOLDOWN LOG: Cooldown time expired in heartbeat, resetting state")
-				isPowerOnCooldown = false
-				powerCooldownTime = 0
-				powerCooldownDuration = 0
 				
-				-- Disconnect the connection
-				if cooldownConnection then
-					cooldownConnection:Disconnect()
-					cooldownConnection = nil
+				-- Use safe reset function
+				if safeResetCooldown() then
+					-- Update the UI
+					updatePowerButtonCooldown()
+					
+					-- Validate cooldown state consistency
+					validateCooldownState()
+					
+					return
 				end
-				
-				-- Update the UI
-				updatePowerButtonCooldown()
-				return
 			end
 			
 			-- Update the cooldown display every frame
 			updatePowerButtonCooldown()
+			
+			-- Validate cooldown state consistency
+			validateCooldownState()
+			
+			-- If UI elements are not available but cooldown should be active, keep the connection alive
+			if not (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+				if shouldPreserveCooldown() then
+					print("COOLDOWN LOG: UI not ready but cooldown should be preserved, keeping connection alive")
+					return
+				end
+			end
 		end)
 	else
 		print("UI elements disappeared during cooldown start, resetting state")
@@ -770,22 +871,37 @@ local function startPowerCooldown(duration: number)
 		return
 	end
 	
-	-- Safety timeout: force reset cooldown after duration + 1 second
-	task.delay(duration + 1, function()
-		if isPowerOnCooldown then
-			print("Safety timeout: forcing cooldown reset")
+	-- Safety timeout: force reset cooldown after expected end time + small buffer
+	local expectedEndTime = powerCooldownTime + powerCooldownDuration
+	task.delay(expectedEndTime - tick() + 0.5, function()
+		-- Only trigger safety timeout if cooldown is still active AND should have finished by now
+		local currentTime = tick()
+		local shouldBeFinished = currentTime >= expectedEndTime
+		local shouldBeActive = shouldCooldownBeActive()
+		
+		if isPowerOnCooldown and shouldBeFinished and not shouldBeActive then
+			print("Safety timeout: forcing cooldown reset - Expected end time:", expectedEndTime, "Current time:", currentTime)
 			print("COOLDOWN LOG: Safety timeout triggered, forcing cooldown reset")
-			isPowerOnCooldown = false
-			if cooldownConnection then
-				cooldownConnection:Disconnect()
-				cooldownConnection = nil
+			
+			-- Use safe reset function
+			if safeResetCooldown() then
+				-- Only update if UI elements still exist
+				if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
+					updatePowerButtonCooldown()
+				else
+					print("Safety timeout: UI not ready, skipping update")
+				end
+				
+				-- Validate cooldown state consistency
+				validateCooldownState()
 			end
-			-- Only update if UI elements still exist
-			if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
-				updatePowerButtonCooldown()
-			else
-				print("Safety timeout: UI not ready, skipping update")
-			end
+		elseif isPowerOnCooldown and shouldBeFinished and shouldBeActive then
+			print("Safety timeout: Cooldown marked as finished but should still be active - Expected end time:", expectedEndTime, "Current time:", currentTime, "Remaining:", expectedEndTime - currentTime)
+			print("COOLDOWN LOG: Safety timeout skipped - cooldown still valid, correcting state")
+			-- The cooldown should still be active, so don't reset it
+		elseif isPowerOnCooldown and not shouldBeFinished then
+			print("Safety timeout: Cooldown still active and not expired yet - Expected end time:", expectedEndTime, "Current time:", currentTime, "Remaining:", expectedEndTime - currentTime)
+			print("COOLDOWN LOG: Safety timeout skipped - cooldown still valid")
 		end
 	end)
 	
@@ -821,6 +937,9 @@ local function cleanupCooldown()
 	-- Clear any pending cooldown
 	pendingCooldown = nil
 	
+	-- Validate cooldown state consistency
+	validateCooldownState()
+	
 	print("cleanupCooldown: cooldown state reset complete")
 	print("COOLDOWN LOG: Cleanup complete - All cooldown state reset to default values")
 end
@@ -834,6 +953,9 @@ local function forceResetCooldown()
 	powerCooldownTime = 0
 	powerCooldownDuration = 0
 	pendingCooldown = nil
+	
+	-- Validate cooldown state consistency
+	validateCooldownState()
 	
 	if cooldownConnection then
 		print("COOLDOWN LOG: Disconnecting cooldown connection during force reset")
@@ -1197,9 +1319,449 @@ local function rebuildInventoryUI()
 	refreshCanvasSize()
 end
 
--- Event wiring
-rollButton.MouseButton1Click:Connect(function()
+-- CSGO-style rolling system
+local isRolling = false
+local rollAnimationFrame: Frame? = nil
+local rollAnimationText: TextLabel? = nil
+local rollAnimationShadow: TextLabel? = nil
+
+local function createRollAnimationUI()
+	if rollAnimationFrame then
+		rollAnimationFrame:Destroy()
+	end
+	
+	rollAnimationFrame = Instance.new("Frame")
+	rollAnimationFrame.Name = "RollAnimationFrame"
+	rollAnimationFrame.Size = UDim2.new(0, 600, 0, 120)
+	rollAnimationFrame.Position = UDim2.new(0.5, 0, 0, -20)
+	rollAnimationFrame.AnchorPoint = Vector2.new(0.5, 0)
+	rollAnimationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	rollAnimationFrame.BackgroundTransparency = 0.5 -- Make main frame translucent too
+	rollAnimationFrame.BorderSizePixel = 0
+	rollAnimationFrame.Visible = false
+	rollAnimationFrame.ZIndex = 10
+	rollAnimationFrame.Parent = screen
+	
+	-- Add ticket-style border with rounded corners
+	local border = Instance.new("Frame")
+	border.Name = "TicketBorder"
+	border.Size = UDim2.new(1, 0, 1, 0)
+	border.Position = UDim2.new(0, 0, 0, 0)
+	border.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold border
+	border.BorderSizePixel = 0
+	border.ZIndex = 9
+	border.Parent = rollAnimationFrame
+	
+	local borderCorner = Instance.new("UICorner")
+	borderCorner.CornerRadius = UDim.new(0, 16)
+	borderCorner.Parent = border
+	
+	-- Inner frame with more translucent background
+	local innerFrame = Instance.new("Frame")
+	innerFrame.Name = "InnerFrame"
+	innerFrame.Size = UDim2.new(1, -8, 1, -8)
+	innerFrame.Position = UDim2.new(0, 4, 0, 4)
+	innerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	innerFrame.BackgroundTransparency = 0.7 -- More translucent so players can clearly see behind the panel
+	innerFrame.BorderSizePixel = 0
+	innerFrame.ZIndex = 10
+	innerFrame.Parent = rollAnimationFrame
+	
+	local innerCorner = Instance.new("UICorner")
+	innerCorner.CornerRadius = UDim.new(0, 12)
+	innerCorner.Parent = innerFrame
+	
+	-- Move all child elements to innerFrame instead of rollAnimationFrame
+	local function createElementInInnerFrame(elementType, properties)
+		local element = Instance.new(elementType)
+		for property, value in pairs(properties) do
+			element[property] = value
+		end
+		element.Parent = innerFrame
+		return element
+	end
+	
+	-- Corner is now applied to the inner frame
+	
+	-- Title (left side)
+	local title = createElementInInnerFrame("TextLabel", {
+		Name = "Title",
+		Text = "ROLLING FOR MARBLE...",
+		TextScaled = true,
+		Size = UDim2.new(0.4, 0, 0, 35),
+		Position = UDim2.new(0, 20, 0, 15),
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.new(1, 1, 1),
+		Font = Enum.Font.GothamBold,
+		ZIndex = 11
+	})
+	
+	-- Ticket icon (center-right)
+	local ticketIcon = createElementInInnerFrame("TextLabel", {
+		Name = "TicketIcon",
+		Text = "🎫",
+		TextScaled = true,
+		Size = UDim2.new(0, 30, 0, 30),
+		Position = UDim2.new(0.5, -15, 0, 15),
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.fromRGB(255, 215, 0),
+		Font = Enum.Font.GothamBold,
+		ZIndex = 11
+	})
+	
+	-- Close button (top-right)
+	local closeButton = createElementInInnerFrame("TextButton", {
+		Name = "CloseButton",
+		Text = "X",
+		TextScaled = true,
+		Size = UDim2.new(0, 25, 0, 25),
+		Position = UDim2.new(1, -35, 0, 15),
+		BackgroundColor3 = Color3.fromRGB(255, 100, 100),
+		TextColor3 = Color3.new(1, 1, 1),
+		Font = Enum.Font.GothamBold,
+		ZIndex = 12
+	})
+	
+	local closeCorner = Instance.new("UICorner")
+	closeCorner.CornerRadius = UDim.new(0, 6)
+	closeCorner.Parent = closeButton
+	
+	-- Close button functionality - FIXED
+	closeButton.MouseButton1Click:Connect(function()
+		print("Close button clicked!")
+		if rollAnimationFrame and rollAnimationFrame.Parent then
+			print("Destroying roll animation frame")
+			rollAnimationFrame:Destroy()
+			isRolling = false
+		else
+			print("rollAnimationFrame not found or not parented")
+		end
+	end)
+	
+	-- Rolling text (main display - center)
+	rollAnimationText = createElementInInnerFrame("TextLabel", {
+		Name = "RollingText",
+		Text = "",
+		TextScaled = true,
+		Size = UDim2.new(0.6, 0, 0, 50),
+		Position = UDim2.new(0.2, 0, 0.5, -25),
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.fromRGB(255, 215, 0), -- Gold color
+		Font = Enum.Font.GothamBold,
+		ZIndex = 11
+	})
+	
+	-- Text shadow (thicker for better visibility on translucent background)
+	rollAnimationShadow = createElementInInnerFrame("TextLabel", {
+		Name = "RollingTextShadow",
+		Text = "",
+		TextScaled = true,
+		Size = UDim2.new(0.6, 0, 0, 50),
+		Position = UDim2.new(0.2, 3, 0.5, -21),
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.new(0, 0, 0),
+		Font = Enum.Font.GothamBold,
+		ZIndex = 10
+	})
+	
+	-- Progress bar (bottom)
+	local progressBar = createElementInInnerFrame("Frame", {
+		Name = "ProgressBar",
+		Size = UDim2.new(0, 0, 0, 6),
+		Position = UDim2.new(0, 20, 1, -30),
+		BackgroundColor3 = Color3.fromRGB(255, 215, 0),
+		BorderSizePixel = 0,
+		ZIndex = 11
+	})
+	
+	local progressCorner = Instance.new("UICorner")
+	progressCorner.CornerRadius = UDim.new(0, 3)
+	progressCorner.Parent = progressBar
+	
+	-- Progress bar background
+	local progressBg = createElementInInnerFrame("Frame", {
+		Name = "ProgressBackground",
+		Size = UDim2.new(1, -40, 0, 6),
+		Position = UDim2.new(0, 20, 1, -30),
+		BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+		BorderSizePixel = 0,
+		ZIndex = 10
+	})
+	
+	local progressBgCorner = Instance.new("UICorner")
+	progressBgCorner.CornerRadius = UDim.new(0, 3)
+	progressBgCorner.Parent = progressBg
+	
+	-- Result display (same area as rolling text, will replace it)
+	local resultDisplay = createElementInInnerFrame("TextLabel", {
+		Name = "ResultDisplay",
+		Text = "",
+		TextScaled = true,
+		Size = UDim2.new(0.6, 0, 0, 50),
+		Position = UDim2.new(0.2, 0, 0.5, -25),
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.fromRGB(0, 255, 0),
+		Font = Enum.Font.GothamBold,
+		ZIndex = 11,
+		Visible = false
+	})
+	
+	return rollAnimationFrame, progressBar
+end
+
+local function startRollAnimation()
+	if isRolling then return end
+	isRolling = true
+	
+	local frame, progressBar = createRollAnimationUI()
+	frame.Visible = true
+	
+	-- Get reference to inner frame for fade out
+	local innerFrame = frame:FindFirstChild("InnerFrame")
+	
+	-- Get all rollable marbles
+	local rollableMarbles = Marbles.getRollable()
+	if #rollableMarbles == 0 then
+		frame:Destroy()
+		isRolling = false
+		return
+	end
+	
+	-- Animation duration
+	local totalDuration = 3.0 -- 3 seconds
+	local startTime = tick()
+	
+	-- Rolling sound effect
+	local rollSfx = Instance.new("Sound")
+	rollSfx.Name = "RollSound"
+	rollSfx.SoundId = "rbxassetid://127877437691780"
+	rollSfx.Volume = 0.4
+	rollSfx.Looped = true
+	rollSfx.Parent = frame
+	rollSfx:Play()
+	
+	-- Add particle effects for excitement
+	local particles = Instance.new("Frame")
+	particles.Name = "Particles"
+	particles.Size = UDim2.new(1, 0, 1, 0)
+	particles.Position = UDim2.new(0, 0, 0, 0)
+	particles.BackgroundTransparency = 1
+	particles.ZIndex = 9
+	particles.Parent = innerFrame
+	
+	-- Create floating particles (optimized for horizontal layout)
+	for i = 1, 12 do -- Reduced particles for horizontal layout
+		local particle = Instance.new("Frame")
+		particle.Size = UDim2.new(0, math.random(2, 6), 0, math.random(2, 6)) -- Even smaller particles
+		particle.Position = UDim2.new(math.random(), 0, math.random(), 0)
+		particle.BackgroundColor3 = Color3.fromRGB(
+			math.random(200, 255),
+			math.random(200, 255),
+			math.random(200, 255)
+		)
+		particle.BorderSizePixel = 0
+		particle.ZIndex = 9
+		particle.Parent = particles
+		
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 3) -- Smaller corner radius
+		corner.Parent = particle
+		
+		-- Animate particle (horizontal movement focus)
+		local startPos = particle.Position
+		local endPos = UDim2.new(math.random(), 0, math.random() * 0.5, 0) -- More horizontal movement
+		local animStart = tick()
+		local animDuration = math.random(1.5, 3) -- Faster animation
+		
+		game:GetService("RunService").Heartbeat:Connect(function()
+			local elapsed = tick() - animStart
+			local progress = math.min(elapsed / animDuration, 1)
+			
+			if progress >= 1 then
+				particle:Destroy()
+				return
+			end
+			
+			-- Smooth movement
+			local currentPos = UDim2.new(
+				startPos.X.Scale + (endPos.X.Scale - startPos.X.Scale) * progress,
+				startPos.X.Offset + (endPos.X.Offset - startPos.X.Offset) * progress,
+				startPos.Y.Scale + (endPos.Y.Scale - startPos.Y.Scale) * progress,
+				startPos.Y.Offset + (endPos.Y.Offset - startPos.Y.Offset) * progress
+			)
+			particle.Position = currentPos
+			
+			-- Fade out near the end
+			if progress > 0.8 then
+				particle.BackgroundTransparency = (progress - 0.8) * 5
+			end
+		end)
+	end
+	
+	-- Animation loop
+	local connection
+	local lastChangeTime = 0
+	local changeInterval = 0.1 -- Change odds display every 0.1 seconds
+	local waitingForResult = false
+	local resultReceived = false
+	
+	connection = game:GetService("RunService").Heartbeat:Connect(function()
+		local elapsed = tick() - startTime
+		local progress = math.min(elapsed / totalDuration, 1)
+		local currentTime = tick()
+		
+		-- Update progress bar (cap at 100% to prevent going off-screen)
+		-- Use the actual panel width minus margins (40px total) to ensure it fits
+		local maxWidth = (frame.AbsoluteSize.X - 40) / frame.AbsoluteSize.X
+		local clampedProgress = math.min(progress, maxWidth)
+		progressBar.Size = UDim2.new(clampedProgress, 0, 0, 6)
+		
+		-- Show odds flying by with dynamic changes
+		if progress < 0.8 then
+			-- Change odds display at regular intervals for dynamic effect
+			if currentTime - lastChangeTime >= changeInterval then
+				local randomMarble = rollableMarbles[math.random(1, #rollableMarbles)]
+				local oddsText = string.format("%s (1/%d)", randomMarble.name, randomMarble.dropDenominator or 1)
+				
+				if rollAnimationText then
+					rollAnimationText.Text = oddsText
+					-- Add some visual flair with color changes
+					rollAnimationText.TextColor3 = Color3.fromRGB(
+						math.random(200, 255),
+						math.random(200, 255),
+						math.random(200, 255)
+					)
+				end
+				if rollAnimationShadow then
+					rollAnimationShadow.Text = oddsText
+				end
+				
+				lastChangeTime = currentTime
+			end
+		elseif progress < 1 then
+			-- Final reveal phase with pulsing effect
+			if rollAnimationText then
+				rollAnimationText.Text = "REVEALING..."
+				-- Pulsing gold color
+				local pulse = math.abs(math.sin(currentTime * 8)) * 0.3 + 0.7
+				rollAnimationText.TextColor3 = Color3.fromRGB(255 * pulse, 215 * pulse, 0)
+			end
+			if rollAnimationShadow then
+				rollAnimationShadow.Text = "REVEALING..."
+			end
+		else
+			-- Animation complete - but wait for server result
+			if not waitingForResult then
+				waitingForResult = true
+				
+				-- Change text to waiting for result
+				if rollAnimationText then
+					rollAnimationText.Text = "WAITING FOR RESULT..."
+					rollAnimationText.TextColor3 = Color3.fromRGB(255, 255, 255)
+				end
+				if rollAnimationShadow then
+					rollAnimationShadow.Text = "WAITING FOR RESULT..."
+				end
+				
+				-- Stop the rolling sound
+				rollSfx:Stop()
+				rollSfx:Destroy()
+				
+				-- Keep progress bar at max width (respecting margins)
+				local maxWidth = (frame.AbsoluteSize.X - 40) / frame.AbsoluteSize.X
+				progressBar.Size = UDim2.new(maxWidth, 0, 0, 6)
+			end
+		end
+		
+		-- If we have a result and animation is complete, show the result
+		if waitingForResult and resultReceived then
+			print("Animation complete - showing result and celebration")
+			print("waitingForResult:", waitingForResult, "resultReceived:", resultReceived)
+			connection:Disconnect()
+			
+			-- Hide rolling text
+			if rollAnimationText then
+				rollAnimationText.Visible = false
+				print("Hidden rolling text")
+			end
+			if rollAnimationShadow then
+				rollAnimationShadow.Visible = false
+				print("Hidden rolling shadow")
+			end
+			
+			-- Show result with celebration effect
+			local innerFrame = frame:FindFirstChild("InnerFrame")
+			if innerFrame then
+				print("Found innerFrame")
+				local resultDisplay = innerFrame:FindFirstChild("ResultDisplay")
+				if resultDisplay then
+					print("Found resultDisplay, making it visible")
+					print("ResultDisplay text:", resultDisplay.Text)
+					resultDisplay.Visible = true
+					-- Don't change the text - it should already contain the stored result from the server
+					
+					-- Celebration animation
+					local celebrationStart = tick()
+					local celebrationConnection
+					celebrationConnection = game:GetService("RunService").Heartbeat:Connect(function()
+						local celebrationElapsed = tick() - celebrationStart
+						local celebrationProgress = math.min(celebrationElapsed / 1.5, 1)
+						
+						-- Bounce effect
+						local bounce = math.sin(celebrationElapsed * 10) * (1 - celebrationProgress) * 10
+						resultDisplay.Position = UDim2.new(0.2, 0, 0.5, -25 + bounce)
+						
+						if celebrationProgress >= 1 then
+							celebrationConnection:Disconnect()
+						end
+					end)
+				else
+					print("ERROR: resultDisplay not found in innerFrame")
+				end
+			else
+				print("ERROR: innerFrame not found in frame")
+			end
+			
+			-- Fade out after delay
+			task.delay(2.0, function()
+				if frame and frame.Parent then
+					-- Fade out animation
+					local fadeTime = 0.8
+					local fadeStart = tick()
+					local fadeConnection
+					fadeConnection = game:GetService("RunService").Heartbeat:Connect(function()
+						local fadeElapsed = tick() - fadeStart
+						local fadeProgress = math.min(fadeElapsed / fadeTime, 1)
+						
+						frame.BackgroundTransparency = 0.2 + (fadeProgress * 0.8)
+						innerFrame.BackgroundTransparency = 0.2 + (fadeProgress * 0.8)
+						
+						if fadeProgress >= 1 then
+							fadeConnection:Disconnect()
+							frame:Destroy()
+							isRolling = false
+						end
+					end)
+				end
+			end)
+		end
+	end)
+	
+	-- Actually trigger the roll
 	RollForMarble:FireServer()
+	
+	-- Return a function that can be called when we get the result
+	return function()
+		print("Roll callback called - setting resultReceived to true")
+		resultReceived = true
+	end
+end
+
+-- Event wiring
+local currentRollCallback: (() -> ())? = nil
+
+rollButton.MouseButton1Click:Connect(function()
+	currentRollCallback = startRollAnimation()
 end)
 
 inventoryButton.MouseButton1Click:Connect(function()
@@ -1260,15 +1822,43 @@ InventoryUpdate.OnClientEvent:Connect(function(payload)
 end)
 
 RollResult.OnClientEvent:Connect(function(result)
-	if result.success then
-		local suffix = result.new and "  (Unlocked!)" or ""
-		resultLabel.Text = string.format("Rolled: %s%s", result.marbleName or result.marbleId or "?", suffix)
+	print("RollResult received:", result.success, result.marbleName or result.marbleId or "nil")
+	
+	-- Call the roll callback to complete the animation
+	if currentRollCallback then
+		print("Calling roll callback to complete animation")
+		currentRollCallback()
+		currentRollCallback = nil
 	else
-		resultLabel.Text = result.message or "Roll failed"
+		print("No roll callback found - animation may have already completed")
 	end
-	task.delay(4, function()
-		if resultLabel then resultLabel.Text = "" end
-	end)
+	
+		-- Store the result but don't show it yet - wait for animation to complete
+	if rollAnimationFrame and rollAnimationFrame.Parent then
+		local resultDisplay = rollAnimationFrame:FindFirstChild("InnerFrame"):FindFirstChild("ResultDisplay")
+		if resultDisplay then
+			-- Store the result text but keep it hidden
+			if result.success then
+				local suffix = result.new and " (NEW!)" or ""
+				resultDisplay.Text = string.format("YOU GOT: %s%s", result.marbleName or result.marbleId or "?", suffix)
+				resultDisplay.TextColor3 = Color3.fromRGB(0, 255, 0) -- Green for success
+				print("Stored result display text:", resultDisplay.Text)
+			else
+				resultDisplay.Text = result.message or "Roll failed"
+				resultDisplay.TextColor3 = Color3.fromRGB(255, 100, 100) -- Red for failure
+				print("Stored result display text:", resultDisplay.Text)
+			end
+			-- Keep it hidden - it will be shown when the animation completes
+			resultDisplay.Visible = false
+		else
+			print("ResultDisplay not found in rollAnimationFrame")
+		end
+	else
+		print("rollAnimationFrame not found or not parented")
+	end
+	
+	-- Remove the bottom result label since result is now shown in the panel
+	-- resultLabel.Text = "" -- Clear any existing text
 end)
 
 -- Handle ability cooldown from server
@@ -1313,7 +1903,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		else
 			-- Check if cooldown should actually be finished
 			local remaining = powerCooldownTime + powerCooldownDuration - tick()
-			if remaining <= 0 then
+			-- Add a small buffer (0.1 seconds) to prevent premature cooldown resets
+			if remaining <= 0.1 then
 				print("COOLDOWN LOG: Cooldown time expired but state not reset, forcing reset")
 				-- Force reset the cooldown state
 				isPowerOnCooldown = false
@@ -1325,6 +1916,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
 				end
 				-- Update the UI
 				updatePowerButtonCooldown()
+				
+				-- Validate cooldown state consistency
+				validateCooldownState()
+				
 				-- Now try to activate the ability
 				local equippedMarble = equippedId and Marbles.getById(equippedId)
 				if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
@@ -1423,6 +2018,18 @@ task.spawn(function()
 		if (powerButton and powerButton.Parent and powerCooldown and powerCooldown.Parent and cooldownText and cooldownText.Parent and textShadow and textShadow.Parent) then
 			if not isUIReady() then
 				print("UI health check: UI elements are invalid, skipping recreation...")
+			end
+			
+			-- Validate cooldown state consistency
+			validateCooldownState()
+			
+			-- If cooldown should be active but UI is not showing it, restore it
+			if shouldPreserveCooldown() then
+				local remaining = powerCooldownTime + powerCooldownDuration - tick()
+				if remaining > 0.1 then
+					print("UI health check: Cooldown should be preserved, restoring UI display")
+					updatePowerButtonCooldown()
+				end
 			end
 		end
 	end

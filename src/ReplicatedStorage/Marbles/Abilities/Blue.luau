@@ -26,7 +26,8 @@ function Ability.ActivateAbility(player: Player, character: Model)
 	character:SetAttribute("FrictionReduction", 0.5)
 	print("BLUE ABILITY LOG: FrictionReduction set to 0.5 for character:", character.Name)
 	
-	task.delay(4, function()
+	-- Store timer reference for cancellation
+	local frictionTimer = task.delay(4, function()
 		if character then
 			print("BLUE ABILITY LOG: Removing FrictionReduction after 4 seconds for character:", character.Name)
 			character:SetAttribute("FrictionReduction", nil)
@@ -34,6 +35,9 @@ function Ability.ActivateAbility(player: Player, character: Model)
 			print("BLUE ABILITY LOG: Character no longer exists, cannot remove FrictionReduction")
 		end
 	end)
+	
+	-- Store the timer reference so we can cancel it if needed
+	character:SetAttribute("BlueFrictionTimer", frictionTimer)
 	
 	print("BLUE ABILITY LOG: Blue ability activation complete - Duration: 4 seconds, Cooldown: 4 seconds")
 end
@@ -43,6 +47,16 @@ function Ability.DeactivateAbility(player: Player, character: Model)
 	print("BLUE ABILITY LOG: Character exists:", character ~= nil, "Character Name:", character and character.Name or "nil")
 	
 	if character then
+		-- Cancel the friction timer if it's still running
+		local timerRef = character:GetAttribute("BlueFrictionTimer")
+		if timerRef then
+			-- Cancel the actual timer thread
+			pcall(function()
+				task.cancel(timerRef)
+			end)
+			character:SetAttribute("BlueFrictionTimer", nil)
+		end
+		
 		character:SetAttribute("FrictionReduction", nil)
 		print("BLUE ABILITY LOG: FrictionReduction removed for character:", character.Name)
 	else

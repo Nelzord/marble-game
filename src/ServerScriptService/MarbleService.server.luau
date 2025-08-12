@@ -284,6 +284,20 @@ local function respawnEquipped(player: Player)
 	local data = getOrCreatePlayerData(player)
 	local old = player.Character
 	if old then
+		-- Deactivate current ability before destroying character
+		local currentDef = Marbles.getById(data.equipped)
+		if currentDef then
+			local currentAbility = Marbles.getAbilityModule(currentDef)
+			if currentAbility and currentAbility.DeactivateAbility then
+				dprint("Deactivating ability before respawn:", currentDef.id)
+				local success, error = pcall(function()
+					currentAbility.DeactivateAbility(player, old)
+				end)
+				if not success then
+					dprint("Failed to deactivate ability during respawn:", error)
+				end
+			end
+		end
 		old:Destroy()
 	end
 	buildMarbleCharacter(player, data.equipped)
@@ -320,10 +334,29 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 	if not def then return end
 	if not data.owned[marbleId] then return end
 	if data.equipped == marbleId then return end
+	
+	-- Deactivate current ability before switching
+	local character = player.Character
+	if character and character.Parent then
+		local currentDef = Marbles.getById(data.equipped)
+		if currentDef then
+			local currentAbility = Marbles.getAbilityModule(currentDef)
+			if currentAbility and currentAbility.DeactivateAbility then
+				dprint("Deactivating current ability:", currentDef.id)
+				local success, error = pcall(function()
+					currentAbility.DeactivateAbility(player, character)
+				end)
+				if not success then
+					dprint("Failed to deactivate ability:", error)
+				end
+			end
+		end
+	end
+	
 	data.equipped = marbleId
 	sendInventory(player)
+	
 	-- In-place switch: update current character instead of respawn
-	local character = player.Character
 	if character and character.Parent then
 		clearHRPTextures(character)
 		applyMarbleVisual(character, marbleId)
@@ -381,6 +414,8 @@ Players.PlayerAdded:Connect(function(player)
 	local data = getOrCreatePlayerData(player)
 	data.equipped = data.equipped or DEFAULT_ID
 	sendInventory(player)
+	
+	-- Handle character added
 	player.CharacterAdded:Connect(function(character)
 		if character:GetAttribute("IsMarbleCharacter") then
 			local hrp = character:FindFirstChild("HumanoidRootPart")
@@ -395,10 +430,52 @@ Players.PlayerAdded:Connect(function(player)
 			respawnEquipped(player)
 		end)
 	end)
+	
+	-- Handle character removal to deactivate abilities
+	player.CharacterRemoving:Connect(function(character)
+		local data = playerData[player]
+		if data and data.equipped then
+			local currentDef = Marbles.getById(data.equipped)
+			if currentDef then
+				local currentAbility = Marbles.getAbilityModule(currentDef)
+				if currentAbility and currentAbility.DeactivateAbility then
+					dprint("Deactivating ability due to character removal:", currentDef.id)
+					local success, error = pcall(function()
+						currentAbility.DeactivateAbility(player, character)
+					end)
+					if not success then
+						dprint("Failed to deactivate ability during character removal:", error)
+					end
+				end
+			end
+		end
+	end)
+	
 	respawnEquipped(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
+	-- Deactivate any active ability before player leaves
+	local character = player.Character
+	if character and character.Parent then
+		local data = playerData[player]
+		if data and data.equipped then
+			local currentDef = Marbles.getById(data.equipped)
+			if currentDef then
+				local currentAbility = Marbles.getAbilityModule(currentDef)
+				if currentAbility and currentAbility.DeactivateAbility then
+					dprint("Deactivating ability before player leaves:", currentDef.id)
+					local success, error = pcall(function()
+						currentAbility.DeactivateAbility(player, character)
+					end)
+					if not success then
+						dprint("Failed to deactivate ability when player leaves:", error)
+					end
+				end
+			end
+		end
+	end
+	
 	playerData[player] = nil
 	spawningFlag[player] = nil
 	abilityCooldowns[player] = nil

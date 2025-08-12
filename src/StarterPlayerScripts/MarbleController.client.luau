@@ -90,6 +90,66 @@ local function ensureCosmeticBall(character: Model, hrp: BasePart): BasePart
 	return ball
 end
 
+local function createRedGlowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("RedGlowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create new trail
+	local trail = Instance.new("Trail")
+	trail.Name = "RedGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "TrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "TrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with more separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for much longer, path-following trail
+	trail.Color = ColorSequence.new(Color3.fromRGB(255, 50, 50)) -- Bright red
+	trail.Transparency = NumberSequence.new(0.1, 0.9) -- More opaque at start, fade to transparent
+	trail.Lifetime = 6.0 -- 5x longer trail duration (was 1.2)
+	trail.MinLength = 2.5 -- 5x longer minimum trail length (was 0.5)
+	trail.MaxLength = 20 -- 5x longer maximum trail length (was 4)
+	trail.WidthScale = NumberSequence.new(0.8, 2.0) -- Slightly wider for better visibility
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return trail
+end
+
+local function removeRedGlowTrail(character: Model)
+	local trail = character:FindFirstChild("RedGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
+local function setupRedGlowEffect(character: Model, hrp: BasePart)
+	-- Monitor RedGlowActive attribute changes
+	character:GetAttributeChangedSignal("RedGlowActive"):Connect(function()
+		local isActive = character:GetAttribute("RedGlowActive")
+		if isActive then
+			createRedGlowTrail(character, hrp)
+		else
+			removeRedGlowTrail(character)
+		end
+	end)
+	
+	-- Check initial state
+	local initialGlow = character:GetAttribute("RedGlowActive")
+	if initialGlow then
+		createRedGlowTrail(character, hrp)
+	end
+end
+
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
 	dprint("applyCosmeticColor", id)
@@ -242,6 +302,16 @@ local function setupController(character: Model)
 
 	-- Keep nameplate a constant on-screen size
 	setupNameplateScaling(character)
+	
+	-- Monitor SpeedMultiplier attribute changes for debugging
+	character:GetAttributeChangedSignal("SpeedMultiplier"):Connect(function()
+		local newValue = character:GetAttribute("SpeedMultiplier")
+		print("[MarbleClient] SpeedMultiplier attribute changed to:", newValue, "Type:", typeof(newValue))
+	end)
+	
+	-- Log initial SpeedMultiplier value
+	local initialMultiplier = character:GetAttribute("SpeedMultiplier")
+	print("[MarbleClient] Initial SpeedMultiplier:", initialMultiplier, "Type:", typeof(initialMultiplier))
 
 	-- Track orientation for cosmetic rolling
 	local visualCFrame = CFrame.new()
@@ -249,7 +319,9 @@ local function setupController(character: Model)
 
 	local function getSpeedMultiplier(): number
 		local mult = character:GetAttribute("SpeedMultiplier")
-		return typeof(mult) == "number" and mult or 1
+		local result = typeof(mult) == "number" and mult or 1
+		
+		return result
 	end
 
 	local logAccum = 0
@@ -266,6 +338,7 @@ local function setupController(character: Model)
 		local cameraNow = workspace.CurrentCamera
 		local dir = cameraNow and getMoveDirection(cameraNow) or Vector3.zero
 		local speed = baseSpeed * getSpeedMultiplier()
+		
 		local targetHoriz = dir * speed
 		local currentVel = hrp.AssemblyLinearVelocity
 		local horiz = Vector3.new(currentVel.X, 0, currentVel.Z)
@@ -337,6 +410,9 @@ local function setupController(character: Model)
 			stepConn:Disconnect()
 		end
 	end)
+
+	-- Setup RedGlowTrail effect
+	setupRedGlowEffect(character, hrp)
 end
 
 local function onCharacterAdded(character: Model)

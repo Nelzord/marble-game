@@ -1,51 +1,59 @@
--- Red marble ability: fiery burst (placeholder)
+-- Red marble ability: speed boost
 local Ability = {}
 
 function Ability.Description()
-	return "Red: A fiery burst that briefly increases acceleration."
+	return "Red: A speed boost that quadruples movement speed."
 end
 
 function Ability.Cooldown()
-	return 3 -- 3 second cooldown
+	return 5 -- 5 second cooldown
 end
 
 function Ability.ActivateAbility(player: Player, character: Model)
-	print("RED ABILITY LOG: Activating Red marble ability for player:", player.Name)
-	print("RED ABILITY LOG: Character exists:", character ~= nil, "Character Name:", character and character.Name or "nil")
+	print("RED ABILITY: Activating for player:", player.Name)
 	
-	-- Example: a short boost flag
+	-- Check if speed boost is already active
 	local prev = character:GetAttribute("SpeedMultiplier")
-	print("RED ABILITY LOG: Previous SpeedMultiplier:", prev, "Type:", typeof(prev))
-	
 	if typeof(prev) == "number" and prev > 1 then 
-		print("RED ABILITY LOG: SpeedMultiplier already active (", prev, "), skipping activation")
+		print("RED ABILITY: Already active")
 		return 
 	end
 	
-	character:SetAttribute("SpeedMultiplier", 1.25)
-	print("RED ABILITY LOG: SpeedMultiplier set to 1.25 for character:", character.Name)
+	-- Set speed multiplier to 4.0 (300% increase - quadruple speed)
+	character:SetAttribute("SpeedMultiplier", 4.0)
 	
-	task.delay(3, function()
+	-- Set red glow attribute to true for visual effect
+	character:SetAttribute("RedGlowActive", true)
+	
+	-- Duration: 2.5 seconds (halfway through 5 second cooldown)
+	local speedTimer = task.delay(2.5, function()
 		if character then
-			print("RED ABILITY LOG: Removing SpeedMultiplier after 3 seconds for character:", character.Name)
 			character:SetAttribute("SpeedMultiplier", nil)
-		else
-			print("RED ABILITY LOG: Character no longer exists, cannot remove SpeedMultiplier")
+			character:SetAttribute("RedGlowActive", false)
+			print("RED ABILITY: Speed boost ended")
 		end
 	end)
 	
-	print("RED ABILITY LOG: Red ability activation complete - Duration: 3 seconds, Cooldown: 3 seconds")
+	-- Store the timer reference so we can cancel it if needed
+	character:SetAttribute("RedSpeedTimer", speedTimer)
 end
 
 function Ability.DeactivateAbility(player: Player, character: Model)
-	print("RED ABILITY LOG: Deactivating Red marble ability for player:", player.Name)
-	print("RED ABILITY LOG: Character exists:", character ~= nil, "Character Name:", character and character.Name or "nil")
+	print("RED ABILITY: Deactivating for player:", player.Name)
 	
 	if character then
+		-- Cancel the speed timer if it's still running
+		local timerRef = character:GetAttribute("RedSpeedTimer")
+		if timerRef then
+			-- Cancel the actual timer thread
+			pcall(function()
+				task.cancel(timerRef)
+			end)
+			character:SetAttribute("RedSpeedTimer", nil)
+		end
+		
 		character:SetAttribute("SpeedMultiplier", nil)
-		print("RED ABILITY LOG: SpeedMultiplier removed for character:", character.Name)
-	else
-		print("RED ABILITY LOG: Character no longer exists, cannot remove SpeedMultiplier")
+		character:SetAttribute("RedGlowActive", false)
 	end
 end
 

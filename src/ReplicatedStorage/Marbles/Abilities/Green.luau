@@ -26,7 +26,8 @@ function Ability.ActivateAbility(player: Player, character: Model)
 	character:SetAttribute("SpeedMultiplier", 1.15)
 	print("GREEN ABILITY LOG: SpeedMultiplier set to 1.15 for character:", character.Name)
 	
-	task.delay(5, function()
+	-- Store timer reference for cancellation
+	local speedTimer = task.delay(5, function()
 		if character then
 			print("GREEN ABILITY LOG: Removing SpeedMultiplier after 5 seconds for character:", character.Name)
 			character:SetAttribute("SpeedMultiplier", nil)
@@ -34,6 +35,9 @@ function Ability.ActivateAbility(player: Player, character: Model)
 			print("GREEN ABILITY LOG: Character no longer exists, cannot remove SpeedMultiplier")
 		end
 	end)
+	
+	-- Store the timer reference so we can cancel it if needed
+	character:SetAttribute("GreenSpeedTimer", speedTimer)
 	
 	print("GREEN ABILITY LOG: Green ability activation complete - Duration: 5 seconds, Cooldown: 5 seconds")
 end
@@ -43,6 +47,16 @@ function Ability.DeactivateAbility(player: Player, character: Model)
 	print("GREEN ABILITY LOG: Character exists:", character ~= nil, "Character Name:", character and character.Name or "nil")
 	
 	if character then
+		-- Cancel the speed timer if it's still running
+		local timerRef = character:GetAttribute("GreenSpeedTimer")
+		if timerRef then
+			-- Cancel the actual timer thread
+			pcall(function()
+				task.cancel(timerRef)
+			end)
+			character:SetAttribute("GreenSpeedTimer", nil)
+		end
+		
 		character:SetAttribute("SpeedMultiplier", nil)
 		print("GREEN ABILITY LOG: SpeedMultiplier removed for character:", character.Name)
 	else
