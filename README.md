@@ -14,4 +14,16 @@ Next, open `MarbleGame.rbxlx` in Roblox Studio and start the Rojo server:
 rojo serve
 ```
 
+## Testing Features
+
+### Debug Mode: All Marbles
+For testing purposes, you can enable a debug flag that automatically gives all marbles to players when they join the game. This allows you to test all marble abilities without having to roll for them.
+
+To enable this feature:
+1. Open `src/ServerScriptService/MarbleService.server.luau`
+2. Set `GIVE_ALL_MARBLES = true` (it's enabled by default)
+3. Set to `false` to disable this feature in production
+
+When enabled, you'll see a console message: `[MarbleService] DEBUG MODE: All marbles will be given to players automatically`
+
 For more help, check out [the Rojo documentation](https://rojo.space/docs).

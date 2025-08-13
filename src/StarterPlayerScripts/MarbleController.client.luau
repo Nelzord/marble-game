@@ -132,6 +132,48 @@ local function removeRedGlowTrail(character: Model)
 	end
 end
 
+local function createGumballGlowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("GumballGlowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create new trail
+	local trail = Instance.new("Trail")
+	trail.Name = "GumballGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "GumballTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "GumballTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with more separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for gumball effect
+	trail.Color = ColorSequence.new(Color3.fromRGB(255, 100, 200)) -- Pink gumball color
+	trail.Transparency = NumberSequence.new(0.1, 0.9) -- More opaque at start, fade to transparent
+	trail.Lifetime = 3.0 -- Trail duration
+	trail.MinLength = 1.5 -- Trail length
+	trail.MaxLength = 12 -- Maximum trail length
+	trail.WidthScale = NumberSequence.new(0.6, 1.5) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return trail
+end
+
+local function removeGumballGlowTrail(character: Model)
+	local trail = character:FindFirstChild("GumballGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
 local function setupRedGlowEffect(character: Model, hrp: BasePart)
 	-- Monitor RedGlowActive attribute changes
 	character:GetAttributeChangedSignal("RedGlowActive"):Connect(function()
@@ -147,6 +189,24 @@ local function setupRedGlowEffect(character: Model, hrp: BasePart)
 	local initialGlow = character:GetAttribute("RedGlowActive")
 	if initialGlow then
 		createRedGlowTrail(character, hrp)
+	end
+end
+
+local function setupGumballGlowEffect(character: Model, hrp: BasePart)
+	-- Monitor GumballGlowActive attribute changes
+	character:GetAttributeChangedSignal("GumballGlowActive"):Connect(function()
+		local isActive = character:GetAttribute("GumballGlowActive")
+		if isActive then
+			createGumballGlowTrail(character, hrp)
+		else
+			removeGumballGlowTrail(character)
+		end
+	end)
+	
+	-- Check initial state
+	local initialGlow = character:GetAttribute("GumballGlowActive")
+	if initialGlow then
+		createGumballGlowTrail(character, hrp)
 	end
 end
 
@@ -185,6 +245,8 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Red = "rbxassetid://99977275020564",
 		Green = "rbxassetid://114474679212927",
 		Blue = "rbxassetid://128223600665334",
+		Spider = "rbxassetid://105354663033087",
+		Gumball = "rbxassetid://92160789193138",
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -312,6 +374,16 @@ local function setupController(character: Model)
 	-- Log initial SpeedMultiplier value
 	local initialMultiplier = character:GetAttribute("SpeedMultiplier")
 	print("[MarbleClient] Initial SpeedMultiplier:", initialMultiplier, "Type:", typeof(initialMultiplier))
+	
+	-- Monitor JumpBoostActive attribute changes for debugging
+	character:GetAttributeChangedSignal("JumpBoostActive"):Connect(function()
+		local newValue = character:GetAttribute("JumpBoostActive")
+		print("[MarbleClient] JumpBoostActive attribute changed to:", newValue, "Type:", typeof(newValue))
+	end)
+	
+	-- Log initial JumpBoostActive value
+	local initialJumpBoost = character:GetAttribute("JumpBoostActive")
+	print("[MarbleClient] Initial JumpBoostActive:", initialJumpBoost, "Type:", typeof(initialJumpBoost))
 
 	-- Track orientation for cosmetic rolling
 	local visualCFrame = CFrame.new()
@@ -321,7 +393,18 @@ local function setupController(character: Model)
 		local mult = character:GetAttribute("SpeedMultiplier")
 		local result = typeof(mult) == "number" and mult or 1
 		
+		-- Gumball marble gets a permanent speed boost
+		local equippedMarbleId = character:GetAttribute("EquippedMarbleId")
+		if equippedMarbleId == "Gumball" then
+			result = result * 2 -- 30% speed boost for gumball
+		end
+		
 		return result
+	end
+	
+	local function shouldApplyJumpBoost(): boolean
+		local jumpBoost = character:GetAttribute("JumpBoostActive")
+		return typeof(jumpBoost) == "boolean" and jumpBoost
 	end
 
 	local logAccum = 0
@@ -369,6 +452,16 @@ local function setupController(character: Model)
 				wrote = true
 			end
 		end
+		
+		-- Apply jump boost if active
+		if shouldApplyJumpBoost() then
+			-- Apply upward velocity boost for jump/launch effect
+			local jumpForce = 50 -- Half the original force (was 50)
+			local newVel = hrp.AssemblyLinearVelocity
+			hrp.AssemblyLinearVelocity = Vector3.new(newVel.X, jumpForce, newVel.Z)
+			wrote = true
+			print("[MarbleClient] Applied jump boost - velocity set to:", hrp.AssemblyLinearVelocity)
+		end
 
 		-- Movement debug logs (rate-limited)
 		logAccum += dt
@@ -413,6 +506,9 @@ local function setupController(character: Model)
 
 	-- Setup RedGlowTrail effect
 	setupRedGlowEffect(character, hrp)
+	
+	-- Setup GumballGlowTrail effect
+	setupGumballGlowEffect(character, hrp)
 end
 
 local function onCharacterAdded(character: Model)

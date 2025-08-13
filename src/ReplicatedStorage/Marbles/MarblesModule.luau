@@ -60,6 +60,14 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Spider",
 		color = Color3.fromRGB(40, 40, 40), -- Dark color for spider theme
 	},
+	Gumball = {
+		id = "Gumball",
+		name = "Gumball Marble",
+		dropDenominator = 4, -- 1/4 rarity (between common and rare)
+		rollable = true,
+		abilityModule = "Gumball",
+		color = Color3.fromRGB(255, 100, 200), -- Pink/magenta color for gumball theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?

@@ -1,0 +1,17 @@
+Gumball Marble Texture Setup Instructions
+
+To create the Gumball marble texture in Roblox Studio:
+
+1. In the Gumball folder, create a new Texture instance
+2. Set the Texture property to: rbxassetid://92160789193138
+3. Set the Face property to: Front (or leave as default for all faces)
+4. Set StudsPerTileU and StudsPerTileV to: 1
+
+Alternatively, you can create a Decal instance:
+1. Create a new Decal instance
+2. Set the Texture property to: rbxassetid://92160789193138
+3. Set the Face property to: Front (or leave as default for all faces)
+
+The texture ID is: rbxassetid://92160789193138
+
+This will make the Gumball marble appear with the correct colorful gumball texture.

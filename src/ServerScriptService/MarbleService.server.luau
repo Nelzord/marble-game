@@ -16,6 +16,10 @@ local function dprint(...)
 	end
 end
 
+-- Debug flag: Give all marbles to players for testing
+-- Set to false to disable this feature in production
+local GIVE_ALL_MARBLES = true
+
 -- Ensure Remotes folder and events exist
 local function getOrCreateRemotes()
 	local folder = ReplicatedStorage:FindFirstChild("Remotes")
@@ -47,6 +51,11 @@ end
 
 local Remotes = getOrCreateRemotes()
 
+-- Debug: Log if the give-all-marbles flag is enabled
+if GIVE_ALL_MARBLES then
+	print("[MarbleService] DEBUG MODE: All marbles will be given to players automatically")
+end
+
 -- Per-player in-memory data (session only). Replace with DataStore for persistence across sessions.
 export type PlayerData = {
 	owned: { [string]: boolean },
@@ -67,6 +76,16 @@ local function getOrCreatePlayerData(player: Player): PlayerData
 			owned = { [DEFAULT_ID] = true },
 			equipped = DEFAULT_ID,
 		}
+		
+		-- Debug flag: Give all marbles to players for testing
+		if GIVE_ALL_MARBLES then
+			local allMarbles = Marbles.getAll()
+			for _, marble in ipairs(allMarbles) do
+				data.owned[marble.id] = true
+			end
+			dprint("Gave all marbles to player:", player.Name)
+		end
+		
 		playerData[player] = data
 	end
 	return data

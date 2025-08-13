@@ -1123,6 +1123,7 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Blue = "Blue: A calming shield that reduces deceleration briefly.",
 	Green = "Green: A rejuvenating pulse that boosts control for a moment.",
 	Spider = "Spider: Shoot a web to grapple and swing toward targets.",
+	Gumball = "Gumball: A bouncy marble that can launch high into the air with explosive force.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -1132,6 +1133,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Green = "rbxassetid://114474679212927",
 	Blue = "rbxassetid://128223600665334",
 	Spider = "rbxassetid://105354663033087",
+	Gumball = "rbxassetid://92160789193138",
 }
 
 local function applyTexturesToPart(part: BasePart, marbleId: string)
