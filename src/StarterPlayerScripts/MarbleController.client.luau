@@ -373,6 +373,10 @@ local function setupController(character: Model)
 	
 	-- Log initial SpeedMultiplier value
 	local initialMultiplier = character:GetAttribute("SpeedMultiplier")
+	if initialMultiplier == nil then
+		character:SetAttribute("SpeedMultiplier", 1)
+		initialMultiplier = 1
+	end
 	print("[MarbleClient] Initial SpeedMultiplier:", initialMultiplier, "Type:", typeof(initialMultiplier))
 	
 	-- Monitor JumpBoostActive attribute changes for debugging
@@ -383,6 +387,10 @@ local function setupController(character: Model)
 	
 	-- Log initial JumpBoostActive value
 	local initialJumpBoost = character:GetAttribute("JumpBoostActive")
+	if initialJumpBoost == nil then
+		character:SetAttribute("JumpBoostActive", false)
+		initialJumpBoost = false
+	end
 	print("[MarbleClient] Initial JumpBoostActive:", initialJumpBoost, "Type:", typeof(initialJumpBoost))
 
 	-- Track orientation for cosmetic rolling
@@ -395,6 +403,10 @@ local function setupController(character: Model)
 		
 		-- Gumball marble gets a permanent speed boost
 		local equippedMarbleId = character:GetAttribute("EquippedMarbleId")
+		if equippedMarbleId == nil then
+			character:SetAttribute("EquippedMarbleId", "Default")
+			equippedMarbleId = "Default"
+		end
 		if equippedMarbleId == "Gumball" then
 			result = result * 2 -- 30% speed boost for gumball
 		end
@@ -440,6 +452,10 @@ local function setupController(character: Model)
 			local baseFactor = 0.985 -- per 60fps frame
 			local frames = math.clamp(dt * 60, 0, 5)
 			local reduce = character:GetAttribute("FrictionReduction")
+			if reduce == nil then
+				character:SetAttribute("FrictionReduction", 0)
+				reduce = 0
+			end
 			local reduction = (typeof(reduce) == "number" and reduce or 0)
 			local perFrame = 1 - (1 - baseFactor) * (1 - reduction)
 			local factor = perFrame ^ frames

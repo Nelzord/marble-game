@@ -264,6 +264,15 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	end
 	character:SetAttribute("IsMarbleCharacter", true)
 	character.Name = player.Name
+	
+	-- Initialize default attributes
+	character:SetAttribute("SpeedMultiplier", 1)
+	character:SetAttribute("JumpBoostActive", false)
+	character:SetAttribute("FrictionReduction", 0)
+	character:SetAttribute("EquippedMarbleId", marbleId)
+	character:SetAttribute("RedGlowActive", false)
+	character:SetAttribute("GumballGlowActive", false)
+	
 	character.Parent = workspace
 
 	local hrp = ensureHRP(character)

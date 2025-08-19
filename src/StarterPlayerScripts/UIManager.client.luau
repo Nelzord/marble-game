@@ -1,4 +1,4 @@
--- UIManager.luau
+-- UIManager.client.luau
 -- Main UI coordination and state management for the Marble Game
 
 local Players = game:GetService("Players")
