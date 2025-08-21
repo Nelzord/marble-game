@@ -33,8 +33,8 @@
           "Name": "Baseplate",
           "Anchored": true,
           "Locked": true,
-          "Material": "Grass",
-          "Color": [0.278431, 0.470588, 0.278431],
+          "Color": [0.6, 0.6, 0.6],
+          "Material": "Concrete",
           "Size": [512, 1, 512],
           "Position": [0, 0, 0]
         }

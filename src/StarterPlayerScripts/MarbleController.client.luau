@@ -31,7 +31,7 @@ local inputState = {
 
 local boundCharacters: { [Model]: boolean } = {}
 
-local baseSpeed = 24 -- movement magnitude; abilities can scale via SpeedMultiplier
+local baseSpeed = 65 -- movement magnitude; abilities can scale via SpeedMultiplier
 
 local function getMoveDirection(camera: Camera): Vector3
 	local cf = camera.CFrame
@@ -449,7 +449,7 @@ local function setupController(character: Model)
 			wrote = true
 		else
 			-- Decay glide horizontally to simulate ice friction
-			local baseFactor = 0.985 -- per 60fps frame
+			local baseFactor = 0.99 -- per 60fps frame
 			local frames = math.clamp(dt * 60, 0, 5)
 			local reduce = character:GetAttribute("FrictionReduction")
 			if reduce == nil then

@@ -138,8 +138,8 @@ end
 function UIComponents.createInventoryFrame(screen: ScreenGui)
 	local invFrame = Instance.new("Frame")
 	invFrame.Name = "InventoryFrame"
-	invFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	invFrame.BackgroundTransparency = 0.2
+	invFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	invFrame.BackgroundTransparency = 0
 	invFrame.BorderSizePixel = 0
 	invFrame.Size = UDim2.new(0, 720, 0, 520)
 	invFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -147,19 +147,23 @@ function UIComponents.createInventoryFrame(screen: ScreenGui)
 	invFrame.Visible = false
 	invFrame.Parent = screen
 	
-	UIComponents.createCorner(invFrame, 8)
+	UIComponents.createCorner(invFrame, 12)
 	
 	-- Create header
 	local header = Instance.new("TextLabel")
-	header.BackgroundTransparency = 1
-	header.Size = UDim2.new(1, -24, 0, 40)
-	header.Position = UDim2.new(0, 12, 0, 10)
+	header.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	header.BorderSizePixel = 0
+	header.Size = UDim2.new(1, 0, 0, 50)
+	header.Position = UDim2.new(0, 0, 0, 0)
 	header.Font = Enum.Font.GothamBold
 	header.TextXAlignment = Enum.TextXAlignment.Center
-	header.Text = "Inventory"
+	header.Text = "INVENTORY"
 	header.TextColor3 = Color3.new(1, 1, 1)
-	header.TextSize = 24
+	header.TextScaled = true
 	header.Parent = invFrame
+	
+	-- Add rounded corners to header
+	UIComponents.createCorner(header, 12)
 	
 	-- Create close button
 	local closeButton = Instance.new("TextButton")
@@ -167,12 +171,12 @@ function UIComponents.createInventoryFrame(screen: ScreenGui)
 	closeButton.Text = "X"
 	closeButton.Font = Enum.Font.GothamBold
 	closeButton.TextScaled = true
-	closeButton.Size = UDim2.fromOffset(36, 36)
-	closeButton.Position = UDim2.new(1, -12, 0, 12)
+	closeButton.Size = UDim2.fromOffset(40, 40)
+	closeButton.Position = UDim2.new(1, -50, 0, 5)
 	closeButton.AnchorPoint = Vector2.new(1, 0)
-	closeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	closeButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
 	closeButton.TextColor3 = Color3.new(1, 1, 1)
-	closeButton.Parent = invFrame
+	closeButton.Parent = header
 	
 	UIComponents.createCorner(closeButton, 8)
 	
@@ -181,10 +185,14 @@ function UIComponents.createInventoryFrame(screen: ScreenGui)
 	list.Name = "List"
 	list.Size = UDim2.new(1, -24, 1, -80)
 	list.Position = UDim2.new(0, 12, 0, 60)
-	list.ScrollBarThickness = 8
+	list.ScrollBarThickness = 6
 	list.CanvasSize = UDim2.new(0, 0, 0, 0)
-	list.BackgroundTransparency = 1
+	list.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	list.BorderSizePixel = 0
 	list.Parent = invFrame
+	
+	-- Add rounded corners to the scrolling frame
+	UIComponents.createCorner(list, 6)
 	
 	-- Create grid layout
 	local grid = Instance.new("UIGridLayout")
