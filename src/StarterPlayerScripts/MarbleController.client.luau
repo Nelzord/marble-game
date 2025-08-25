@@ -31,7 +31,7 @@ local inputState = {
 
 local boundCharacters: { [Model]: boolean } = {}
 
-local baseSpeed = 65 -- movement magnitude; abilities can scale via SpeedMultiplier
+local baseSpeed = 40 -- movement magnitude; abilities can scale via SpeedMultiplier
 
 local function getMoveDirection(camera: Camera): Vector3
 	local cf = camera.CFrame
