@@ -68,6 +68,14 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Gumball",
 		color = Color3.fromRGB(255, 100, 200), -- Pink/magenta color for gumball theme
 	},
+	TimeTravel = {
+		id = "TimeTravel",
+		name = "Time Travel Marble",
+		dropDenominator = 20, -- 1/20 rarity (very rare)
+		rollable = true,
+		abilityModule = "TimeTravel",
+		color = Color3.fromRGB(150, 100, 255), -- Purple color for time travel theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?

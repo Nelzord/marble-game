@@ -69,6 +69,10 @@ local spawningFlag: { [Player]: boolean } = {}
 -- Ability cooldown tracking
 local abilityCooldowns: { [Player]: number } = {}
 
+-- Position recording for time travel ability
+local positionRecordingEnabled = true
+local positionRecordingInterval = 0.016 -- ~60fps
+
 local function getOrCreatePlayerData(player: Player): PlayerData
 	local data = playerData[player]
 	if not data then
@@ -122,6 +126,27 @@ local function startAbilityCooldown(player: Player)
 		duration = cooldown,
 		startTime = tick(),
 	})
+end
+
+-- Record player positions for time travel ability
+local function recordPlayerPosition(player: Player)
+	local character = player.Character
+	if not character then return end
+	
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp or not hrp:IsA("BasePart") then return end
+	
+	-- Check if player has time travel ability equipped
+	local data = playerData[player]
+	if data and data.equipped then
+		local def = Marbles.getById(data.equipped)
+		if def and def.abilityModule == "TimeTravel" then
+			local ability = Marbles.getAbilityModule(def)
+			if ability and ability.RecordPosition then
+				ability.RecordPosition(player, hrp.Position)
+			end
+		end
+	end
 end
 
 local function sendInventory(player: Player)
@@ -204,10 +229,72 @@ local function getRarityText(def): string
 	return "Default"
 end
 
+-- Function to determine rarity tier and styling
+local function getRarityTier(def): { tier: string, font: Enum.Font, textColor: Color3, glowColor: Color3?, scale: number }
+	if not def or not def.rollable or not def.dropDenominator or def.dropDenominator <= 0 then
+		return {
+			tier = "Common",
+			font = Enum.Font.GothamBold,
+			textColor = Color3.fromRGB(200, 200, 200),
+			scale = 1.0
+		}
+	end
+	
+	local denominator = def.dropDenominator
+	
+	-- Rarity tiers based on drop chance
+	if denominator <= 2 then
+		-- Common: 1/1, 1/2
+		return {
+			tier = "Common",
+			font = Enum.Font.GothamBold,
+			textColor = Color3.fromRGB(200, 200, 200),
+			scale = 1.0
+		}
+	elseif denominator <= 5 then
+		-- Uncommon: 1/3, 1/4, 1/5
+		return {
+			tier = "Uncommon",
+			font = Enum.Font.SourceSansBold,
+			textColor = Color3.fromRGB(100, 200, 100),
+			glowColor = Color3.fromRGB(50, 150, 50),
+			scale = 1.1
+		}
+	elseif denominator <= 10 then
+		-- Rare: 1/6, 1/7, 1/8, 1/9, 1/10
+		return {
+			tier = "Rare",
+			font = Enum.Font.Antique,
+			textColor = Color3.fromRGB(100, 150, 255),
+			glowColor = Color3.fromRGB(50, 100, 200),
+			scale = 1.2
+		}
+	elseif denominator <= 20 then
+		-- Epic: 1/11 to 1/20
+		return {
+			tier = "Epic",
+			font = Enum.Font.Fondamento,
+			textColor = Color3.fromRGB(200, 100, 255),
+			glowColor = Color3.fromRGB(150, 50, 200),
+			scale = 1.3
+		}
+	else
+		-- Legendary: 1/21+
+		return {
+			tier = "Legendary",
+			font = Enum.Font.Highway,
+			textColor = Color3.fromRGB(255, 200, 50),
+			glowColor = Color3.fromRGB(255, 150, 0),
+			scale = 1.4
+		}
+	end
+end
+
 local function ensureNameplate(character: Model, player: Player, marbleId: string)
 	local hrp = character:FindFirstChild("HumanoidRootPart")
 	if not hrp or not hrp:IsA("BasePart") then return end
 	local def = Marbles.getById(marbleId)
+	local rarityInfo = getRarityTier(def)
 	local text = string.format("%s (%s)", player.Name, getRarityText(def))
 
 	local gui = character:FindFirstChild("Nameplate")
@@ -220,19 +307,37 @@ local function ensureNameplate(character: Model, player: Player, marbleId: strin
 		gui.MaxDistance = 250
 		gui.Adornee = hrp
 		gui.Parent = character
+		
 		local label = Instance.new("TextLabel")
 		label.Name = "Label"
 		label.BackgroundTransparency = 1
 		label.Size = UDim2.fromScale(1, 1)
 		label.TextScaled = true
-		label.Font = Enum.Font.GothamBold
-		label.TextColor3 = Color3.new(1,1,1)
+		label.Font = rarityInfo.font
+		label.TextColor3 = rarityInfo.textColor
 		label.Parent = gui
+		
+		-- Add rarity attributes for client-side styling
+		character:SetAttribute("NameplateRarityTier", rarityInfo.tier)
+		character:SetAttribute("NameplateFont", rarityInfo.font.Name)
+		character:SetAttribute("NameplateTextColor", rarityInfo.textColor)
+		character:SetAttribute("NameplateGlowColor", rarityInfo.glowColor)
+		character:SetAttribute("NameplateScale", rarityInfo.scale)
 	end
+	
 	local label = gui:FindFirstChild("Label")
 	if label and label:IsA("TextLabel") then
 		label.Text = text
+		label.Font = rarityInfo.font
+		label.TextColor3 = rarityInfo.textColor
 	end
+	
+	-- Update rarity attributes
+	character:SetAttribute("NameplateRarityTier", rarityInfo.tier)
+	character:SetAttribute("NameplateFont", rarityInfo.font.Name)
+	character:SetAttribute("NameplateTextColor", rarityInfo.textColor)
+	character:SetAttribute("NameplateGlowColor", rarityInfo.glowColor)
+	character:SetAttribute("NameplateScale", rarityInfo.scale)
 end
 
 local function muteFootsteps(character: Model)
@@ -507,4 +612,16 @@ Players.PlayerRemoving:Connect(function(player)
 	playerData[player] = nil
 	spawningFlag[player] = nil
 	abilityCooldowns[player] = nil
+end)
+
+-- Start position recording loop for time travel ability
+local RunService = game:GetService("RunService")
+RunService.Heartbeat:Connect(function()
+	if not positionRecordingEnabled then return end
+	
+	for player, _ in pairs(playerData) do
+		if player and player.Parent then
+			recordPlayerPosition(player)
+		end
+	end
 end) 

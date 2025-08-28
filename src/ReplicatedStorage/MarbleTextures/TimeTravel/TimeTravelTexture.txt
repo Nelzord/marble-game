@@ -1,0 +1,20 @@
+TimeTravel Marble Texture
+
+Color: Black and White theme
+Material: Neon or SmoothPlastic
+Transparency: 0.1 (slight transparency for ethereal effect)
+
+Design Elements:
+- Black and white color scheme
+- Clockwork patterns
+- Temporal swirls or spirals
+- Numbers and time symbols
+- High contrast appearance
+
+Notes:
+- Should be applied to all faces of the marble
+- Use StudsPerTileU and StudsPerTileV for proper tiling
+- Consider adding a subtle glow effect
+- Ability effect uses flying numbers and black/white particles
+
+Asset ID: rbxassetid://115652916108662

@@ -247,6 +247,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Blue = "rbxassetid://128223600665334",
 		Spider = "rbxassetid://105354663033087",
 		Gumball = "rbxassetid://92160789193138",
+		TimeTravel = "rbxassetid://115652916108662",
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -322,6 +323,235 @@ local function setupNameplateScaling(character: Model)
 	RunService.RenderStepped:Connect(update)
 end
 
+-- Enhanced nameplate styling based on rarity
+local function setupEnhancedNameplate(character: Model)
+	local gui = character:FindFirstChild("Nameplate")
+	if not gui or not gui:IsA("BillboardGui") then return end
+	
+	local label = gui:FindFirstChild("Label")
+	if not label or not label:IsA("TextLabel") then return end
+	
+	-- Function to apply rarity-based styling
+	local function applyRarityStyling()
+		local rarityTier = character:GetAttribute("NameplateRarityTier")
+		local fontName = character:GetAttribute("NameplateFont")
+		local textColor = character:GetAttribute("NameplateTextColor")
+		local glowColor = character:GetAttribute("NameplateGlowColor")
+		local rarityScale = character:GetAttribute("NameplateScale") or 1.0
+		
+		if not rarityTier then return end
+		
+		-- Apply font
+		if fontName then
+			label.Font = Enum.Font[fontName] or Enum.Font.GothamBold
+		end
+		
+		-- Apply text color
+		if textColor then
+			label.TextColor3 = textColor
+		end
+		
+		-- Add text stroke effects for higher rarities
+		if rarityTier == "Rare" or rarityTier == "Epic" or rarityTier == "Legendary" then
+			label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+			label.TextStrokeTransparency = 0.3
+		else
+			label.TextStrokeTransparency = 1
+		end
+		
+		-- Add shadow effect for epic+ rarities
+		if rarityTier == "Epic" or rarityTier == "Legendary" then
+			label.TextStrokeTransparency = 0.1
+			label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		end
+		
+		-- Apply rarity-based scaling
+		local baseSize = gui.Size
+		gui.Size = UDim2.fromOffset(baseSize.X.Offset * rarityScale, baseSize.Y.Offset * rarityScale)
+		
+		-- Add subtle floating animation for epic+ rarities
+		if rarityTier == "Epic" or rarityTier == "Legendary" then
+			local originalOffset = gui.StudsOffset
+			local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			local floatTween = game:GetService("TweenService"):Create(gui, tweenInfo, {
+				StudsOffset = Vector3.new(originalOffset.X, originalOffset.Y + 0.3, originalOffset.Z)
+			})
+			floatTween:Play()
+		end
+		
+		-- Add text scaling animation for legendary marbles
+		if rarityTier == "Legendary" then
+			local originalSize = label.Size
+			local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			local scaleTween = game:GetService("TweenService"):Create(label, tweenInfo, {
+				Size = UDim2.fromScale(1.05, 1.05)
+			})
+			scaleTween:Play()
+		end
+		
+		-- Remove existing rarity effects
+		local effectsToRemove = {"RarityGlow", "RainbowGlow", "EpicStar", "RareDiamond", "LegendarySparkle", "UncommonLeaf"}
+		for _, effectName in ipairs(effectsToRemove) do
+			local existingEffect = gui:FindFirstChild(effectName)
+			if existingEffect then
+				existingEffect:Destroy()
+			end
+		end
+		
+		-- Add glow effect for uncommon+ rarities
+		if glowColor and rarityTier ~= "Common" then
+			local glow = Instance.new("TextLabel")
+			glow.Name = "RarityGlow"
+			glow.Size = UDim2.fromScale(1.1, 1.1)
+			glow.Position = UDim2.fromScale(-0.05, -0.05)
+			glow.BackgroundTransparency = 1
+			glow.Text = label.Text
+			glow.TextScaled = true
+			glow.Font = label.Font
+			glow.TextColor3 = glowColor
+			glow.TextTransparency = 0.7
+			glow.ZIndex = label.ZIndex - 1
+			glow.Parent = gui
+			
+			-- Add subtle animation for epic+ rarities
+			if rarityTier == "Epic" or rarityTier == "Legendary" then
+				local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+				local tween = game:GetService("TweenService"):Create(glow, tweenInfo, {
+					TextTransparency = 0.3
+				})
+				tween:Play()
+			end
+			
+			-- Add rainbow effect for legendary marbles
+			if rarityTier == "Legendary" then
+				local rainbowTween = game:GetService("TweenService"):Create(glow, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {
+					TextColor3 = Color3.fromRGB(255, 100, 100)
+				})
+				rainbowTween:Play()
+				
+				-- Create a second rainbow layer for extra effect
+				local rainbowGlow = glow:Clone()
+				rainbowGlow.Name = "RainbowGlow"
+				rainbowGlow.Position = UDim2.fromScale(-0.1, -0.1)
+				rainbowGlow.Size = UDim2.fromScale(1.2, 1.2)
+				rainbowGlow.TextTransparency = 0.8
+				rainbowGlow.ZIndex = glow.ZIndex - 1
+				rainbowGlow.Parent = gui
+				
+				local rainbowTween2 = game:GetService("TweenService"):Create(rainbowGlow, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {
+					TextColor3 = Color3.fromRGB(100, 255, 100)
+				})
+				rainbowTween2:Play()
+			end
+		end
+		
+		-- Add special effects for different rarity tiers
+		if rarityTier == "Epic" then
+			-- Add epic star effect
+			local star = Instance.new("Frame")
+			star.Name = "EpicStar"
+			star.Size = UDim2.fromOffset(16, 16)
+			star.Position = UDim2.fromScale(1.05, 0)
+			star.BackgroundTransparency = 1
+			star.Parent = gui
+			
+			local starLabel = Instance.new("TextLabel")
+			starLabel.Size = UDim2.fromScale(1, 1)
+			starLabel.BackgroundTransparency = 1
+			starLabel.Text = "⭐"
+			starLabel.TextScaled = true
+			starLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+			starLabel.Parent = star
+			
+			-- Animate star
+			local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			local tween = game:GetService("TweenService"):Create(star, tweenInfo, {
+				Rotation = 360
+			})
+			tween:Play()
+		elseif rarityTier == "Rare" then
+			-- Add rare diamond effect
+			local diamond = Instance.new("Frame")
+			diamond.Name = "RareDiamond"
+			diamond.Size = UDim2.fromOffset(14, 14)
+			diamond.Position = UDim2.fromScale(1.05, 0)
+			diamond.BackgroundTransparency = 1
+			diamond.Parent = gui
+			
+			local diamondLabel = Instance.new("TextLabel")
+			diamondLabel.Size = UDim2.fromScale(1, 1)
+			diamondLabel.BackgroundTransparency = 1
+			diamondLabel.Text = "💎"
+			diamondLabel.TextScaled = true
+			diamondLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+			diamondLabel.Parent = diamond
+			
+			-- Subtle pulse animation
+			local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			local tween = game:GetService("TweenService"):Create(diamond, tweenInfo, {
+				Size = UDim2.fromOffset(18, 18)
+			})
+			tween:Play()
+		elseif rarityTier == "Uncommon" then
+			-- Add uncommon leaf effect
+			local leaf = Instance.new("Frame")
+			leaf.Name = "UncommonLeaf"
+			leaf.Size = UDim2.fromOffset(12, 12)
+			leaf.Position = UDim2.fromScale(1.05, 0)
+			leaf.BackgroundTransparency = 1
+			leaf.Parent = gui
+			
+			local leafLabel = Instance.new("TextLabel")
+			leafLabel.Size = UDim2.fromScale(1, 1)
+			leafLabel.BackgroundTransparency = 1
+			leafLabel.Text = "🍃"
+			leafLabel.TextScaled = true
+			leafLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+			leafLabel.Parent = leaf
+			
+			-- Gentle sway animation
+			local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			local tween = game:GetService("TweenService"):Create(leaf, tweenInfo, {
+				Rotation = 15
+			})
+			tween:Play()
+		elseif rarityTier == "Legendary" then
+			-- Add legendary sparkle effect
+			local sparkle = Instance.new("Frame")
+			sparkle.Name = "LegendarySparkle"
+			sparkle.Size = UDim2.fromOffset(20, 20)
+			sparkle.Position = UDim2.fromScale(1.1, 0)
+			sparkle.BackgroundTransparency = 1
+			sparkle.Parent = gui
+			
+			local sparkleLabel = Instance.new("TextLabel")
+			sparkleLabel.Size = UDim2.fromScale(1, 1)
+			sparkleLabel.BackgroundTransparency = 1
+			sparkleLabel.Text = "✨"
+			sparkleLabel.TextScaled = true
+			sparkleLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+			sparkleLabel.Parent = sparkle
+			
+			-- Animate sparkle
+			local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			local tween = game:GetService("TweenService"):Create(sparkle, tweenInfo, {
+				Rotation = 360
+			})
+			tween:Play()
+		end
+	end
+	
+	-- Apply initial styling
+	applyRarityStyling()
+	
+	-- Monitor rarity attribute changes
+	character:GetAttributeChangedSignal("NameplateRarityTier"):Connect(applyRarityStyling)
+	character:GetAttributeChangedSignal("NameplateFont"):Connect(applyRarityStyling)
+	character:GetAttributeChangedSignal("NameplateTextColor"):Connect(applyRarityStyling)
+	character:GetAttributeChangedSignal("NameplateGlowColor"):Connect(applyRarityStyling)
+	character:GetAttributeChangedSignal("NameplateScale"):Connect(applyRarityStyling)
+end
+
 local function setupController(character: Model)
 	if boundCharacters[character] then return end
 	dprint("setupController for", character)
@@ -364,6 +594,9 @@ local function setupController(character: Model)
 
 	-- Keep nameplate a constant on-screen size
 	setupNameplateScaling(character)
+	
+	-- Setup enhanced rarity-based nameplate styling
+	setupEnhancedNameplate(character)
 	
 	-- Monitor SpeedMultiplier attribute changes for debugging
 	character:GetAttributeChangedSignal("SpeedMultiplier"):Connect(function()
