@@ -9,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local UIComponents = require(script.Parent.UIComponents)
 local CooldownSystem = require(script.Parent.CooldownSystem)
 local InventorySystem = require(script.Parent.InventorySystem)
+local BadgeSystem = require(script.Parent.BadgeSystem)
 local RollAnimation = require(script.Parent.RollAnimation)
 
 local MarbleUIController = {}
@@ -25,11 +26,16 @@ local cooldownText: TextLabel? = nil
 local textShadow: TextLabel? = nil
 local rollButton: TextButton? = nil
 local inventoryButton: TextButton? = nil
+local badgesButton: TextButton? = nil
 local resultLabel: TextLabel? = nil
 local invFrame: Frame? = nil
 local invCloseButton: TextButton? = nil
 local invList: ScrollingFrame? = nil
 local invGrid: UIGridLayout? = nil
+local badgesFrame: Frame? = nil
+local badgesCloseButton: TextButton? = nil
+local badgesList: ScrollingFrame? = nil
+local badgesGrid: UIGridLayout? = nil
 local invOpenSfx: Sound? = nil
 
 -- Remote events
@@ -113,6 +119,10 @@ local function createUI()
 	inventoryButton = UIComponents.createInventoryButton(screen)
 	print("Inventory button created")
 	
+	-- Create badges button
+	badgesButton = UIComponents.createBadgesButton(screen)
+	print("Badges button created")
+	
 	-- Create result label
 	resultLabel = UIComponents.createResultLabel(screen)
 	print("Result label created")
@@ -121,6 +131,10 @@ local function createUI()
 	invFrame, invCloseButton, invList, invGrid = UIComponents.createInventoryFrame(screen)
 	print("Inventory frame created")
 	
+	-- Create badges frame
+	badgesFrame, badgesCloseButton, badgesList, badgesGrid = UIComponents.createBadgesFrame(screen)
+	print("Badges frame created")
+	
 	-- Create sound effects
 	invOpenSfx = UIComponents.createSoundEffects(screen)
 	print("Sound effects created")
@@ -128,6 +142,11 @@ local function createUI()
 	-- Set up grid canvas size refresh
 	invGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		InventorySystem.refreshCanvasSize(invList, invGrid)
+	end)
+	
+	-- Set up badges grid canvas size refresh
+	badgesGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		BadgeSystem.refreshCanvasSize(badgesList, badgesGrid)
 	end)
 	
 	print("=== UI Construction Complete ===")
@@ -266,7 +285,9 @@ local function setupEventHandlers()
 	inventoryButton.MouseButton1Click:Connect(function()
 		local newVisible = not invFrame.Visible
 		invFrame.Visible = newVisible
+		-- Hide badges frame when opening inventory
 		if newVisible then
+			badgesFrame.Visible = false
 			pcall(function()
 				invOpenSfx:Play()
 			end)
@@ -276,6 +297,26 @@ local function setupEventHandlers()
 	-- Inventory close button handler
 	invCloseButton.MouseButton1Click:Connect(function()
 		invFrame.Visible = false
+	end)
+	
+	-- Badges button click handler
+	badgesButton.MouseButton1Click:Connect(function()
+		local newVisible = not badgesFrame.Visible
+		badgesFrame.Visible = newVisible
+		-- Hide inventory frame when opening badges
+		if newVisible then
+			invFrame.Visible = false
+			-- Build badges UI when opening
+			BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid)
+			pcall(function()
+				invOpenSfx:Play()
+			end)
+		end
+	end)
+	
+	-- Badges close button handler
+	badgesCloseButton.MouseButton1Click:Connect(function()
+		badgesFrame.Visible = false
 	end)
 	
 	-- Inventory update handler
@@ -413,6 +454,9 @@ function MarbleUIController.init()
 	
 	-- Request initial inventory
 	RequestInventory:FireServer()
+	
+	-- Initialize badges UI
+	BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid)
 	
 	print("=== MarbleUIController Initialization Complete ===")
 end

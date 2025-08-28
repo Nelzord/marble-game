@@ -118,6 +118,25 @@ function UIComponents.createInventoryButton(screen: ScreenGui)
 	return inventoryButton
 end
 
+-- Create the badges button
+function UIComponents.createBadgesButton(screen: ScreenGui)
+	local badgesButton = Instance.new("TextButton")
+	badgesButton.Name = "BadgesButton"
+	badgesButton.Text = "Badges"
+	badgesButton.TextScaled = true
+	badgesButton.Size = UDim2.fromOffset(160, 40)
+	badgesButton.Position = UDim2.new(0, 16, 0, 64)
+	badgesButton.AnchorPoint = Vector2.new(0, 0)
+	badgesButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	badgesButton.TextColor3 = Color3.new(1, 1, 1)
+	badgesButton.Font = Enum.Font.GothamBold
+	badgesButton.Parent = screen
+	
+	UIComponents.createCorner(badgesButton, 8)
+	
+	return badgesButton
+end
+
 -- Create the result label
 function UIComponents.createResultLabel(screen: ScreenGui)
 	local resultLabel = Instance.new("TextLabel")
@@ -205,6 +224,79 @@ function UIComponents.createInventoryFrame(screen: ScreenGui)
 	grid.Parent = list
 	
 	return invFrame, closeButton, list, grid
+end
+
+-- Create the badges frame
+function UIComponents.createBadgesFrame(screen: ScreenGui)
+	local badgesFrame = Instance.new("Frame")
+	badgesFrame.Name = "BadgesFrame"
+	badgesFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	badgesFrame.BackgroundTransparency = 0
+	badgesFrame.BorderSizePixel = 0
+	badgesFrame.Size = UDim2.new(0, 720, 0, 520)
+	badgesFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	badgesFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	badgesFrame.Visible = false
+	badgesFrame.Parent = screen
+	
+	UIComponents.createCorner(badgesFrame, 12)
+	
+	-- Create header
+	local header = Instance.new("TextLabel")
+	header.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	header.BorderSizePixel = 0
+	header.Size = UDim2.new(1, 0, 0, 50)
+	header.Position = UDim2.new(0, 0, 0, 0)
+	header.Font = Enum.Font.GothamBold
+	header.TextXAlignment = Enum.TextXAlignment.Center
+	header.Text = "BADGES"
+	header.TextColor3 = Color3.new(1, 1, 1)
+	header.TextScaled = true
+	header.Parent = badgesFrame
+	
+	-- Add rounded corners to header
+	UIComponents.createCorner(header, 12)
+	
+	-- Create close button
+	local closeButton = Instance.new("TextButton")
+	closeButton.Name = "CloseButton"
+	closeButton.Text = "X"
+	closeButton.Font = Enum.Font.GothamBold
+	closeButton.TextScaled = true
+	closeButton.Size = UDim2.fromOffset(40, 40)
+	closeButton.Position = UDim2.new(1, -50, 0, 5)
+	closeButton.AnchorPoint = Vector2.new(1, 0)
+	closeButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+	closeButton.TextColor3 = Color3.new(1, 1, 1)
+	closeButton.Parent = header
+	
+	UIComponents.createCorner(closeButton, 8)
+	
+	-- Create scrolling list
+	local list = Instance.new("ScrollingFrame")
+	list.Name = "List"
+	list.Size = UDim2.new(1, -24, 1, -80)
+	list.Position = UDim2.new(0, 12, 0, 60)
+	list.ScrollBarThickness = 6
+	list.CanvasSize = UDim2.new(0, 0, 0, 0)
+	list.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	list.BorderSizePixel = 0
+	list.Parent = badgesFrame
+	
+	-- Add rounded corners to the scrolling frame
+	UIComponents.createCorner(list, 6)
+	
+	-- Create grid layout (4 columns for badges since they're smaller)
+	local grid = Instance.new("UIGridLayout")
+	grid.FillDirection = Enum.FillDirection.Horizontal
+	grid.FillDirectionMaxCells = 4
+	grid.CellPadding = UDim2.fromOffset(10, 10)
+	grid.CellSize = UDim2.fromOffset(150, 150)
+	grid.SortOrder = Enum.SortOrder.LayoutOrder
+	grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	grid.Parent = list
+	
+	return badgesFrame, closeButton, list, grid
 end
 
 -- Create sound effects
