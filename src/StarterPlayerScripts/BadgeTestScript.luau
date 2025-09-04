@@ -13,40 +13,13 @@ local function setupTestControls()
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if processed then return end
 		
-		-- Number keys 1-9 unlock badges 1-9
-		if input.KeyCode >= Enum.KeyCode.One and input.KeyCode <= Enum.KeyCode.Nine then
+		-- Number keys 1-8 unlock badges 1-8
+		if input.KeyCode >= Enum.KeyCode.One and input.KeyCode <= Enum.KeyCode.Eight then
 			local levelNumber = input.KeyCode.Value - Enum.KeyCode.One.Value + 1
 			if BadgeSystem.unlockBadge(levelNumber) then
 				print("Badge unlocked for level", levelNumber)
 			else
 				print("Failed to unlock badge for level", levelNumber)
-			end
-		end
-		
-		-- Zero key unlocks badge 10
-		if input.KeyCode == Enum.KeyCode.Zero then
-			if BadgeSystem.unlockBadge(10) then
-				print("Badge unlocked for level 10")
-			else
-				print("Failed to unlock badge for level 10")
-			end
-		end
-		
-		-- Minus key unlocks badge 11
-		if input.KeyCode == Enum.KeyCode.Minus then
-			if BadgeSystem.unlockBadge(11) then
-				print("Badge unlocked for level 11")
-			else
-				print("Failed to unlock badge for level 11")
-			end
-		end
-		
-		-- Equals key unlocks badge 12
-		if input.KeyCode == Enum.KeyCode.Equals then
-			if BadgeSystem.unlockBadge(12) then
-				print("Badge unlocked for level 12")
-			else
-				print("Failed to unlock badge for level 12")
 			end
 		end
 		
@@ -62,7 +35,7 @@ local function setupTestControls()
 		-- I key shows badge info
 		if input.KeyCode == Enum.KeyCode.I then
 			local unlockedCount = BadgeSystem.getUnlockedCount()
-			print("Badge Info - Unlocked:", unlockedCount, "/ 12")
+			print("Badge Info - Unlocked:", unlockedCount, "/ 8")
 			
 			for _, badge in ipairs(BadgeSystem.getAllBadges()) do
 				local status = badge.unlocked and "UNLOCKED" or "LOCKED"
@@ -77,9 +50,6 @@ setupTestControls()
 
 print("BadgeTestScript loaded!")
 print("Controls:")
-print("  1-9: Unlock badges for levels 1-9")
-print("  0: Unlock badge for level 10")
-print("  -: Unlock badge for level 11")
-print("  =: Unlock badge for level 12")
+print("  1-8: Unlock badges for levels 1-8")
 print("  I: Show badge information")
 print("  R: Reset all badges to locked")

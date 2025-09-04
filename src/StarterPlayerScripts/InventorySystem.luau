@@ -20,6 +20,7 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Spider = "Spider: Shoot a web to grapple and swing toward targets.",
 	Gumball = "Gumball: A bouncy marble that can launch high into the air with explosive force.",
 	TimeTravel = "TimeTravel: Go back in time 5 seconds to your previous position.",
+	Moon = "Moon: Lower gravity for slower falling and floating lunar-like movement.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -31,6 +32,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Spider = "rbxassetid://105354663033087",
 	Gumball = "rbxassetid://92160789193138",
 	TimeTravel = "rbxassetid://115652916108662",
+	Moon = "rbxassetid://95370471502854",
 }
 
 -- Function to apply textures to a part

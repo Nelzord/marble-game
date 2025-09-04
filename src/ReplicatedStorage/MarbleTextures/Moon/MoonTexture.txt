@@ -1,0 +1,18 @@
+Moon Marble Texture
+===================
+
+This file contains the texture information for the Moon Marble.
+
+Texture Details:
+- Base Color: Light gray/silver (RGB: 200, 200, 220)
+- Material: Slightly metallic with subtle moon-like surface
+- Pattern: Smooth with subtle craters and moon surface details
+- Glow Effect: Soft white/blue glow when ability is active
+
+The Moon Marble provides:
+- Lower gravity for floating, lunar-like movement
+- Slower falling and jumping (same distance, slower speed)
+- Passive ability (always active when equipped)
+- Visual glow effect when active
+
+This marble is perfect for players who want to experience low-gravity movement, simulating the reduced gravity environment of the moon where everything moves slower but covers the same distances.

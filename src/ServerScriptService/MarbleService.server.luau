@@ -377,6 +377,8 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	character:SetAttribute("EquippedMarbleId", marbleId)
 	character:SetAttribute("RedGlowActive", false)
 	character:SetAttribute("GumballGlowActive", false)
+	character:SetAttribute("MoonGravityActive", false)
+	character:SetAttribute("MoonGlowActive", false)
 	
 	character.Parent = workspace
 
@@ -409,6 +411,18 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	pcall(function()
 		hrp:SetNetworkOwner(player)
 	end)
+	
+	-- Activate the marble's ability if it has one
+	local ability = Marbles.getAbilityModule(marbleId)
+	if ability and ability.ActivateAbility then
+		dprint("Activating marble ability on spawn:", marbleId)
+		local success, error = pcall(function()
+			ability.ActivateAbility(player, character)
+		end)
+		if not success then
+			dprint("Failed to activate marble ability on spawn:", error)
+		end
+	end
 end
 
 local function respawnEquipped(player: Player)
@@ -494,6 +508,18 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 		clearHRPTextures(character)
 		applyMarbleVisual(character, marbleId)
 		ensureNameplate(character, player, marbleId)
+		
+		-- Activate the new marble's ability if it has one
+		local newAbility = Marbles.getAbilityModule(def)
+		if newAbility and newAbility.ActivateAbility then
+			dprint("Activating new marble ability:", def.id)
+			local success, error = pcall(function()
+				newAbility.ActivateAbility(player, character)
+			end)
+			if not success then
+				dprint("Failed to activate new marble ability:", error)
+			end
+		end
 	end
 end)
 

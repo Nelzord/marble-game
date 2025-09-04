@@ -174,6 +174,48 @@ local function removeGumballGlowTrail(character: Model)
 	end
 end
 
+local function createMoonGlowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("MoonGlowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create new trail
+	local trail = Instance.new("Trail")
+	trail.Name = "MoonGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "MoonTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "MoonTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with more separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for moon effect
+	trail.Color = ColorSequence.new(Color3.fromRGB(200, 200, 255)) -- Soft white/blue moon glow
+	trail.Transparency = NumberSequence.new(0.2, 0.95) -- More transparent for subtle effect
+	trail.Lifetime = 4.0 -- Trail duration
+	trail.MinLength = 1.0 -- Trail length
+	trail.MaxLength = 15 -- Maximum trail length
+	trail.WidthScale = NumberSequence.new(0.5, 1.2) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return trail
+end
+
+local function removeMoonGlowTrail(character: Model)
+	local trail = character:FindFirstChild("MoonGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
 local function setupRedGlowEffect(character: Model, hrp: BasePart)
 	-- Monitor RedGlowActive attribute changes
 	character:GetAttributeChangedSignal("RedGlowActive"):Connect(function()
@@ -207,6 +249,24 @@ local function setupGumballGlowEffect(character: Model, hrp: BasePart)
 	local initialGlow = character:GetAttribute("GumballGlowActive")
 	if initialGlow then
 		createGumballGlowTrail(character, hrp)
+	end
+end
+
+local function setupMoonGlowEffect(character: Model, hrp: BasePart)
+	-- Monitor MoonGlowActive attribute changes
+	character:GetAttributeChangedSignal("MoonGlowActive"):Connect(function()
+		local isActive = character:GetAttribute("MoonGlowActive")
+		if isActive then
+			createMoonGlowTrail(character, hrp)
+		else
+			removeMoonGlowTrail(character)
+		end
+	end)
+	
+	-- Check initial state
+	local initialGlow = character:GetAttribute("MoonGlowActive")
+	if initialGlow then
+		createMoonGlowTrail(character, hrp)
 	end
 end
 
@@ -248,6 +308,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Spider = "rbxassetid://105354663033087",
 		Gumball = "rbxassetid://92160789193138",
 		TimeTravel = "rbxassetid://115652916108662",
+		Moon = "rbxassetid://95370471502854",
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -651,6 +712,12 @@ local function setupController(character: Model)
 		local jumpBoost = character:GetAttribute("JumpBoostActive")
 		return typeof(jumpBoost) == "boolean" and jumpBoost
 	end
+	
+	local function shouldApplyMoonGravity(): boolean
+		local moonGravity = character:GetAttribute("MoonGravityActive")
+		return typeof(moonGravity) == "boolean" and moonGravity
+	end
+	
 
 	local logAccum = 0
 	local prevIsInput = false
@@ -711,6 +778,18 @@ local function setupController(character: Model)
 			wrote = true
 			print("[MarbleClient] Applied jump boost - velocity set to:", hrp.AssemblyLinearVelocity)
 		end
+		
+		-- Apply Moon gravity reduction if active
+		if shouldApplyMoonGravity() then
+			-- Only reduce downward velocity (falling), leave upward velocity (jumping) unchanged
+			local currentVel = hrp.AssemblyLinearVelocity
+			if currentVel.Y < 0 then -- Only apply when falling (negative Y velocity)
+				local gravityReduction = 0.6 -- Reduce gravity to 60% of normal (moon-like)
+				local newYVel = currentVel.Y * gravityReduction
+				hrp.AssemblyLinearVelocity = Vector3.new(currentVel.X, newYVel, currentVel.Z)
+				wrote = true
+			end
+		end
 
 		-- Movement debug logs (rate-limited)
 		logAccum += dt
@@ -758,6 +837,9 @@ local function setupController(character: Model)
 	
 	-- Setup GumballGlowTrail effect
 	setupGumballGlowEffect(character, hrp)
+	
+	-- Setup MoonGlowTrail effect
+	setupMoonGlowEffect(character, hrp)
 end
 
 local function onCharacterAdded(character: Model)

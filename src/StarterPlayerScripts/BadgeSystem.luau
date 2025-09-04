@@ -13,10 +13,6 @@ local BADGES = {
 	{ id = "level6", name = "Level 6", description = "Complete the sixth level", unlocked = false },
 	{ id = "level7", name = "Level 7", description = "Complete the seventh level", unlocked = false },
 	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false },
-	{ id = "level9", name = "Level 9", description = "Complete the ninth level", unlocked = false },
-	{ id = "level10", name = "Level 10", description = "Complete the tenth level", unlocked = false },
-	{ id = "level11", name = "Level 11", description = "Complete the eleventh level", unlocked = false },
-	{ id = "level12", name = "Level 12", description = "Complete the twelfth level", unlocked = false },
 }
 
 -- Function to get all badges
@@ -26,7 +22,7 @@ end
 
 -- Function to unlock a badge by level number
 function BadgeSystem.unlockBadge(levelNumber)
-	if levelNumber >= 1 and levelNumber <= 12 then
+	if levelNumber >= 1 and levelNumber <= 8 then
 		local badgeIndex = levelNumber
 		if BADGES[badgeIndex] then
 			BADGES[badgeIndex].unlocked = true
