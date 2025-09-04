@@ -451,6 +451,61 @@ local function respawnEquipped(player: Player)
 	spawningFlag[player] = nil
 end
 
+-- Hazard system: Teleport players to SpawnLocation when they touch hazards
+local function setupHazardSystem()
+	-- Find all parts named "hazard" in workspace
+	local function setupHazardPart(part: BasePart)
+		if part.Name == "hazard" then
+			part.Touched:Connect(function(hit)
+				local character = hit:FindFirstAncestorOfClass("Model")
+				if not character then return end
+				
+				local player = Players:GetPlayerFromCharacter(character)
+				if not player then return end
+				
+				-- Check if this is a marble character
+				if not character:GetAttribute("IsMarbleCharacter") then return end
+				
+				-- Teleport to SpawnLocation
+				local spawnLocation = workspace:FindFirstChildOfClass("SpawnLocation")
+				if spawnLocation then
+					local spawnPos = spawnLocation.Position + Vector3.new(0, 5, 0)
+					local hrp = character:FindFirstChild("HumanoidRootPart")
+					if hrp and hrp:IsA("BasePart") then
+						-- Stop any current velocity
+						hrp.AssemblyLinearVelocity = Vector3.zero
+						hrp.AssemblyAngularVelocity = Vector3.zero
+						-- Teleport to spawn
+						character:PivotTo(CFrame.new(spawnPos))
+						dprint("Player", player.Name, "touched hazard and was teleported to spawn")
+					end
+				else
+					-- Fallback: respawn the character
+					dprint("No SpawnLocation found, respawning player", player.Name)
+					respawnEquipped(player)
+				end
+			end)
+		end
+	end
+	
+	-- Setup existing hazard parts
+	for _, part in ipairs(workspace:GetDescendants()) do
+		if part:IsA("BasePart") then
+			setupHazardPart(part)
+		end
+	end
+	
+	-- Monitor for new hazard parts
+	workspace.DescendantAdded:Connect(function(descendant)
+		if descendant:IsA("BasePart") then
+			setupHazardPart(descendant)
+		end
+	end)
+end
+
+-- Initialize hazard system
+setupHazardSystem()
+
 -- Remote connections
 Remotes.RollForMarble.OnServerEvent:Connect(function(player: Player)
 	local data = getOrCreatePlayerData(player)
