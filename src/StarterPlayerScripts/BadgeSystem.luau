@@ -1,9 +1,19 @@
 -- BadgeSystem.luau
 -- Handles all badge-related functionality for levels beaten
+-- Now works with server-side persistence
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BadgeSystem = {}
 
--- Badge data structure
+-- Wait for remote events
+local RemotesFolder = ReplicatedStorage:WaitForChild("Remotes")
+local BadgeUnlocked = RemotesFolder:WaitForChild("BadgeUnlocked")
+local BadgeUpdate = RemotesFolder:WaitForChild("BadgeUpdate")
+local RequestBadges = RemotesFolder:WaitForChild("RequestBadges")
+
+-- Badge data structure (will be updated from server)
 local BADGES = {
 	{ id = "level1", name = "Level 1", description = "Complete the first level", unlocked = false },
 	{ id = "level2", name = "Level 2", description = "Complete the second level", unlocked = false },
@@ -15,20 +25,36 @@ local BADGES = {
 	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false },
 }
 
+-- Function to update badges from server data
+local function updateBadgesFromServer(badgeData: { [string]: boolean })
+	for _, badge in ipairs(BADGES) do
+		badge.unlocked = badgeData[badge.id] == true
+	end
+end
+
+-- Set up event handlers
+BadgeUpdate.OnClientEvent:Connect(function(badgeData)
+	print("BadgeUpdate received from server:", badgeData)
+	updateBadgesFromServer(badgeData)
+end)
+
+BadgeUnlocked.OnClientEvent:Connect(function(badgeId)
+	print("Badge unlocked:", badgeId)
+	-- The badge data will be updated via BadgeUpdate event
+end)
+
+-- Request initial badge data from server
+RequestBadges:FireServer()
+
 -- Function to get all badges
 function BadgeSystem.getAllBadges()
 	return BADGES
 end
 
--- Function to unlock a badge by level number
+-- Function to unlock a badge by level number (now handled server-side)
+-- This function is kept for compatibility but does nothing
 function BadgeSystem.unlockBadge(levelNumber)
-	if levelNumber >= 1 and levelNumber <= 8 then
-		local badgeIndex = levelNumber
-		if BADGES[badgeIndex] then
-			BADGES[badgeIndex].unlocked = true
-			return true
-		end
-	end
+	print("BadgeSystem.unlockBadge called - badges are now unlocked server-side when touching Badge objects")
 	return false
 end
 
@@ -53,12 +79,11 @@ function BadgeSystem.getUnlockedCount()
 	return count
 end
 
--- Function to reset all badges to locked
+-- Function to reset all badges to locked (now handled server-side)
+-- This function is kept for compatibility but does nothing
 function BadgeSystem.resetAllBadges()
-	for _, badge in ipairs(BADGES) do
-		badge.unlocked = false
-	end
-	return true
+	print("BadgeSystem.resetAllBadges called - badges are now persistent and managed server-side")
+	return false
 end
 
 -- Function to create a badge tile
