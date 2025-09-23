@@ -309,6 +309,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Gumball = "rbxassetid://92160789193138",
 		TimeTravel = "rbxassetid://115652916108662",
 		Moon = "rbxassetid://95370471502854",
+		Jumper = "rbxassetid://81030833444551",
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]

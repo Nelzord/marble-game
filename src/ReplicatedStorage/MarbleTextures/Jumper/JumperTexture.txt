@@ -1,0 +1,24 @@
+Jumper Marble Texture Setup Instructions
+========================================
+
+To create the Jumper marble texture in Roblox Studio:
+
+1. In the Jumper folder, create a new Texture instance
+2. Set the Texture property to: rbxassetid://81030833444551
+3. Set the Face property to: Front (or leave as default for all faces)
+4. Set StudsPerTileU and StudsPerTileV to: 1
+
+Alternatively, you can create a Decal instance:
+1. Create a new Decal instance
+2. Set the Texture property to: rbxassetid://81030833444551
+3. Set the Face property to: Front (or leave as default for all faces)
+
+The texture ID is: rbxassetid://81030833444551
+
+This will make the Jumper marble appear with the correct orange jumping-themed texture.
+
+Texture Details:
+- Base Color: Orange (RGB: 255, 165, 0)
+- Theme: Dynamic, energetic, movement-focused
+- Ability: Double jump when pressing E in mid-air
+- Rarity: 1/40 (very rare)

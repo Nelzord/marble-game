@@ -84,6 +84,14 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Moon",
 		color = Color3.fromRGB(200, 200, 220), -- Light gray/silver color for moon theme
 	},
+	Jumper = {
+		id = "Jumper",
+		name = "Jumper Marble",
+		dropDenominator = 40, -- 1/40 rarity (very rare)
+		rollable = true,
+		abilityModule = "Jumper",
+		color = Color3.fromRGB(255, 165, 0), -- Orange color for jumper theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?

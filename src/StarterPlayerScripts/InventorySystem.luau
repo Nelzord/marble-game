@@ -21,6 +21,7 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Gumball = "Gumball: A bouncy marble that can launch high into the air with explosive force.",
 	TimeTravel = "TimeTravel: Go back in time 5 seconds to your previous position.",
 	Moon = "Moon: Lower gravity for slower falling and floating lunar-like movement.",
+	Jumper = "Jumper: Press E to perform a double jump when in mid-air.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -33,6 +34,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Gumball = "rbxassetid://92160789193138",
 	TimeTravel = "rbxassetid://115652916108662",
 	Moon = "rbxassetid://95370471502854",
+	Jumper = "rbxassetid://81030833444551",
 }
 
 -- Function to apply textures to a part
