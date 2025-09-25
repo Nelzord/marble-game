@@ -1,0 +1,35 @@
+Glass Marble Texture Setup Instructions
+=======================================
+
+To create the Glass marble texture in Roblox Studio:
+
+1. In the Glass folder, create a new Texture instance
+2. Set the Texture property to: rbxassetid://105354663033089
+3. Set the Face property to: Front (or leave as default for all faces)
+4. Set StudsPerTileU and StudsPerTileV to: 1
+
+Alternatively, you can create a Decal instance:
+1. Create a new Decal instance
+2. Set the Texture property to: rbxassetid://105354663033089
+3. Set the Face property to: Front (or leave as default for all faces)
+
+The texture ID is: rbxassetid://105354663033089
+
+This will make the Glass marble appear with the correct glassy, crystalline texture.
+
+Glass Marble Details:
+- Base Color: Light blue glass (RGB: 220, 240, 255)
+- Material: Glass with high reflectance and transparency
+- Pattern: Smooth glass surface with subtle reflections
+- Glow Effect: Cool blue glow when ability is active
+
+The Glass Marble provides:
+- Leaves behind a connected glass trail while moving that makes marbles slip and slide
+- 6-second duration for each glass tile in the trail
+- No cooldown - passive trail ability that activates while moving
+- Visual glass particles and sparkle effects
+- Affects all marbles that touch any glass tile in the trail
+- Only creates glass tiles when moving above minimum speed threshold
+- Maximum of 20 glass tiles in trail at once
+
+This marble is perfect for players who want to leave behind slippery glass trails that affect movement, making it harder for other players to maintain control while following their path.
