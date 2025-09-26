@@ -216,6 +216,48 @@ local function removeMoonGlowTrail(character: Model)
 	end
 end
 
+local function createGoldGlowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("GoldGlowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create new trail
+	local trail = Instance.new("Trail")
+	trail.Name = "GoldGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "GoldTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "GoldTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with more separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for gold effect
+	trail.Color = ColorSequence.new(Color3.fromRGB(255, 215, 0)) -- Gold color
+	trail.Transparency = NumberSequence.new(0.1, 0.9) -- More opaque at start, fade to transparent
+	trail.Lifetime = 4.0 -- Trail duration
+	trail.MinLength = 1.5 -- Trail length
+	trail.MaxLength = 15 -- Maximum trail length
+	trail.WidthScale = NumberSequence.new(0.7, 1.5) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return trail
+end
+
+local function removeGoldGlowTrail(character: Model)
+	local trail = character:FindFirstChild("GoldGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
 local function setupRedGlowEffect(character: Model, hrp: BasePart)
 	-- Monitor RedGlowActive attribute changes
 	character:GetAttributeChangedSignal("RedGlowActive"):Connect(function()
@@ -270,6 +312,24 @@ local function setupMoonGlowEffect(character: Model, hrp: BasePart)
 	end
 end
 
+local function setupGoldGlowEffect(character: Model, hrp: BasePart)
+	-- Monitor GoldGlowActive attribute changes
+	character:GetAttributeChangedSignal("GoldGlowActive"):Connect(function()
+		local isActive = character:GetAttribute("GoldGlowActive")
+		if isActive then
+			createGoldGlowTrail(character, hrp)
+		else
+			removeGoldGlowTrail(character)
+		end
+	end)
+	
+	-- Check initial state
+	local initialGlow = character:GetAttribute("GoldGlowActive")
+	if initialGlow then
+		createGoldGlowTrail(character, hrp)
+	end
+end
+
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
 	dprint("applyCosmeticColor", id)
@@ -310,6 +370,8 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		TimeTravel = "rbxassetid://115652916108662",
 		Moon = "rbxassetid://95370471502854",
 		Jumper = "rbxassetid://81030833444551",
+		Glass = "rbxassetid://101699002274981", -- Glass texture
+		Gold = "rbxassetid://84142305330257", -- Gold texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -841,6 +903,9 @@ local function setupController(character: Model)
 	
 	-- Setup MoonGlowTrail effect
 	setupMoonGlowEffect(character, hrp)
+	
+	-- Setup GoldGlowTrail effect
+	setupGoldGlowEffect(character, hrp)
 end
 
 local function onCharacterAdded(character: Model)

@@ -35,6 +35,8 @@ local FALLBACK_DECALS: { [string]: string } = {
 	TimeTravel = "rbxassetid://115652916108662",
 	Moon = "rbxassetid://95370471502854",
 	Jumper = "rbxassetid://81030833444551",
+	Glass = "rbxassetid://101699002274981", -- Glass texture
+	Gold = "rbxassetid://84142305330257", -- Gold texture
 }
 
 -- Function to apply textures to a part

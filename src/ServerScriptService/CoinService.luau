@@ -9,7 +9,7 @@ local MAX_COINS = 20
 local SPAWN_INTERVAL = 10 -- seconds
 local DESPAWN_AFTER = 120 -- seconds
 
-local COIN_DEBUG = false
+local COIN_DEBUG = true
 local function clog(...)
 	if COIN_DEBUG then
 		print("[CoinService]", ...)
@@ -171,8 +171,20 @@ local function createCoin(): CoinInfo
 		if not model then return end
 		local player = Players:GetPlayerFromCharacter(model)
 		if not player then return end
-		addCoins(player, 1)
-		clog(string.format("Collected by %s at (%.1f, %.1f, %.1f)", player.Name, basePos.X, basePos.Y, basePos.Z))
+		
+		-- Check for gold multiplier
+		local goldMultiplier = model:GetAttribute("GoldMultiplier")
+		clog(string.format("Coin collection - GoldMultiplier attribute: %s (type: %s)", tostring(goldMultiplier), typeof(goldMultiplier)))
+		local coinAmount = 1
+		if typeof(goldMultiplier) == "number" and goldMultiplier > 1 then
+			coinAmount = math.floor(coinAmount * goldMultiplier)
+			clog(string.format("Gold multiplier active: %dx coins for %s", goldMultiplier, player.Name))
+		else
+			clog(string.format("No gold multiplier - using base coin amount: %d", coinAmount))
+		end
+		
+		addCoins(player, coinAmount)
+		clog(string.format("Collected %d coins by %s at (%.1f, %.1f, %.1f)", coinAmount, player.Name, basePos.X, basePos.Y, basePos.Z))
 		-- Play pickup sound at coin position
 		local sfxPart = Instance.new("Part")
 		sfxPart.Name = "CoinSFX"
