@@ -167,11 +167,28 @@ coinTitle.TextScaled = true
 coinTitle.Font = Enum.Font.GothamBold
 coinTitle.Parent = coinContent
 
+-- Luck display
+local luckDisplay = Instance.new("TextLabel")
+luckDisplay.Name = "LuckDisplay"
+luckDisplay.Size = UDim2.new(1, -20, 0, 30)
+luckDisplay.Position = UDim2.new(0, 10, 0, 70)
+luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
+luckDisplay.BorderSizePixel = 0
+luckDisplay.Text = "Current Luck: 1.0x"
+luckDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+luckDisplay.TextScaled = true
+luckDisplay.Font = Enum.Font.GothamBold
+luckDisplay.Parent = coinContent
+
+local luckCorner = Instance.new("UICorner")
+luckCorner.CornerRadius = UDim.new(0, 6)
+luckCorner.Parent = luckDisplay
+
 -- Coin shop items container
 local coinItemsContainer = Instance.new("ScrollingFrame")
 coinItemsContainer.Name = "CoinItemsContainer"
-coinItemsContainer.Size = UDim2.new(1, -40, 1, -100)
-coinItemsContainer.Position = UDim2.new(0, 20, 0, 80)
+coinItemsContainer.Size = UDim2.new(1, -40, 1, -130)
+coinItemsContainer.Position = UDim2.new(0, 20, 0, 110)
 coinItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 coinItemsContainer.BorderSizePixel = 0
 coinItemsContainer.ScrollBarThickness = 6
@@ -217,6 +234,239 @@ end)
 closeButton.MouseButton1Click:Connect(function()
     toggleShop(false)
 end)
+
+-- Variables for shop functionality
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Wait for remotes
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local coinCountUpdate = remotes:WaitForChild("CoinCountUpdate")
+
+-- Create shop purchase remote if it doesn't exist
+local shopPurchase
+if remotes:FindFirstChild("ShopPurchase") then
+    shopPurchase = remotes:FindFirstChild("ShopPurchase")
+else
+    shopPurchase = Instance.new("RemoteEvent")
+    shopPurchase.Name = "ShopPurchase"
+    shopPurchase.Parent = remotes
+end
+
+-- Create luck update remote if it doesn't exist
+local luckUpdate
+if remotes:FindFirstChild("LuckUpdate") then
+    luckUpdate = remotes:FindFirstChild("LuckUpdate")
+else
+    luckUpdate = Instance.new("RemoteEvent")
+    luckUpdate.Name = "LuckUpdate"
+    luckUpdate.Parent = remotes
+end
+
+-- Current coin count
+local currentCoins = 0
+
+-- Function to create shop item UI
+local function createShopItem(item, container)
+    local itemFrame = Instance.new("Frame")
+    itemFrame.Name = "ItemFrame_" .. item.name
+    itemFrame.Size = UDim2.new(1, -20, 0, 80)
+    itemFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    itemFrame.BorderSizePixel = 0
+    itemFrame.Parent = container
+    
+    local itemCorner = Instance.new("UICorner")
+    itemCorner.CornerRadius = UDim.new(0, 8)
+    itemCorner.Parent = itemFrame
+    
+    -- Item name
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Size = UDim2.new(0.6, 0, 0.4, 0)
+    nameLabel.Position = UDim2.new(0, 10, 0, 5)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = item.name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextScaled = true
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = itemFrame
+    
+    -- Item description
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Name = "DescLabel"
+    descLabel.Size = UDim2.new(0.6, 0, 0.4, 0)
+    descLabel.Position = UDim2.new(0, 10, 0, 35)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = item.description
+    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    descLabel.TextScaled = true
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = itemFrame
+    
+    -- Price label
+    local priceLabel = Instance.new("TextLabel")
+    priceLabel.Name = "PriceLabel"
+    priceLabel.Size = UDim2.new(0.3, 0, 0.4, 0)
+    priceLabel.Position = UDim2.new(0.7, 0, 0, 5)
+    priceLabel.BackgroundTransparency = 1
+    priceLabel.Text = item.price .. " Coins"
+    priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+    priceLabel.TextScaled = true
+    priceLabel.Font = Enum.Font.GothamBold
+    priceLabel.TextXAlignment = Enum.TextXAlignment.Right
+    priceLabel.Parent = itemFrame
+    
+    -- Buy button
+    local buyButton = Instance.new("TextButton")
+    buyButton.Name = "BuyButton"
+    buyButton.Size = UDim2.new(0.3, 0, 0.4, 0)
+    buyButton.Position = UDim2.new(0.7, 0, 0, 35)
+    buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    buyButton.BorderSizePixel = 0
+    buyButton.Text = "BUY"
+    buyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    buyButton.TextScaled = true
+    buyButton.Font = Enum.Font.GothamBold
+    buyButton.Parent = itemFrame
+    
+    local buyCorner = Instance.new("UICorner")
+    buyCorner.CornerRadius = UDim.new(0, 6)
+    buyCorner.Parent = buyButton
+    
+    -- Update button state based on affordability
+    local function updateButtonState()
+        if currentCoins >= item.price then
+            buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            buyButton.Text = "BUY"
+        else
+            buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            buyButton.Text = "NO COINS"
+        end
+    end
+    
+    -- Buy button functionality
+    buyButton.MouseButton1Click:Connect(function()
+        if currentCoins >= item.price then
+            -- Fire purchase request to server
+            shopPurchase:FireServer(item.name)
+        end
+    end)
+    
+    -- Return update function
+    return updateButtonState
+end
+
+-- Function to populate shop items
+local function populateShopItems()
+    -- Clear existing items
+    for _, child in pairs(coinItemsContainer:GetChildren()) do
+        if child:IsA("Frame") and child.Name:find("ItemFrame_") then
+            child:Destroy()
+        end
+    end
+    
+    -- Get shop items from server (for now, we'll use hardcoded items)
+    local shopItems = {
+        {
+            name = "Lucky Potion (1.25x)",
+            price = 50,
+            description = "Increases luck by 1.25x for 5 minutes",
+            itemType = "lucky_potion",
+            luckMultiplier = 1.25
+        },
+        {
+            name = "Lucky Potion (1.5x)",
+            price = 75,
+            description = "Increases luck by 1.5x for 5 minutes",
+            itemType = "lucky_potion",
+            luckMultiplier = 1.5
+        },
+        {
+            name = "Lucky Potion (2x)",
+            price = 100,
+            description = "Increases luck by 2x for 5 minutes",
+            itemType = "lucky_potion",
+            luckMultiplier = 2
+        }
+    }
+    
+    local updateFunctions = {}
+    
+    -- Create items
+    for i, item in ipairs(shopItems) do
+        local updateFunc = createShopItem(item, coinItemsContainer)
+        table.insert(updateFunctions, updateFunc)
+        
+        -- Position the item
+        local itemFrame = coinItemsContainer:FindFirstChild("ItemFrame_" .. item.name)
+        if itemFrame then
+            itemFrame.Position = UDim2.new(0, 10, 0, (i - 1) * 90)
+        end
+    end
+    
+    -- Update container size
+    coinItemsContainer.CanvasSize = UDim2.new(0, 0, 0, #shopItems * 90)
+    
+    -- Return update functions
+    return updateFunctions
+end
+
+-- Function to update coin count
+local function updateCoinCount(coinCount)
+    currentCoins = coinCount
+    -- Update all shop item buttons
+    for _, child in pairs(coinItemsContainer:GetChildren()) do
+        if child:IsA("Frame") and child.Name:find("ItemFrame_") then
+            local buyButton = child:FindFirstChild("BuyButton")
+            if buyButton then
+                local priceText = child:FindFirstChild("PriceLabel")
+                if priceText then
+                    local price = tonumber(priceText.Text:match("(%d+) Coins"))
+                    if price and currentCoins >= price then
+                        buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                        buyButton.Text = "BUY"
+                    else
+                        buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                        buyButton.Text = "NO COINS"
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Function to update luck display
+local function updateLuckDisplay(luckMultiplier, timeLeft)
+    if luckDisplay then
+        if luckMultiplier > 1 and timeLeft > 0 then
+            local minutes = math.floor(timeLeft / 60)
+            local seconds = timeLeft % 60
+            luckDisplay.Text = "Current Luck: " .. string.format("%.2f", luckMultiplier) .. "x (" .. minutes .. ":" .. string.format("%02d", seconds) .. ")"
+            luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150) -- Purple for active luck
+        else
+            luckDisplay.Text = "Current Luck: 1.00x"
+            luckDisplay.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Gray for no luck
+        end
+    end
+end
+
+-- Listen for coin count updates
+coinCountUpdate.OnClientEvent:Connect(updateCoinCount)
+
+-- Listen for luck updates
+luckUpdate.OnClientEvent:Connect(updateLuckDisplay)
+
+-- Populate shop when switching to coin tab
+local originalSwitchToTab = switchToTab
+switchToTab = function(tabName)
+    originalSwitchToTab(tabName)
+    if tabName == "coin" then
+        populateShopItems()
+    end
+end
 
 -- Make the script accessible to other scripts
 _G.ShopUI = {

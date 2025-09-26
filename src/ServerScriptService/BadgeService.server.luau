@@ -55,6 +55,10 @@ local BADGES = {
 	{ id = "level6", name = "Level 6", description = "Complete the sixth level", unlocked = false },
 	{ id = "level7", name = "Level 7", description = "Complete the seventh level", unlocked = false },
 	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false },
+	{ id = "level9", name = "Level 9 (World 2)", description = "Complete the ninth level", unlocked = false },
+	{ id = "level10", name = "Level 10 (World 2)", description = "Complete the tenth level", unlocked = false },
+	{ id = "level11", name = "Level 11 (World 2)", description = "Complete the eleventh level", unlocked = false },
+	{ id = "level12", name = "Level 12 (World 2)", description = "Complete the twelfth level", unlocked = false },
 }
 
 -- Persistence
@@ -228,7 +232,7 @@ function BadgeService.getUnlockedCount(player: Player): number
 end
 
 function BadgeService.getBadgeIdByNumber(badgeNumber: number): string?
-	if badgeNumber >= 1 and badgeNumber <= 8 then
+	if badgeNumber >= 1 and badgeNumber <= 12 then
 		return "level" .. badgeNumber
 	end
 	return nil

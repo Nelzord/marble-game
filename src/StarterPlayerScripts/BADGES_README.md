@@ -4,7 +4,7 @@ The Badges System has been added to the Marble Game to track player progress thr
 
 ## Features
 
-- **8 Level Badges**: One badge for each level (Level 1 through Level 8)
+- **12 Level Badges**: One badge for each level (Level 1 through Level 8, Level 9-12 World 2)
 - **Visual Status**: Each badge shows whether it's locked or unlocked
 - **Progress Tracking**: Players can see their completion progress at a glance
 - **Clean UI**: Badges are displayed in a 4-column grid layout
@@ -32,7 +32,7 @@ Each badge displays:
 - Similar layout to the Inventory window
 - Header shows "BADGES"
 - Close button (X) in top-right corner
-- Scrollable grid of 8 badges
+- Scrollable grid of 12 badges
 
 ## Technical Implementation
 
@@ -45,7 +45,7 @@ Each badge displays:
 - `MarbleUIController.luau` - Integrated badges system into main UI
 
 ### Badge System Functions
-- `getAllBadges()` - Returns all 8 badges
+- `getAllBadges()` - Returns all 12 badges
 - `unlockBadge(levelNumber)` - Unlocks a specific level badge
 - `isBadgeUnlocked(badgeId)` - Checks if a badge is unlocked
 - `getUnlockedCount()` - Returns count of unlocked badges
@@ -57,7 +57,7 @@ Each badge displays:
 
 The `BadgeTestScript.luau` provides keyboard controls for testing:
 
-- **1-8**: Unlock badges for levels 1-8
+- **1-12**: Unlock badges for levels 1-12
 - **R**: Reset all badges to locked
 - **I**: Show badge information in console
 
@@ -74,7 +74,7 @@ The `BadgeTestScript.luau` provides keyboard controls for testing:
 To unlock badges in actual gameplay, call:
 ```lua
 local BadgeSystem = require(path.to.BadgeSystem)
-BadgeSystem.unlockBadge(levelNumber) -- levelNumber 1-8
+BadgeSystem.unlockBadge(levelNumber) -- levelNumber 1-12
 ```
 
 This should be called when a player completes a level, typically from the server-side level completion logic.

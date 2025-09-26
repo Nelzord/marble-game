@@ -230,4 +230,25 @@ spawn(function()
 		-- Wait interval before next spawn attempt
 		task.wait(SPAWN_INTERVAL)
 	end
-end) 
+end)
+
+-- Public API for other services
+local CoinService = {}
+
+function CoinService:GetCoins(player)
+	return getCoins(player)
+end
+
+function CoinService:SetCoins(player, amount)
+	setCoins(player, amount)
+end
+
+function CoinService:AddCoins(player, delta)
+	addCoins(player, delta)
+end
+
+function CoinService:RemoveCoins(player, amount)
+	addCoins(player, -amount)
+end
+
+return CoinService

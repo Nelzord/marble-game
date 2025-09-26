@@ -23,6 +23,10 @@ local BADGES = {
 	{ id = "level6", name = "Level 6", description = "Complete the sixth level", unlocked = false },
 	{ id = "level7", name = "Level 7", description = "Complete the seventh level", unlocked = false },
 	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false },
+	{ id = "level9", name = "Level 9 (World 2)", description = "Complete the ninth level", unlocked = false },
+	{ id = "level10", name = "Level 10 (World 2)", description = "Complete the tenth level", unlocked = false },
+	{ id = "level11", name = "Level 11 (World 2)", description = "Complete the eleventh level", unlocked = false },
+	{ id = "level12", name = "Level 12 (World 2)", description = "Complete the twelfth level", unlocked = false },
 }
 
 -- Function to update badges from server data
@@ -53,6 +57,7 @@ end
 
 -- Function to unlock a badge by level number (now handled server-side)
 -- This function is kept for compatibility but does nothing
+-- Supports level numbers 1-12
 function BadgeSystem.unlockBadge(levelNumber)
 	print("BadgeSystem.unlockBadge called - badges are now unlocked server-side when touching Badge objects")
 	return false
