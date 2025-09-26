@@ -4,10 +4,14 @@ The Badges System has been added to the Marble Game to track player progress thr
 
 ## Features
 
-- **12 Level Badges**: One badge for each level (Level 1 through Level 8, Level 9-12 World 2)
+- **16 Level Badges**: One badge for each level across two worlds
+  - **World 1**: Levels 1-8 (8 badges)
+  - **World 2**: Levels 9-16 (8 badges)
+- **World Separation**: Toggle between World 1 and World 2 with dedicated tabs
+- **Progressive Unlock**: World 2 is locked until all World 1 badges are collected
 - **Visual Status**: Each badge shows whether it's locked or unlocked
 - **Progress Tracking**: Players can see their completion progress at a glance
-- **Clean UI**: Badges are displayed in a 4-column grid layout
+- **Clean UI**: Badges are displayed in a 4-column grid layout with world selection
 
 ## How It Works
 
@@ -32,7 +36,8 @@ Each badge displays:
 - Similar layout to the Inventory window
 - Header shows "BADGES"
 - Close button (X) in top-right corner
-- Scrollable grid of 12 badges
+- World selection tabs (World 1 / World 2)
+- Scrollable grid of badges for the selected world
 
 ## Technical Implementation
 
@@ -45,21 +50,32 @@ Each badge displays:
 - `MarbleUIController.luau` - Integrated badges system into main UI
 
 ### Badge System Functions
-- `getAllBadges()` - Returns all 12 badges
+- `getAllBadges()` - Returns all 16 badges
+- `getBadgesByWorld(worldNumber)` - Returns badges for a specific world
+- `getWorld1Badges()` - Returns World 1 badges (levels 1-8)
+- `getWorld2Badges()` - Returns World 2 badges (levels 9-16)
+- `isWorld1Completed()` - Checks if all World 1 badges are unlocked
+- `isWorld2Unlocked()` - Checks if World 2 is unlocked (requires World 1 completion)
 - `unlockBadge(levelNumber)` - Unlocks a specific level badge
 - `isBadgeUnlocked(badgeId)` - Checks if a badge is unlocked
 - `getUnlockedCount()` - Returns count of unlocked badges
 - `resetAllBadges()` - Resets all badges to locked state
 - `createBadgeTile()` - Creates UI tile for a badge
-- `rebuildBadgesUI()` - Rebuilds the entire badges display
+- `rebuildBadgesUI(list, grid, worldNumber?)` - Rebuilds badges display for specific world
 
 ## Testing
 
 The `BadgeTestScript.luau` provides keyboard controls for testing:
 
-- **1-12**: Unlock badges for levels 1-12
+- **1-16**: Unlock badges for levels 1-16
 - **R**: Reset all badges to locked
 - **I**: Show badge information in console
+
+The `BadgeWorldTest.luau` provides additional testing for world separation:
+
+- Tests world filtering functionality
+- Verifies correct badge counts per world
+- Validates world-specific badge retrieval
 
 ## Future Enhancements
 
@@ -74,7 +90,24 @@ The `BadgeTestScript.luau` provides keyboard controls for testing:
 To unlock badges in actual gameplay, call:
 ```lua
 local BadgeSystem = require(path.to.BadgeSystem)
-BadgeSystem.unlockBadge(levelNumber) -- levelNumber 1-12
+BadgeSystem.unlockBadge(levelNumber) -- levelNumber 1-16
 ```
 
 This should be called when a player completes a level, typically from the server-side level completion logic.
+
+## World Separation
+
+The badges are now organized into two worlds:
+
+- **World 1**: Contains levels 1-8 (8 badges total) - Always accessible
+- **World 2**: Contains levels 9-16 (8 badges total) - Locked until all World 1 badges are collected
+
+### World Unlock System
+
+- **World 1**: Always accessible to players
+- **World 2**: Locked by default, shows "World 2 (Locked)" in the tab
+- **Unlock Condition**: Complete all 8 badges in World 1
+- **Visual Feedback**: World 2 tab changes from "World 2 (Locked)" to "World 2" when unlocked
+- **Click Prevention**: Players cannot click on World 2 tab when locked
+
+Players can switch between worlds using the tab buttons in the badges UI. The active world is highlighted in green, while the inactive world appears in gray. When World 2 is locked, it appears darker and shows a "Locked" indicator.

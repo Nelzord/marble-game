@@ -47,18 +47,24 @@ local Remotes = getOrCreateRemotes()
 
 -- Badge data structure
 local BADGES = {
-	{ id = "level1", name = "Level 1", description = "Complete the first level", unlocked = false },
-	{ id = "level2", name = "Level 2", description = "Complete the second level", unlocked = false },
-	{ id = "level3", name = "Level 3", description = "Complete the third level", unlocked = false },
-	{ id = "level4", name = "Level 4", description = "Complete the fourth level", unlocked = false },
-	{ id = "level5", name = "Level 5", description = "Complete the fifth level", unlocked = false },
-	{ id = "level6", name = "Level 6", description = "Complete the sixth level", unlocked = false },
-	{ id = "level7", name = "Level 7", description = "Complete the seventh level", unlocked = false },
-	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false },
-	{ id = "level9", name = "Level 9 (World 2)", description = "Complete the ninth level", unlocked = false },
-	{ id = "level10", name = "Level 10 (World 2)", description = "Complete the tenth level", unlocked = false },
-	{ id = "level11", name = "Level 11 (World 2)", description = "Complete the eleventh level", unlocked = false },
-	{ id = "level12", name = "Level 12 (World 2)", description = "Complete the twelfth level", unlocked = false },
+	-- World 1 (Levels 1-8)
+	{ id = "level1", name = "Level 1", description = "Complete the first level", unlocked = false, world = 1 },
+	{ id = "level2", name = "Level 2", description = "Complete the second level", unlocked = false, world = 1 },
+	{ id = "level3", name = "Level 3", description = "Complete the third level", unlocked = false, world = 1 },
+	{ id = "level4", name = "Level 4", description = "Complete the fourth level", unlocked = false, world = 1 },
+	{ id = "level5", name = "Level 5", description = "Complete the fifth level", unlocked = false, world = 1 },
+	{ id = "level6", name = "Level 6", description = "Complete the sixth level", unlocked = false, world = 1 },
+	{ id = "level7", name = "Level 7", description = "Complete the seventh level", unlocked = false, world = 1 },
+	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false, world = 1 },
+	-- World 2 (Levels 9-16)
+	{ id = "level9", name = "Level 9", description = "Complete the ninth level", unlocked = false, world = 2 },
+	{ id = "level10", name = "Level 10", description = "Complete the tenth level", unlocked = false, world = 2 },
+	{ id = "level11", name = "Level 11", description = "Complete the eleventh level", unlocked = false, world = 2 },
+	{ id = "level12", name = "Level 12", description = "Complete the twelfth level", unlocked = false, world = 2 },
+	{ id = "level13", name = "Level 13", description = "Complete the thirteenth level", unlocked = false, world = 2 },
+	{ id = "level14", name = "Level 14", description = "Complete the fourteenth level", unlocked = false, world = 2 },
+	{ id = "level15", name = "Level 15", description = "Complete the fifteenth level", unlocked = false, world = 2 },
+	{ id = "level16", name = "Level 16", description = "Complete the sixteenth level", unlocked = false, world = 2 },
 }
 
 -- Persistence
@@ -232,7 +238,7 @@ function BadgeService.getUnlockedCount(player: Player): number
 end
 
 function BadgeService.getBadgeIdByNumber(badgeNumber: number): string?
-	if badgeNumber >= 1 and badgeNumber <= 12 then
+	if badgeNumber >= 1 and badgeNumber <= 16 then
 		return "level" .. badgeNumber
 	end
 	return nil

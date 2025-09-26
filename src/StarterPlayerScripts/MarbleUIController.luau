@@ -36,6 +36,9 @@ local badgesFrame: Frame? = nil
 local badgesCloseButton: TextButton? = nil
 local badgesList: ScrollingFrame? = nil
 local badgesGrid: UIGridLayout? = nil
+local world1Tab: TextButton? = nil
+local world2Tab: TextButton? = nil
+local currentWorld: number = 1
 local invOpenSfx: Sound? = nil
 
 -- Remote events
@@ -132,7 +135,7 @@ local function createUI()
 	print("Inventory frame created")
 	
 	-- Create badges frame
-	badgesFrame, badgesCloseButton, badgesList, badgesGrid = UIComponents.createBadgesFrame(screen)
+	badgesFrame, badgesCloseButton, badgesList, badgesGrid, world1Tab, world2Tab = UIComponents.createBadgesFrame(screen)
 	print("Badges frame created")
 	
 	-- Create sound effects
@@ -150,6 +153,23 @@ local function createUI()
 	end)
 	
 	print("=== UI Construction Complete ===")
+end
+
+-- Function to update World 2 tab appearance based on World 1 completion
+local function updateWorld2TabAppearance()
+	if not world2Tab then return end
+	
+	local isWorld2Unlocked = BadgeSystem.isWorld2Unlocked()
+	
+	if isWorld2Unlocked then
+		world2Tab.Text = "World 2"
+		world2Tab.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		world2Tab.TextColor3 = Color3.fromRGB(200, 200, 200)
+	else
+		world2Tab.Text = "World 2 (Locked)"
+		world2Tab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		world2Tab.TextColor3 = Color3.fromRGB(150, 150, 150)
+	end
 end
 
 -- Function to update power button based on equipped marble
@@ -306,8 +326,14 @@ local function setupEventHandlers()
 		-- Hide inventory frame when opening badges
 		if newVisible then
 			invFrame.Visible = false
-			-- Build badges UI when opening
-			BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid)
+			-- Reset to World 1 and update tab appearance
+			currentWorld = 1
+			world1Tab.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+			world1Tab.TextColor3 = Color3.new(1, 1, 1)
+			-- Update World 2 tab appearance based on completion status
+			updateWorld2TabAppearance()
+			-- Build badges UI for World 1 when opening
+			BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid, 1)
 			pcall(function()
 				invOpenSfx:Play()
 			end)
@@ -317,6 +343,36 @@ local function setupEventHandlers()
 	-- Badges close button handler
 	badgesCloseButton.MouseButton1Click:Connect(function()
 		badgesFrame.Visible = false
+	end)
+	
+	-- World 1 tab handler
+	world1Tab.MouseButton1Click:Connect(function()
+		currentWorld = 1
+		-- Update tab appearance
+		world1Tab.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+		world1Tab.TextColor3 = Color3.new(1, 1, 1)
+		world2Tab.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		world2Tab.TextColor3 = Color3.fromRGB(200, 200, 200)
+		-- Rebuild badges UI for World 1
+		BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid, 1)
+	end)
+	
+	-- World 2 tab handler
+	world2Tab.MouseButton1Click:Connect(function()
+		-- Check if World 2 is unlocked
+		if not BadgeSystem.isWorld2Unlocked() then
+			print("World 2 is locked - complete all World 1 badges first!")
+			return
+		end
+		
+		currentWorld = 2
+		-- Update tab appearance
+		world2Tab.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+		world2Tab.TextColor3 = Color3.new(1, 1, 1)
+		world1Tab.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		world1Tab.TextColor3 = Color3.fromRGB(200, 200, 200)
+		-- Rebuild badges UI for World 2
+		BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid, 2)
 	end)
 	
 	-- Inventory update handler
@@ -334,6 +390,19 @@ local function setupEventHandlers()
 		InventorySystem.updateInventory(payload)
 		InventorySystem.rebuildInventoryUI(invList, invGrid, Marbles, EquipMarble)
 		updatePowerButtonForMarble()
+	end)
+	
+	-- Badge update handler - check for World 2 unlock
+	local BadgeUpdate = RemotesFolder:WaitForChild("BadgeUpdate")
+	BadgeUpdate.OnClientEvent:Connect(function(badgeData)
+		print("BadgeUpdate received in MarbleUIController")
+		-- Update World 2 tab appearance when badges are updated
+		updateWorld2TabAppearance()
+		
+		-- If badges frame is open, rebuild the current world's UI
+		if badgesFrame and badgesFrame.Visible then
+			BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid, currentWorld)
+		end
 	end)
 	
 	-- Roll result handler

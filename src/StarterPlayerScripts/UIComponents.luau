@@ -272,11 +272,50 @@ function UIComponents.createBadgesFrame(screen: ScreenGui)
 	
 	UIComponents.createCorner(closeButton, 8)
 	
+	-- Create world selection tabs
+	local worldTabs = Instance.new("Frame")
+	worldTabs.Name = "WorldTabs"
+	worldTabs.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	worldTabs.BorderSizePixel = 0
+	worldTabs.Size = UDim2.new(1, -24, 0, 40)
+	worldTabs.Position = UDim2.new(0, 12, 0, 60)
+	worldTabs.Parent = badgesFrame
+	
+	UIComponents.createCorner(worldTabs, 6)
+	
+	-- World 1 tab
+	local world1Tab = Instance.new("TextButton")
+	world1Tab.Name = "World1Tab"
+	world1Tab.Text = "World 1"
+	world1Tab.Font = Enum.Font.GothamBold
+	world1Tab.TextScaled = true
+	world1Tab.Size = UDim2.new(0.5, -5, 1, -8)
+	world1Tab.Position = UDim2.new(0, 4, 0, 4)
+	world1Tab.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+	world1Tab.TextColor3 = Color3.new(1, 1, 1)
+	world1Tab.Parent = worldTabs
+	
+	UIComponents.createCorner(world1Tab, 4)
+	
+	-- World 2 tab
+	local world2Tab = Instance.new("TextButton")
+	world2Tab.Name = "World2Tab"
+	world2Tab.Text = "World 2 (Locked)"
+	world2Tab.Font = Enum.Font.GothamBold
+	world2Tab.TextScaled = true
+	world2Tab.Size = UDim2.new(0.5, -5, 1, -8)
+	world2Tab.Position = UDim2.new(0.5, 1, 0, 4)
+	world2Tab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	world2Tab.TextColor3 = Color3.fromRGB(150, 150, 150)
+	world2Tab.Parent = worldTabs
+	
+	UIComponents.createCorner(world2Tab, 4)
+	
 	-- Create scrolling list
 	local list = Instance.new("ScrollingFrame")
 	list.Name = "List"
-	list.Size = UDim2.new(1, -24, 1, -80)
-	list.Position = UDim2.new(0, 12, 0, 60)
+	list.Size = UDim2.new(1, -24, 1, -120)
+	list.Position = UDim2.new(0, 12, 0, 100)
 	list.ScrollBarThickness = 6
 	list.CanvasSize = UDim2.new(0, 0, 0, 0)
 	list.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -296,7 +335,7 @@ function UIComponents.createBadgesFrame(screen: ScreenGui)
 	grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	grid.Parent = list
 	
-	return badgesFrame, closeButton, list, grid
+	return badgesFrame, closeButton, list, grid, world1Tab, world2Tab
 end
 
 -- Create sound effects

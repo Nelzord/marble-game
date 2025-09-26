@@ -15,18 +15,24 @@ local RequestBadges = RemotesFolder:WaitForChild("RequestBadges")
 
 -- Badge data structure (will be updated from server)
 local BADGES = {
-	{ id = "level1", name = "Level 1", description = "Complete the first level", unlocked = false },
-	{ id = "level2", name = "Level 2", description = "Complete the second level", unlocked = false },
-	{ id = "level3", name = "Level 3", description = "Complete the third level", unlocked = false },
-	{ id = "level4", name = "Level 4", description = "Complete the fourth level", unlocked = false },
-	{ id = "level5", name = "Level 5", description = "Complete the fifth level", unlocked = false },
-	{ id = "level6", name = "Level 6", description = "Complete the sixth level", unlocked = false },
-	{ id = "level7", name = "Level 7", description = "Complete the seventh level", unlocked = false },
-	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false },
-	{ id = "level9", name = "Level 9 (World 2)", description = "Complete the ninth level", unlocked = false },
-	{ id = "level10", name = "Level 10 (World 2)", description = "Complete the tenth level", unlocked = false },
-	{ id = "level11", name = "Level 11 (World 2)", description = "Complete the eleventh level", unlocked = false },
-	{ id = "level12", name = "Level 12 (World 2)", description = "Complete the twelfth level", unlocked = false },
+	-- World 1 (Levels 1-8)
+	{ id = "level1", name = "Level 1", description = "Complete the first level", unlocked = false, world = 1 },
+	{ id = "level2", name = "Level 2", description = "Complete the second level", unlocked = false, world = 1 },
+	{ id = "level3", name = "Level 3", description = "Complete the third level", unlocked = false, world = 1 },
+	{ id = "level4", name = "Level 4", description = "Complete the fourth level", unlocked = false, world = 1 },
+	{ id = "level5", name = "Level 5", description = "Complete the fifth level", unlocked = false, world = 1 },
+	{ id = "level6", name = "Level 6", description = "Complete the sixth level", unlocked = false, world = 1 },
+	{ id = "level7", name = "Level 7", description = "Complete the seventh level", unlocked = false, world = 1 },
+	{ id = "level8", name = "Level 8", description = "Complete the eighth level", unlocked = false, world = 1 },
+	-- World 2 (Levels 9-16)
+	{ id = "level9", name = "Level 9", description = "Complete the ninth level", unlocked = false, world = 2 },
+	{ id = "level10", name = "Level 10", description = "Complete the tenth level", unlocked = false, world = 2 },
+	{ id = "level11", name = "Level 11", description = "Complete the eleventh level", unlocked = false, world = 2 },
+	{ id = "level12", name = "Level 12", description = "Complete the twelfth level", unlocked = false, world = 2 },
+	{ id = "level13", name = "Level 13", description = "Complete the thirteenth level", unlocked = false, world = 2 },
+	{ id = "level14", name = "Level 14", description = "Complete the fourteenth level", unlocked = false, world = 2 },
+	{ id = "level15", name = "Level 15", description = "Complete the fifteenth level", unlocked = false, world = 2 },
+	{ id = "level16", name = "Level 16", description = "Complete the sixteenth level", unlocked = false, world = 2 },
 }
 
 -- Function to update badges from server data
@@ -55,9 +61,46 @@ function BadgeSystem.getAllBadges()
 	return BADGES
 end
 
+-- Function to get badges by world
+function BadgeSystem.getBadgesByWorld(worldNumber: number)
+	local worldBadges = {}
+	for _, badge in ipairs(BADGES) do
+		if badge.world == worldNumber then
+			table.insert(worldBadges, badge)
+		end
+	end
+	return worldBadges
+end
+
+-- Function to get World 1 badges (levels 1-8)
+function BadgeSystem.getWorld1Badges()
+	return BadgeSystem.getBadgesByWorld(1)
+end
+
+-- Function to get World 2 badges (levels 9-16)
+function BadgeSystem.getWorld2Badges()
+	return BadgeSystem.getBadgesByWorld(2)
+end
+
+-- Function to check if World 1 is fully completed
+function BadgeSystem.isWorld1Completed()
+	local world1Badges = BadgeSystem.getWorld1Badges()
+	for _, badge in ipairs(world1Badges) do
+		if not badge.unlocked then
+			return false
+		end
+	end
+	return true
+end
+
+-- Function to check if World 2 is unlocked (requires World 1 completion)
+function BadgeSystem.isWorld2Unlocked()
+	return BadgeSystem.isWorld1Completed()
+end
+
 -- Function to unlock a badge by level number (now handled server-side)
 -- This function is kept for compatibility but does nothing
--- Supports level numbers 1-12
+-- Supports level numbers 1-16
 function BadgeSystem.unlockBadge(levelNumber)
 	print("BadgeSystem.unlockBadge called - badges are now unlocked server-side when touching Badge objects")
 	return false
@@ -161,7 +204,7 @@ function BadgeSystem.refreshCanvasSize(list, grid)
 end
 
 -- Function to rebuild badges UI
-function BadgeSystem.rebuildBadgesUI(list, grid)
+function BadgeSystem.rebuildBadgesUI(list, grid, worldNumber: number?)
 	if not list or not grid then
 		print("rebuildBadgesUI: Required UI elements (list or grid) not available, skipping")
 		return
@@ -174,7 +217,10 @@ function BadgeSystem.rebuildBadgesUI(list, grid)
 		end
 	end
 	
-	for _, badge in ipairs(BadgeSystem.getAllBadges()) do
+	-- Get badges to display
+	local badgesToShow = if worldNumber then BadgeSystem.getBadgesByWorld(worldNumber) else BadgeSystem.getAllBadges()
+	
+	for _, badge in ipairs(badgesToShow) do
 		local tile = BadgeSystem.createBadgeTile(badge, list, grid)
 		tile.Parent = list
 	end
