@@ -26,4 +26,14 @@ To enable this feature:
 
 When enabled, you'll see a console message: `[MarbleService] DEBUG MODE: All marbles will be given to players automatically`
 
+### Debug Mode: Give Coins
+For testing purposes, you can enable a debug flag that automatically gives 500 coins to players when they join the game. This allows you to test coin-related features without having to collect coins.
+
+To enable this feature:
+1. Open `src/ServerScriptService/CoinService.luau`
+2. Set `GIVE_COINS = true` (it's enabled by default)
+3. Set to `false` to disable this feature in production
+
+When enabled, you'll see a console message: `[CoinService] DEBUG MODE: Players will receive 500 coins automatically`
+
 For more help, check out [the Rojo documentation](https://rojo.space/docs).

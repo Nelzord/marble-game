@@ -16,7 +16,16 @@ local function clog(...)
 	end
 end
 
+-- Debug flag: Give 500 coins to players for testing
+-- Set to false to disable this feature in production
+local GIVE_COINS = true
+
 clog("initializing...")
+
+-- Debug: Log if the give-coins flag is enabled
+if GIVE_COINS then
+	print("[CoinService] DEBUG MODE: Players will receive 500 coins automatically")
+end
 
 -- Create/fetch remotes
 local function getOrCreateRemotes()
@@ -71,12 +80,20 @@ end
 
 Players.PlayerAdded:Connect(function(player)
 	local amount = 0
-	local ok, err = pcall(function()
-		amount = coinsStore:GetAsync("coins_" .. player.UserId) or 0
-	end)
-	if not ok then
-		warn("[CoinService] DataStore GetAsync failed:", err)
+	
+	-- Debug flag: Give 500 coins to players for testing
+	if GIVE_COINS then
+		amount = 500
+		clog("Gave 500 coins to player:", player.Name)
+	else
+		local ok, err = pcall(function()
+			amount = coinsStore:GetAsync("coins_" .. player.UserId) or 0
+		end)
+		if not ok then
+			warn("[CoinService] DataStore GetAsync failed:", err)
+		end
 	end
+	
 	playerCoins[player] = tonumber(amount) or 0
 	sendCoins(player)
 end)

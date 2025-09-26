@@ -76,6 +76,8 @@ end
 
 -- Function to purchase item
 function ShopService:PurchaseItem(player, itemName)
+    print("[ShopService] PurchaseItem called for " .. player.Name .. " - " .. itemName)
+    
     -- Find the item
     local item = nil
     for _, shopItem in ipairs(shopItems) do
@@ -86,14 +88,19 @@ function ShopService:PurchaseItem(player, itemName)
     end
     
     if not item then
+        print("[ShopService] Item not found: " .. itemName)
         return false, "Item not found"
     end
+    
+    print("[ShopService] Found item: " .. item.name .. " (price: " .. item.price .. ")")
     
     -- Get CoinService
     local CoinService = require(game.ServerScriptService.CoinService)
     
     -- Check if player has enough coins
     local currentCoins = CoinService:GetCoins(player)
+    print("[ShopService] Player " .. player.Name .. " has " .. currentCoins .. " coins, needs " .. item.price)
+    
     if currentCoins < item.price then
         return false, "Not enough coins"
     end
@@ -170,6 +177,7 @@ function ShopService:Init()
     
     -- Handle shop purchases
     Remotes.ShopPurchase.OnServerEvent:Connect(function(player, itemName)
+        print("[ShopService] Received purchase request from " .. player.Name .. " for " .. itemName)
         local success, message = ShopService:PurchaseItem(player, itemName)
         if success then
             print(player.Name .. " successfully purchased " .. itemName)
