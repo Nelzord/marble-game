@@ -51,13 +51,32 @@ function ShopService:GetShopItems()
     return shopItems
 end
 
--- Function to get player's current luck multiplier
+-- Function to get player's current luck multiplier (including permanent bonus)
 function ShopService:GetPlayerLuckMultiplier(player)
     local potion = playerLuckyPotions[player]
+    local potionMultiplier = 1
     if potion and os.time() < potion.endTime then
-        return potion.multiplier
+        potionMultiplier = potion.multiplier
     end
-    return 1 -- Default luck multiplier
+    
+    -- Get permanent luck bonus from RobuxService (with safe require)
+    local permanentBonus = 1 -- Default to 1x if RobuxService not available
+    
+    -- Try to get RobuxService, but don't fail if it's not available
+    local success, result = pcall(function()
+        local RobuxService = require(script.Parent.RobuxService)
+        if RobuxService and RobuxService.GetPlayerTotalLuckMultiplier then
+            return RobuxService:GetPlayerTotalLuckMultiplier(player)
+        end
+        return 1
+    end)
+    
+    if success then
+        permanentBonus = result
+    end
+    
+    -- Combine permanent bonus with potion multiplier
+    return permanentBonus * potionMultiplier
 end
 
 -- Function to send luck update to client
@@ -94,8 +113,15 @@ function ShopService:PurchaseItem(player, itemName)
     
     print("[ShopService] Found item: " .. item.name .. " (price: " .. item.price .. ")")
     
-    -- Get CoinService
-    local CoinService = require(game.ServerScriptService.CoinService)
+    -- Get CoinService (with safe require)
+    local success, CoinService = pcall(function()
+        return require(script.Parent.CoinService)
+    end)
+    
+    if not success or not CoinService then
+        print("[ShopService] Failed to require CoinService")
+        return false, "Service unavailable"
+    end
     
     -- Check if player has enough coins
     local currentCoins = CoinService:GetCoins(player)
@@ -142,8 +168,15 @@ end
 
 -- Function to get player coins (for UI display)
 function ShopService:GetPlayerCoins(player)
-    local CoinService = require(game.ServerScriptService.CoinService)
-    return CoinService:GetCoins(player)
+    local success, CoinService = pcall(function()
+        return require(script.Parent.CoinService)
+    end)
+    
+    if success and CoinService then
+        return CoinService:GetCoins(player)
+    else
+        return 0 -- Default to 0 coins if service unavailable
+    end
 end
 
 -- Initialize the service

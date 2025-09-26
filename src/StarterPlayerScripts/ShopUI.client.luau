@@ -133,6 +133,7 @@ specialTitle.TextScaled = true
 specialTitle.Font = Enum.Font.GothamBold
 specialTitle.Parent = specialContent
 
+
 -- Special shop items container
 local specialItemsContainer = Instance.new("ScrollingFrame")
 specialItemsContainer.Name = "SpecialItemsContainer"
@@ -267,8 +268,12 @@ end
 -- Current coin count
 local currentCoins = 0
 
+-- Store update functions for shop items
+local robuxUpdateFunctions = {}
+local coinUpdateFunctions = {}
+
 -- Function to create shop item UI
-local function createShopItem(item, container)
+local function createShopItem(item, container, isRobuxItem)
     local itemFrame = Instance.new("Frame")
     itemFrame.Name = "ItemFrame_" .. item.name
     itemFrame.Size = UDim2.new(1, -20, 0, 80)
@@ -312,8 +317,8 @@ local function createShopItem(item, container)
     priceLabel.Size = UDim2.new(0.3, 0, 0.4, 0)
     priceLabel.Position = UDim2.new(0.7, 0, 0, 5)
     priceLabel.BackgroundTransparency = 1
-    priceLabel.Text = item.price .. " Coins"
-    priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+    priceLabel.Text = item.price .. (isRobuxItem and " Robux" or " Coins")
+    priceLabel.TextColor3 = isRobuxItem and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 215, 0)
     priceLabel.TextScaled = true
     priceLabel.Font = Enum.Font.GothamBold
     priceLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -324,9 +329,9 @@ local function createShopItem(item, container)
     buyButton.Name = "BuyButton"
     buyButton.Size = UDim2.new(0.3, 0, 0.4, 0)
     buyButton.Position = UDim2.new(0.7, 0, 0, 35)
-    buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    buyButton.BackgroundColor3 = isRobuxItem and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(0, 150, 0)
     buyButton.BorderSizePixel = 0
-    buyButton.Text = "BUY"
+    buyButton.Text = isRobuxItem and "BUY (R$)" or "BUY"
     buyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     buyButton.TextScaled = true
     buyButton.Font = Enum.Font.GothamBold
@@ -336,22 +341,61 @@ local function createShopItem(item, container)
     buyCorner.CornerRadius = UDim.new(0, 6)
     buyCorner.Parent = buyButton
     
-    -- Update button state based on affordability
+    -- Update button state based on affordability and ownership
     local function updateButtonState()
-        if currentCoins >= item.price then
-            buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            buyButton.Text = "BUY"
+        if isRobuxItem then
+            -- Check if player owns permanent luck (for permanent_luck item)
+            if item.itemType == "permanent_luck" and _G.playerPermanentLuckBonus and _G.playerPermanentLuckBonus >= 2 then
+                buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                buyButton.Text = "OWNED"
+                buyButton.Active = false
+            else
+                -- For other Robux items, always show as purchasable
+                buyButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+                buyButton.Text = "BUY (R$)"
+                buyButton.Active = true
+            end
         else
-            buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-            buyButton.Text = "NO COINS"
+            -- For coin items, check if player has enough coins
+            if currentCoins >= item.price then
+                buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                buyButton.Text = "BUY"
+            else
+                buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                buyButton.Text = "NO COINS"
+            end
         end
     end
     
     -- Buy button functionality
     buyButton.MouseButton1Click:Connect(function()
-        if currentCoins >= item.price then
-            -- Fire purchase request to server
-            shopPurchase:FireServer(item.name)
+        if isRobuxItem then
+            -- Don't allow purchase if already owned (for permanent_luck)
+            if item.itemType == "permanent_luck" and _G.playerPermanentLuckBonus and _G.playerPermanentLuckBonus >= 2 then
+                return
+            end
+            
+            -- Show feedback that purchase prompt is being shown
+            buyButton.Text = "OPENING..."
+            buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            
+            -- Fire Robux purchase request to server
+            local robuxPurchase = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("RobuxPurchase")
+            if robuxPurchase then
+                robuxPurchase:FireServer(item.itemType)
+                
+                -- Reset button after a short delay
+                task.delay(2, function()
+                    if buyButton then
+                        updateButtonState()
+                    end
+                end)
+            end
+        else
+            -- Fire coin purchase request to server
+            if currentCoins >= item.price then
+                shopPurchase:FireServer(item.name)
+            end
         end
     end)
     
@@ -359,14 +403,17 @@ local function createShopItem(item, container)
     return updateButtonState
 end
 
--- Function to populate shop items
-local function populateShopItems()
+-- Function to populate coin shop items
+local function populateCoinShopItems()
     -- Clear existing items
     for _, child in pairs(coinItemsContainer:GetChildren()) do
         if child:IsA("Frame") and child.Name:find("ItemFrame_") then
             child:Destroy()
         end
     end
+    
+    -- Clear update functions
+    coinUpdateFunctions = {}
     
     -- Get shop items from server (for now, we'll use hardcoded items)
     local shopItems = {
@@ -393,12 +440,10 @@ local function populateShopItems()
         }
     }
     
-    local updateFunctions = {}
-    
     -- Create items
     for i, item in ipairs(shopItems) do
-        local updateFunc = createShopItem(item, coinItemsContainer)
-        table.insert(updateFunctions, updateFunc)
+        local updateFunc = createShopItem(item, coinItemsContainer, false)
+        table.insert(coinUpdateFunctions, updateFunc)
         
         -- Position the item
         local itemFrame = coinItemsContainer:FindFirstChild("ItemFrame_" .. item.name)
@@ -409,33 +454,77 @@ local function populateShopItems()
     
     -- Update container size
     coinItemsContainer.CanvasSize = UDim2.new(0, 0, 0, #shopItems * 90)
+end
+
+-- Function to update all shop items
+local function updateAllShopItems()
+    -- Update Robux shop items
+    for _, updateFunc in pairs(robuxUpdateFunctions) do
+        if updateFunc then
+            updateFunc()
+        end
+    end
     
-    -- Return update functions
-    return updateFunctions
+    -- Update coin shop items
+    for _, updateFunc in pairs(coinUpdateFunctions) do
+        if updateFunc then
+            updateFunc()
+        end
+    end
+end
+
+-- Make updateAllShopItems globally accessible
+_G.updateAllShopItems = updateAllShopItems
+
+-- Function to populate Robux shop items
+local function populateRobuxShopItems()
+    -- Clear existing items
+    for _, child in pairs(specialItemsContainer:GetChildren()) do
+        if child:IsA("Frame") and child.Name:find("ItemFrame_") then
+            child:Destroy()
+        end
+    end
+    
+    -- Clear update functions
+    robuxUpdateFunctions = {}
+    
+    -- Robux shop items
+    local robuxItems = {
+        {
+            name = "Nuke All",
+            price = 100,
+            description = "Instantly kill everyone including yourself with a massive explosion! (One-time use)",
+            itemType = "nuke_all"
+        },
+        {
+            name = "Permanent 2x Luck",
+            price = 200,
+            description = "Permanent 2x luck bonus (applies to all potions)",
+            itemType = "permanent_luck"
+        }
+    }
+    
+    -- Create items
+    for i, item in ipairs(robuxItems) do
+        local updateFunc = createShopItem(item, specialItemsContainer, true)
+        table.insert(robuxUpdateFunctions, updateFunc)
+        
+        -- Position the item
+        local itemFrame = specialItemsContainer:FindFirstChild("ItemFrame_" .. item.name)
+        if itemFrame then
+            itemFrame.Position = UDim2.new(0, 10, 0, (i - 1) * 90)
+        end
+    end
+    
+    -- Update container size
+    specialItemsContainer.CanvasSize = UDim2.new(0, 0, 0, #robuxItems * 90)
 end
 
 -- Function to update coin count
 local function updateCoinCount(coinCount)
     currentCoins = coinCount
-    -- Update all shop item buttons
-    for _, child in pairs(coinItemsContainer:GetChildren()) do
-        if child:IsA("Frame") and child.Name:find("ItemFrame_") then
-            local buyButton = child:FindFirstChild("BuyButton")
-            if buyButton then
-                local priceText = child:FindFirstChild("PriceLabel")
-                if priceText then
-                    local price = tonumber(priceText.Text:match("(%d+) Coins"))
-                    if price and currentCoins >= price then
-                        buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-                        buyButton.Text = "BUY"
-                    else
-                        buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-                        buyButton.Text = "NO COINS"
-                    end
-                end
-            end
-        end
-    end
+    -- Update all shop items
+    updateAllShopItems()
 end
 
 -- Function to update luck display
@@ -453,18 +542,37 @@ local function updateLuckDisplay(luckMultiplier, timeLeft)
     end
 end
 
+-- Function to update Robux data display
+local function updateRobuxDataDisplay(permanentLuckBonus, hasNukeAll)
+    -- Store permanent luck bonus globally for shop items to access
+    _G.playerPermanentLuckBonus = permanentLuckBonus
+    
+    -- Update all shop items to reflect ownership status
+    if _G.updateAllShopItems then
+        _G.updateAllShopItems()
+    end
+end
+
 -- Listen for coin count updates
 coinCountUpdate.OnClientEvent:Connect(updateCoinCount)
 
 -- Listen for luck updates
 luckUpdate.OnClientEvent:Connect(updateLuckDisplay)
 
--- Populate shop when switching to coin tab
+-- Listen for Robux data updates
+local robuxDataUpdate = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("RobuxDataUpdate")
+if robuxDataUpdate then
+    robuxDataUpdate.OnClientEvent:Connect(updateRobuxDataDisplay)
+end
+
+-- Populate shop when switching tabs
 local originalSwitchToTab = switchToTab
 switchToTab = function(tabName)
     originalSwitchToTab(tabName)
     if tabName == "coin" then
-        populateShopItems()
+        populateCoinShopItems()
+    elseif tabName == "special" then
+        populateRobuxShopItems()
     end
 end
 
