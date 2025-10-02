@@ -113,6 +113,36 @@ local function getRarityOnly(def): string
 	return ""
 end
 
+-- Function to get rarity color based on drop denominator
+local function getRarityColor(def): Color3
+	if not def or not def.rollable or not def.dropDenominator or def.dropDenominator <= 0 then
+		return Color3.fromRGB(200, 200, 200) -- Common gray
+	end
+	
+	local denominator = def.dropDenominator
+	
+	-- Rarity colors based on drop chance
+	if denominator <= 2 then
+		-- Common: 1/1, 1/2
+		return Color3.fromRGB(200, 200, 200)
+	elseif denominator <= 5 then
+		-- Uncommon: 1/3, 1/4, 1/5
+		return Color3.fromRGB(100, 200, 100)
+	elseif denominator <= 9 then
+		-- Rare: 1/6, 1/7, 1/8, 1/9
+		return Color3.fromRGB(100, 150, 255)
+	elseif denominator <= 49 then
+		-- Epic: 1/10 to 1/49
+		return Color3.fromRGB(200, 100, 255)
+	elseif denominator <= 199 then
+		-- Legendary: 1/50 to 1/199
+		return Color3.fromRGB(255, 200, 50)
+	else
+		-- Mythic: 1/200 to 1/2500
+		return Color3.fromRGB(255, 50, 50)
+	end
+end
+
 -- Function to create a marble tile
 function InventorySystem.createMarbleTile(def, list, grid, EquipMarble)
 	local isOwned = ownedSet[def.id] == true
@@ -126,6 +156,24 @@ function InventorySystem.createMarbleTile(def, list, grid, EquipMarble)
 	local corner2 = Instance.new("UICorner")
 	corner2.CornerRadius = UDim.new(0, 8)
 	corner2.Parent = tile
+
+	-- Add green ring for equipped marbles
+	if isEquipped then
+		local ring = Instance.new("Frame")
+		ring.Name = "EquippedRing"
+		ring.Size = UDim2.new(1, 4, 1, 4)
+		ring.Position = UDim2.new(0, -2, 0, -2)
+		ring.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+		ring.BorderSizePixel = 0
+		ring.Parent = tile
+		
+		local ringCorner = Instance.new("UICorner")
+		ringCorner.CornerRadius = UDim.new(0, 10)
+		ringCorner.Parent = ring
+		
+		-- Move ring behind the main tile
+		ring.ZIndex = tile.ZIndex - 1
+	end
 
 	local viewport = Instance.new("ViewportFrame")
 	viewport.Size = UDim2.new(1, -16, 1, -56)
@@ -175,25 +223,25 @@ function InventorySystem.createMarbleTile(def, list, grid, EquipMarble)
 	sphere.Position = center
 	cam.CFrame = CFrame.new(center + Vector3.new(0, 0, 12), center)
 
-	-- Name or rarity label
+	-- Name label
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Size = UDim2.new(1, -16, 0, 16)
 	nameLabel.Position = UDim2.new(0, 8, 1, -44)
-	nameLabel.Text = isOwned and (def.name .. getRarityText(def)) or getRarityOnly(def)
+	nameLabel.Text = isOwned and def.name or "???"
 	nameLabel.TextColor3 = Color3.new(1, 1, 1)
 	nameLabel.TextScaled = true
 	nameLabel.Parent = tile
 
-	-- Status label
-	local status = Instance.new("TextLabel")
-	status.BackgroundTransparency = 1
-	status.Size = UDim2.new(1, -16, 0, 20)
-	status.Position = UDim2.new(0, 8, 1, -24)
-	status.TextScaled = true
-	status.TextColor3 = isOwned and (isEquipped and Color3.fromRGB(180, 255, 180) or Color3.fromRGB(220, 220, 220)) or Color3.fromRGB(220, 180, 180)
-	status.Text = isOwned and (isEquipped and "Equipped" or "Not Equipped") or "Locked"
-	status.Parent = tile
+	-- Rarity label
+	local rarityLabel = Instance.new("TextLabel")
+	rarityLabel.BackgroundTransparency = 1
+	rarityLabel.Size = UDim2.new(1, -16, 0, 20)
+	rarityLabel.Position = UDim2.new(0, 8, 1, -24)
+	rarityLabel.TextScaled = true
+	rarityLabel.TextColor3 = isOwned and getRarityColor(def) or Color3.fromRGB(220, 180, 180)
+	rarityLabel.Text = isOwned and getRarityText(def) or "Locked"
+	rarityLabel.Parent = tile
 
 	-- Equip interaction (only if owned)
 	if isOwned then
