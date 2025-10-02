@@ -160,7 +160,7 @@ function UIComponents.createInventoryFrame(screen: ScreenGui)
 	invFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	invFrame.BackgroundTransparency = 0
 	invFrame.BorderSizePixel = 0
-	invFrame.Size = UDim2.new(0, 720, 0, 520)
+	invFrame.Size = UDim2.new(0, 860, 0, 520)
 	invFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	invFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	invFrame.Visible = false
@@ -216,7 +216,7 @@ function UIComponents.createInventoryFrame(screen: ScreenGui)
 	-- Create grid layout
 	local grid = Instance.new("UIGridLayout")
 	grid.FillDirection = Enum.FillDirection.Horizontal
-	grid.FillDirectionMaxCells = 3
+	grid.FillDirectionMaxCells = 4
 	grid.CellPadding = UDim2.fromOffset(10, 10)
 	grid.CellSize = UDim2.fromOffset(200, 200)
 	grid.SortOrder = Enum.SortOrder.LayoutOrder
