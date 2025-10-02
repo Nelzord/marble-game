@@ -1,0 +1,34 @@
+Teleporting Marble Texture Setup Instructions
+============================================
+
+To create the Teleporting marble texture in Roblox Studio:
+
+1. In the Teleporting folder, create a new Texture instance
+2. Set the Texture property to: rbxassetid://73544653958153
+3. Set the Face property to: Front (or leave as default for all faces)
+4. Set StudsPerTileU and StudsPerTileV to: 1
+
+Alternatively, you can create a Decal instance:
+1. Create a new Decal instance
+2. Set the Texture property to: rbxassetid://73544653958153
+3. Set the Face property to: Front (or leave as default for all faces)
+
+The texture ID is: rbxassetid://73544653958153
+
+This will make the Teleporting marble appear with the correct teleportation-themed texture.
+
+Teleporting Marble Details:
+- Base Color: Blue teleportation (RGB: 100, 200, 255)
+- Material: Neon with high reflectance and glow effects
+- Pattern: Teleportation swirls and energy patterns
+- Glow Effect: Bright blue glow when ability is active
+
+The Teleporting Marble provides:
+- Teleports the player 20 studs upward in the air
+- 8-second cooldown between uses
+- Visual teleportation particles and effects
+- Blue energy particles that fly outward during teleportation
+- Brief upward velocity boost after teleportation for natural feel
+- Rare (1/35 drop chance)
+
+This marble is perfect for players who want to gain height advantage quickly, escape from difficult situations, or reach higher platforms. The teleportation effect includes magical particles and a blue energy glow that makes the ability visually impressive.

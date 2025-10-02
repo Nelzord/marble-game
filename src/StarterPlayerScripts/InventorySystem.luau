@@ -24,6 +24,7 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Jumper = "Jumper: Press E to perform a double jump when in mid-air.",
 	Gold = "Gold: Doubles all coins collected while active.",
 	Diamond = "Diamond: Triples all coins collected while active.",
+	Teleporting = "Teleporting: Teleport upward in the air to gain height advantage.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -40,6 +41,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Glass = "rbxassetid://101699002274981", -- Glass texture
 	Gold = "rbxassetid://84142305330257", -- Gold texture
 	Diamond = "rbxassetid://95881293008595", -- Diamond texture
+	Teleporting = "rbxassetid://73544653958153", -- Teleporting texture
 }
 
 -- Function to apply textures to a part
