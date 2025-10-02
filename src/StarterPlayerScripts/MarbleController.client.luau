@@ -372,6 +372,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Jumper = "rbxassetid://81030833444551",
 		Glass = "rbxassetid://101699002274981", -- Glass texture
 		Gold = "rbxassetid://84142305330257", -- Gold texture
+		Diamond = "rbxassetid://95881293008595", -- Diamond texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]

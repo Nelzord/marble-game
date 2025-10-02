@@ -22,6 +22,8 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	TimeTravel = "TimeTravel: Go back in time 5 seconds to your previous position.",
 	Moon = "Moon: Lower gravity for slower falling and floating lunar-like movement.",
 	Jumper = "Jumper: Press E to perform a double jump when in mid-air.",
+	Gold = "Gold: Doubles all coins collected while active.",
+	Diamond = "Diamond: Triples all coins collected while active.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -37,6 +39,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Jumper = "rbxassetid://81030833444551",
 	Glass = "rbxassetid://101699002274981", -- Glass texture
 	Gold = "rbxassetid://84142305330257", -- Gold texture
+	Diamond = "rbxassetid://95881293008595", -- Diamond texture
 }
 
 -- Function to apply textures to a part

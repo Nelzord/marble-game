@@ -1,0 +1,32 @@
+Diamond Marble Texture Setup Instructions
+=========================================
+
+To create the Diamond marble texture in Roblox Studio:
+
+1. In the Diamond folder, create a new Texture instance
+2. Set the Texture property to: rbxassetid://95881293008595
+3. Set the Face property to: Front (or leave as default for all faces)
+4. Set StudsPerTileU and StudsPerTileV to: 1
+
+Alternatively, you can create a Decal instance:
+1. Create a new Decal instance
+2. Set the Texture property to: rbxassetid://95881293008595
+3. Set the Face property to: Front (or leave as default for all faces)
+
+The texture ID is: rbxassetid://95881293008595
+
+This will make the Diamond marble appear with the correct crystalline, diamond-like texture.
+
+Diamond Marble Details:
+- Base Color: Diamond Blue-White (RGB: 185, 242, 255)
+- Material: Crystal with high reflectance and prismatic effects
+- Pattern: Faceted diamond surface with brilliant reflections
+- Glow Effect: Bright diamond blue-white glow when ability is active
+
+The Diamond Marble provides:
+- 3x coin multiplier for all coins collected while active
+- Passive ability (always active when equipped)
+- Visual diamond glow effect when active
+- Ultra rare (1/2500 drop chance)
+
+This marble is perfect for players who want to maximize their coin collection even further than the Gold marble, as it triples all coins earned while the marble is equipped. The diamond appearance and glow effect make it clear when this powerful ability is active.

@@ -172,15 +172,30 @@ local function createCoin(): CoinInfo
 		local player = Players:GetPlayerFromCharacter(model)
 		if not player then return end
 		
-		-- Check for gold multiplier
+		-- Check for multipliers (Gold and Diamond)
 		local goldMultiplier = model:GetAttribute("GoldMultiplier")
-		clog(string.format("Coin collection - GoldMultiplier attribute: %s (type: %s)", tostring(goldMultiplier), typeof(goldMultiplier)))
+		local diamondMultiplier = model:GetAttribute("DiamondMultiplier")
+		clog(string.format("Coin collection - GoldMultiplier: %s, DiamondMultiplier: %s", tostring(goldMultiplier), tostring(diamondMultiplier)))
+		
 		local coinAmount = 1
-		if typeof(goldMultiplier) == "number" and goldMultiplier > 1 then
-			coinAmount = math.floor(coinAmount * goldMultiplier)
-			clog(string.format("Gold multiplier active: %dx coins for %s", goldMultiplier, player.Name))
+		local activeMultiplier = 1
+		local multiplierType = "none"
+		
+		-- Check Diamond multiplier first (higher priority)
+		if typeof(diamondMultiplier) == "number" and diamondMultiplier > 1 then
+			activeMultiplier = diamondMultiplier
+			multiplierType = "diamond"
+		-- Check Gold multiplier if no Diamond multiplier
+		elseif typeof(goldMultiplier) == "number" and goldMultiplier > 1 then
+			activeMultiplier = goldMultiplier
+			multiplierType = "gold"
+		end
+		
+		if activeMultiplier > 1 then
+			coinAmount = math.floor(coinAmount * activeMultiplier)
+			clog(string.format("%s multiplier active: %dx coins for %s", multiplierType:upper(), activeMultiplier, player.Name))
 		else
-			clog(string.format("No gold multiplier - using base coin amount: %d", coinAmount))
+			clog(string.format("No multiplier - using base coin amount: %d", coinAmount))
 		end
 		
 		addCoins(player, coinAmount)
