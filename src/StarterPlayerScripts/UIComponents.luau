@@ -137,6 +137,25 @@ function UIComponents.createBadgesButton(screen: ScreenGui)
 	return badgesButton
 end
 
+-- Create the shop button
+function UIComponents.createShopButton(screen: ScreenGui)
+	local shopButton = Instance.new("TextButton")
+	shopButton.Name = "ShopButton"
+	shopButton.Text = "Shop"
+	shopButton.TextScaled = true
+	shopButton.Size = UDim2.fromOffset(160, 40)
+	shopButton.Position = UDim2.new(0, 16, 0, 112)
+	shopButton.AnchorPoint = Vector2.new(0, 0)
+	shopButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	shopButton.TextColor3 = Color3.new(1, 1, 1)
+	shopButton.Font = Enum.Font.GothamBold
+	shopButton.Parent = screen
+	
+	UIComponents.createCorner(shopButton, 8)
+	
+	return shopButton
+end
+
 -- Create the result label
 function UIComponents.createResultLabel(screen: ScreenGui)
 	local resultLabel = Instance.new("TextLabel")

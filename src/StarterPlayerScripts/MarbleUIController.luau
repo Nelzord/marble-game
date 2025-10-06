@@ -27,6 +27,7 @@ local textShadow: TextLabel? = nil
 local rollButton: TextButton? = nil
 local inventoryButton: TextButton? = nil
 local badgesButton: TextButton? = nil
+local shopButton: TextButton? = nil
 local resultLabel: TextLabel? = nil
 local invFrame: Frame? = nil
 local invCloseButton: TextButton? = nil
@@ -125,6 +126,10 @@ local function createUI()
 	-- Create badges button
 	badgesButton = UIComponents.createBadgesButton(screen)
 	print("Badges button created")
+	
+	-- Create shop button
+	shopButton = UIComponents.createShopButton(screen)
+	print("Shop button created")
 	
 	-- Create result label
 	resultLabel = UIComponents.createResultLabel(screen)
@@ -338,6 +343,24 @@ local function setupEventHandlers()
 				invOpenSfx:Play()
 			end)
 		end
+	end)
+	
+	-- Shop button click handler
+	shopButton.MouseButton1Click:Connect(function()
+		-- Hide other frames when opening shop
+		invFrame.Visible = false
+		badgesFrame.Visible = false
+		
+		-- Toggle shop using the global ShopUI function
+		if _G.ShopUI and _G.ShopUI.toggleShop then
+			_G.ShopUI.toggleShop(true)
+		else
+			print("ShopUI not available - shop may not be loaded yet")
+		end
+		
+		pcall(function()
+			invOpenSfx:Play()
+		end)
 	end)
 	
 	-- Badges close button handler
