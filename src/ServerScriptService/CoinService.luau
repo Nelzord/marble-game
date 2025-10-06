@@ -46,6 +46,7 @@ local function getOrCreateRemotes()
 	end
 	return {
 		CoinCountUpdate = ensureEvent("CoinCountUpdate"),
+		RequestCoins = ensureEvent("RequestCoins"),
 	}
 end
 
@@ -107,6 +108,11 @@ Players.PlayerRemoving:Connect(function(player)
 		warn("[CoinService] DataStore SetAsync failed:", err)
 	end
 	playerCoins[player] = nil
+end)
+
+-- Handle coin count requests
+Remotes.RequestCoins.OnServerEvent:Connect(function(player)
+	sendCoins(player)
 end)
 
 -- Coin spawning & movement

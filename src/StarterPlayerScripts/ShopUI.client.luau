@@ -67,17 +67,26 @@ tabContainer.Position = UDim2.new(0, 20, 0, 80)
 tabContainer.BackgroundTransparency = 1
 tabContainer.Parent = mainFrame
 
+-- Add UIListLayout for proper tab distribution
+local tabListLayout = Instance.new("UIListLayout")
+tabListLayout.FillDirection = Enum.FillDirection.Horizontal
+tabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+tabListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+tabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabListLayout.Padding = UDim.new(0, 5) -- 5 pixel spacing between tabs
+tabListLayout.Parent = tabContainer
+
 -- Special Shop Tab (Robux)
 local specialTab = Instance.new("TextButton")
 specialTab.Name = "SpecialTab"
-specialTab.Size = UDim2.new(0, 150, 0, 40)
-specialTab.Position = UDim2.new(0, 0, 0, 0)
+specialTab.Size = UDim2.new(0.33, -4, 0, 40) -- 1/3 width minus padding
 specialTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold color for Robux
 specialTab.BorderSizePixel = 0
 specialTab.Text = "SPECIAL SHOP"
 specialTab.TextColor3 = Color3.fromRGB(0, 0, 0)
 specialTab.TextScaled = true
 specialTab.Font = Enum.Font.GothamBold
+specialTab.LayoutOrder = 1
 specialTab.Parent = tabContainer
 
 local specialTabCorner = Instance.new("UICorner")
@@ -87,19 +96,36 @@ specialTabCorner.Parent = specialTab
 -- Coin Shop Tab
 local coinTab = Instance.new("TextButton")
 coinTab.Name = "CoinTab"
-coinTab.Size = UDim2.new(0, 150, 0, 40)
-coinTab.Position = UDim2.new(0, 170, 0, 0)
+coinTab.Size = UDim2.new(0.33, -4, 0, 40) -- 1/3 width minus padding
 coinTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Gray for coin shop
 coinTab.BorderSizePixel = 0
 coinTab.Text = "COIN SHOP"
 coinTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 coinTab.TextScaled = true
 coinTab.Font = Enum.Font.GothamBold
+coinTab.LayoutOrder = 2
 coinTab.Parent = tabContainer
 
 local coinTabCorner = Instance.new("UICorner")
 coinTabCorner.CornerRadius = UDim.new(0, 8)
 coinTabCorner.Parent = coinTab
+
+-- Gamepasses Tab
+local gamepassesTab = Instance.new("TextButton")
+gamepassesTab.Name = "GamepassesTab"
+gamepassesTab.Size = UDim2.new(0.33, -4, 0, 40) -- 1/3 width minus padding
+gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Gray for gamepasses
+gamepassesTab.BorderSizePixel = 0
+gamepassesTab.Text = "GAMEPASSES"
+gamepassesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+gamepassesTab.TextScaled = true
+gamepassesTab.Font = Enum.Font.GothamBold
+gamepassesTab.LayoutOrder = 3
+gamepassesTab.Parent = tabContainer
+
+local gamepassesTabCorner = Instance.new("UICorner")
+gamepassesTabCorner.CornerRadius = UDim.new(0, 8)
+gamepassesTabCorner.Parent = gamepassesTab
 
 -- Content area
 local contentFrame = Instance.new("Frame")
@@ -147,6 +173,13 @@ specialItemsContainer.Parent = specialContent
 local specialItemsCorner = Instance.new("UICorner")
 specialItemsCorner.CornerRadius = UDim.new(0, 6)
 specialItemsCorner.Parent = specialItemsContainer
+
+-- Special shop grid layout
+local specialGridLayout = Instance.new("UIGridLayout")
+specialGridLayout.CellSize = UDim2.new(0, 150, 0, 200)
+specialGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+specialGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+specialGridLayout.Parent = specialItemsContainer
 
 -- Coin Shop Content
 local coinContent = Instance.new("Frame")
@@ -199,84 +232,72 @@ local coinItemsCorner = Instance.new("UICorner")
 coinItemsCorner.CornerRadius = UDim.new(0, 6)
 coinItemsCorner.Parent = coinItemsContainer
 
+-- Coin shop grid layout
+local coinGridLayout = Instance.new("UIGridLayout")
+coinGridLayout.CellSize = UDim2.new(0, 150, 0, 200)
+coinGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+coinGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+coinGridLayout.Parent = coinItemsContainer
+
+-- Gamepasses Content
+local gamepassesContent = Instance.new("Frame")
+gamepassesContent.Name = "GamepassesContent"
+gamepassesContent.Size = UDim2.new(1, 0, 1, 0)
+gamepassesContent.BackgroundTransparency = 1
+gamepassesContent.Visible = false
+gamepassesContent.Parent = contentFrame
+
+-- Gamepasses title
+local gamepassesTitle = Instance.new("TextLabel")
+gamepassesTitle.Name = "GamepassesTitle"
+gamepassesTitle.Size = UDim2.new(1, 0, 0, 50)
+gamepassesTitle.Position = UDim2.new(0, 0, 0, 20)
+gamepassesTitle.BackgroundTransparency = 1
+gamepassesTitle.Text = "Gamepasses"
+gamepassesTitle.TextColor3 = Color3.fromRGB(100, 200, 255)
+gamepassesTitle.TextScaled = true
+gamepassesTitle.Font = Enum.Font.GothamBold
+gamepassesTitle.Parent = gamepassesContent
+
+-- Gamepasses items container
+local gamepassesItemsContainer = Instance.new("ScrollingFrame")
+gamepassesItemsContainer.Name = "GamepassesItemsContainer"
+gamepassesItemsContainer.Size = UDim2.new(1, -40, 1, -100)
+gamepassesItemsContainer.Position = UDim2.new(0, 20, 0, 80)
+gamepassesItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+gamepassesItemsContainer.BorderSizePixel = 0
+gamepassesItemsContainer.ScrollBarThickness = 6
+gamepassesItemsContainer.Parent = gamepassesContent
+
+local gamepassesItemsCorner = Instance.new("UICorner")
+gamepassesItemsCorner.CornerRadius = UDim.new(0, 6)
+gamepassesItemsCorner.Parent = gamepassesItemsContainer
+
+-- Gamepasses grid layout
+local gamepassesGridLayout = Instance.new("UIGridLayout")
+gamepassesGridLayout.CellSize = UDim2.new(0, 150, 0, 200)
+gamepassesGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+gamepassesGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+gamepassesGridLayout.Parent = gamepassesItemsContainer
+
 -- Initially hide the GUI
 shopGui.Enabled = false
-
--- Function to show/hide shop
-local function toggleShop(show)
-    shopGui.Enabled = show
-end
-
--- Function to switch tabs
-local function switchToTab(tabName)
-    if tabName == "special" then
-        specialContent.Visible = true
-        coinContent.Visible = false
-        specialTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
-        coinTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    else
-        specialContent.Visible = false
-        coinContent.Visible = true
-        specialTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        coinTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
-    end
-end
-
--- Tab button functionality
-specialTab.MouseButton1Click:Connect(function()
-    switchToTab("special")
-end)
-
-coinTab.MouseButton1Click:Connect(function()
-    switchToTab("coin")
-end)
-
--- Close button functionality
-closeButton.MouseButton1Click:Connect(function()
-    toggleShop(false)
-end)
-
--- Variables for shop functionality
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
--- Wait for remotes
-local remotes = ReplicatedStorage:WaitForChild("Remotes")
-local coinCountUpdate = remotes:WaitForChild("CoinCountUpdate")
-
--- Create shop purchase remote if it doesn't exist
-local shopPurchase
-if remotes:FindFirstChild("ShopPurchase") then
-    shopPurchase = remotes:FindFirstChild("ShopPurchase")
-else
-    shopPurchase = Instance.new("RemoteEvent")
-    shopPurchase.Name = "ShopPurchase"
-    shopPurchase.Parent = remotes
-end
-
--- Create luck update remote if it doesn't exist
-local luckUpdate
-if remotes:FindFirstChild("LuckUpdate") then
-    luckUpdate = remotes:FindFirstChild("LuckUpdate")
-else
-    luckUpdate = Instance.new("RemoteEvent")
-    luckUpdate.Name = "LuckUpdate"
-    luckUpdate.Parent = remotes
-end
-
--- Current coin count
-local currentCoins = 0
 
 -- Store update functions for shop items
 local robuxUpdateFunctions = {}
 local coinUpdateFunctions = {}
+local gamepassesUpdateFunctions = {}
+
+-- Current coin count
+local currentCoins = 0
+-- Store globally so buy buttons can access it
+_G.currentCoins = 0
 
 -- Function to create shop item UI
 local function createShopItem(item, container, isRobuxItem)
     local itemFrame = Instance.new("Frame")
     itemFrame.Name = "ItemFrame_" .. item.name
-    itemFrame.Size = UDim2.new(1, -20, 0, 80)
+    itemFrame.Size = UDim2.new(0, 150, 0, 200) -- Fixed size for grid
     itemFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     itemFrame.BorderSizePixel = 0
     itemFrame.Parent = container
@@ -285,50 +306,62 @@ local function createShopItem(item, container, isRobuxItem)
     itemCorner.CornerRadius = UDim.new(0, 8)
     itemCorner.Parent = itemFrame
     
+    -- Image placeholder
+    local imagePlaceholder = Instance.new("Frame")
+    imagePlaceholder.Name = "ImagePlaceholder"
+    imagePlaceholder.Size = UDim2.new(1, -10, 0, 100)
+    imagePlaceholder.Position = UDim2.new(0, 5, 0, 5)
+    imagePlaceholder.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    imagePlaceholder.BorderSizePixel = 0
+    imagePlaceholder.Parent = itemFrame
+    
+    local imageCorner = Instance.new("UICorner")
+    imageCorner.CornerRadius = UDim.new(0, 6)
+    imageCorner.Parent = imagePlaceholder
+    
+    -- Placeholder text
+    local placeholderText = Instance.new("TextLabel")
+    placeholderText.Name = "PlaceholderText"
+    placeholderText.Size = UDim2.new(1, 0, 1, 0)
+    placeholderText.Position = UDim2.new(0, 0, 0, 0)
+    placeholderText.BackgroundTransparency = 1
+    placeholderText.Text = "IMAGE"
+    placeholderText.TextColor3 = Color3.fromRGB(150, 150, 150)
+    placeholderText.TextScaled = true
+    placeholderText.Font = Enum.Font.Gotham
+    placeholderText.Parent = imagePlaceholder
+    
     -- Item name
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Name = "NameLabel"
-    nameLabel.Size = UDim2.new(0.6, 0, 0.4, 0)
-    nameLabel.Position = UDim2.new(0, 10, 0, 5)
+    nameLabel.Size = UDim2.new(1, -10, 0, 30)
+    nameLabel.Position = UDim2.new(0, 5, 0, 110)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = item.name
     nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     nameLabel.TextScaled = true
     nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Center
     nameLabel.Parent = itemFrame
-    
-    -- Item description
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Name = "DescLabel"
-    descLabel.Size = UDim2.new(0.6, 0, 0.4, 0)
-    descLabel.Position = UDim2.new(0, 10, 0, 35)
-    descLabel.BackgroundTransparency = 1
-    descLabel.Text = item.description
-    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    descLabel.TextScaled = true
-    descLabel.Font = Enum.Font.Gotham
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.Parent = itemFrame
     
     -- Price label
     local priceLabel = Instance.new("TextLabel")
     priceLabel.Name = "PriceLabel"
-    priceLabel.Size = UDim2.new(0.3, 0, 0.4, 0)
-    priceLabel.Position = UDim2.new(0.7, 0, 0, 5)
+    priceLabel.Size = UDim2.new(1, -10, 0, 25)
+    priceLabel.Position = UDim2.new(0, 5, 0, 145)
     priceLabel.BackgroundTransparency = 1
     priceLabel.Text = item.price .. (isRobuxItem and " Robux" or " Coins")
     priceLabel.TextColor3 = isRobuxItem and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 215, 0)
     priceLabel.TextScaled = true
     priceLabel.Font = Enum.Font.GothamBold
-    priceLabel.TextXAlignment = Enum.TextXAlignment.Right
+    priceLabel.TextXAlignment = Enum.TextXAlignment.Center
     priceLabel.Parent = itemFrame
     
     -- Buy button
     local buyButton = Instance.new("TextButton")
     buyButton.Name = "BuyButton"
-    buyButton.Size = UDim2.new(0.3, 0, 0.4, 0)
-    buyButton.Position = UDim2.new(0.7, 0, 0, 35)
+    buyButton.Size = UDim2.new(1, -10, 0, 30)
+    buyButton.Position = UDim2.new(0, 5, 0, 175)
     buyButton.BackgroundColor3 = isRobuxItem and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(0, 150, 0)
     buyButton.BorderSizePixel = 0
     buyButton.Text = isRobuxItem and "BUY (R$)" or "BUY"
@@ -357,50 +390,111 @@ local function createShopItem(item, container, isRobuxItem)
             end
         else
             -- For coin items, check if player has enough coins
-            if currentCoins >= item.price then
+            local currentCoinCount = _G.currentCoins or currentCoins
+            if currentCoinCount >= item.price then
                 buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
                 buyButton.Text = "BUY"
+                buyButton.Active = true
             else
                 buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
                 buyButton.Text = "NO COINS"
+                buyButton.Active = false
             end
         end
     end
     
     -- Buy button functionality
     buyButton.MouseButton1Click:Connect(function()
+        print("Buy button clicked for item:", item.name, "Type:", item.itemType, "IsRobux:", isRobuxItem)
+        print("Current coins at purchase time:", currentCoins)
+        
         if isRobuxItem then
             -- Don't allow purchase if already owned (for permanent_luck)
             if item.itemType == "permanent_luck" and _G.playerPermanentLuckBonus and _G.playerPermanentLuckBonus >= 2 then
+                print("Item already owned, purchase blocked")
                 return
             end
             
-            -- Show feedback that purchase prompt is being shown
-            buyButton.Text = "OPENING..."
-            buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-            
-            -- Fire Robux purchase request to server
-            local robuxPurchase = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("RobuxPurchase")
-            if robuxPurchase then
-                robuxPurchase:FireServer(item.itemType)
-                
-                -- Reset button after a short delay
-                task.delay(2, function()
-                    if buyButton then
-                        updateButtonState()
-                    end
-                end)
+            -- For Robux items, trigger the purchase
+            print("Attempting Robux purchase for:", item.itemType)
+            local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+            if remotesFolder then
+                local robuxPurchase = remotesFolder:FindFirstChild("RobuxPurchase")
+                if robuxPurchase then
+                    print("Firing RobuxPurchase remote event for:", item.itemType)
+                    robuxPurchase:FireServer(item.itemType)
+                else
+                    print("RobuxPurchase remote event not found")
+                end
+            else
+                print("Remotes folder not found")
             end
         else
-            -- Fire coin purchase request to server
-            if currentCoins >= item.price then
-                shopPurchase:FireServer(item.name)
+            -- For coin items, check if player has enough coins
+            -- Use the global currentCoins variable, not the captured one
+            local currentCoinCount = _G.currentCoins or currentCoins
+            print("Coin purchase attempt. Current coins:", currentCoinCount, "Required:", item.price)
+            if currentCoinCount >= item.price then
+                -- Trigger coin purchase
+                local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+                if remotesFolder then
+                    local shopPurchase = remotesFolder:FindFirstChild("ShopPurchase")
+                    if shopPurchase then
+                        print("Firing ShopPurchase remote event for:", item.name)
+                        shopPurchase:FireServer(item.name)
+                    else
+                        print("ShopPurchase remote event not found")
+                    end
+                else
+                    print("Remotes folder not found")
+                end
+            else
+                print("Not enough coins for purchase")
             end
         end
     end)
     
     -- Return update function
     return updateButtonState
+end
+
+-- Function to populate Robux shop items
+local function populateRobuxShopItems()
+    -- Clear existing items
+    for _, child in pairs(specialItemsContainer:GetChildren()) do
+        if child:IsA("Frame") and child.Name:find("ItemFrame_") then
+            child:Destroy()
+        end
+    end
+    
+    -- Clear update functions
+    robuxUpdateFunctions = {}
+    
+    -- Robux shop items
+    local robuxItems = {
+        {
+            name = "Nuke All",
+            price = 100,
+            description = "Instantly kill everyone including yourself with a massive explosion! (One-time use)",
+            itemType = "nuke_all"
+        }
+    }
+    
+    -- Create items
+    for i, item in ipairs(robuxItems) do
+        local updateFunc = createShopItem(item, specialItemsContainer, true)
+        table.insert(robuxUpdateFunctions, updateFunc)
+    end
+    
+    -- Update container size based on grid layout
+    local function updateCanvasSize()
+        local gridSize = specialGridLayout.AbsoluteContentSize
+        specialItemsContainer.CanvasSize = UDim2.new(0, 0, 0, gridSize.Y + 20)
+    end
+    
+    -- Connect to grid layout changes
+    specialGridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+    updateCanvasSize()
 end
 
 -- Function to populate coin shop items
@@ -444,17 +538,155 @@ local function populateCoinShopItems()
     for i, item in ipairs(shopItems) do
         local updateFunc = createShopItem(item, coinItemsContainer, false)
         table.insert(coinUpdateFunctions, updateFunc)
-        
-        -- Position the item
-        local itemFrame = coinItemsContainer:FindFirstChild("ItemFrame_" .. item.name)
-        if itemFrame then
-            itemFrame.Position = UDim2.new(0, 10, 0, (i - 1) * 90)
+    end
+    
+    -- Update container size based on grid layout
+    local function updateCanvasSize()
+        local gridSize = coinGridLayout.AbsoluteContentSize
+        coinItemsContainer.CanvasSize = UDim2.new(0, 0, 0, gridSize.Y + 20)
+    end
+    
+    -- Connect to grid layout changes
+    coinGridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+    updateCanvasSize()
+end
+
+-- Function to populate gamepasses items
+local function populateGamepassesItems()
+    -- Clear existing items
+    for _, child in pairs(gamepassesItemsContainer:GetChildren()) do
+        if child:IsA("Frame") and child.Name:find("ItemFrame_") then
+            child:Destroy()
         end
     end
     
-    -- Update container size
-    coinItemsContainer.CanvasSize = UDim2.new(0, 0, 0, #shopItems * 90)
+    -- Clear update functions
+    gamepassesUpdateFunctions = {}
+    
+    -- Gamepasses items
+    local gamepassesItems = {
+        {
+            name = "Permanent 2x Luck",
+            price = 200,
+            description = "Permanent 2x luck bonus (applies to all potions)",
+            itemType = "permanent_luck"
+        }
+    }
+    
+    -- Create items
+    for i, item in ipairs(gamepassesItems) do
+        local updateFunc = createShopItem(item, gamepassesItemsContainer, true) -- Use Robux styling for gamepasses
+        table.insert(gamepassesUpdateFunctions, updateFunc)
+    end
+    
+    -- Update container size based on grid layout
+    local function updateCanvasSize()
+        local gridSize = gamepassesGridLayout.AbsoluteContentSize
+        gamepassesItemsContainer.CanvasSize = UDim2.new(0, 0, 0, gridSize.Y + 20)
+    end
+    
+    -- Connect to grid layout changes
+    gamepassesGridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+    updateCanvasSize()
 end
+
+-- Function to switch tabs
+local function switchToTab(tabName)
+    -- Hide all content
+    specialContent.Visible = false
+    coinContent.Visible = false
+    gamepassesContent.Visible = false
+    
+    -- Reset all tab colors
+    specialTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    coinTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    
+    if tabName == "special" then
+        specialContent.Visible = true
+        specialTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+    elseif tabName == "coin" then
+        coinContent.Visible = true
+        coinTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+    elseif tabName == "gamepasses" then
+        gamepassesContent.Visible = true
+        gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+    end
+end
+
+-- Function to show/hide shop
+local function toggleShop(show)
+    shopGui.Enabled = show
+    if show then
+        print("Shop opened. Current coins:", currentCoins)
+        -- Request current coin count from server
+        local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+        if remotesFolder then
+            local requestCoins = remotesFolder:FindFirstChild("RequestCoins")
+            if requestCoins then
+                print("Requesting current coin count from server")
+                requestCoins:FireServer()
+            else
+                print("RequestCoins remote event not found, using current value")
+            end
+        end
+        -- When opening the shop, populate the default tab (special shop)
+        populateRobuxShopItems()
+        -- Make sure special tab is active
+        switchToTab("special")
+    end
+end
+
+-- Tab button functionality
+specialTab.MouseButton1Click:Connect(function()
+    switchToTab("special")
+end)
+
+coinTab.MouseButton1Click:Connect(function()
+    switchToTab("coin")
+end)
+
+gamepassesTab.MouseButton1Click:Connect(function()
+    switchToTab("gamepasses")
+end)
+
+-- Close button functionality
+closeButton.MouseButton1Click:Connect(function()
+    toggleShop(false)
+end)
+
+-- Variables for shop functionality
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Wait for remotes
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local coinCountUpdate = remotes:WaitForChild("CoinCountUpdate")
+
+-- Create shop purchase remote if it doesn't exist
+local shopPurchase
+if remotes:FindFirstChild("ShopPurchase") then
+    shopPurchase = remotes:FindFirstChild("ShopPurchase")
+else
+    shopPurchase = Instance.new("RemoteEvent")
+    shopPurchase.Name = "ShopPurchase"
+    shopPurchase.Parent = remotes
+end
+
+-- Create luck update remote if it doesn't exist
+local luckUpdate
+if remotes:FindFirstChild("LuckUpdate") then
+    luckUpdate = remotes:FindFirstChild("LuckUpdate")
+else
+    luckUpdate = Instance.new("RemoteEvent")
+    luckUpdate.Name = "LuckUpdate"
+    luckUpdate.Parent = remotes
+end
+
+-- Current coin count
+local currentCoins = 0
+
 
 -- Function to update all shop items
 local function updateAllShopItems()
@@ -471,60 +703,39 @@ local function updateAllShopItems()
             updateFunc()
         end
     end
+    
+    -- Update gamepasses items
+    for _, updateFunc in pairs(gamepassesUpdateFunctions) do
+        if updateFunc then
+            updateFunc()
+        end
+    end
 end
 
 -- Make updateAllShopItems globally accessible
 _G.updateAllShopItems = updateAllShopItems
 
--- Function to populate Robux shop items
-local function populateRobuxShopItems()
-    -- Clear existing items
-    for _, child in pairs(specialItemsContainer:GetChildren()) do
-        if child:IsA("Frame") and child.Name:find("ItemFrame_") then
-            child:Destroy()
-        end
-    end
-    
-    -- Clear update functions
-    robuxUpdateFunctions = {}
-    
-    -- Robux shop items
-    local robuxItems = {
-        {
-            name = "Nuke All",
-            price = 100,
-            description = "Instantly kill everyone including yourself with a massive explosion! (One-time use)",
-            itemType = "nuke_all"
-        },
-        {
-            name = "Permanent 2x Luck",
-            price = 200,
-            description = "Permanent 2x luck bonus (applies to all potions)",
-            itemType = "permanent_luck"
-        }
-    }
-    
-    -- Create items
-    for i, item in ipairs(robuxItems) do
-        local updateFunc = createShopItem(item, specialItemsContainer, true)
-        table.insert(robuxUpdateFunctions, updateFunc)
-        
-        -- Position the item
-        local itemFrame = specialItemsContainer:FindFirstChild("ItemFrame_" .. item.name)
-        if itemFrame then
-            itemFrame.Position = UDim2.new(0, 10, 0, (i - 1) * 90)
-        end
-    end
-    
-    -- Update container size
-    specialItemsContainer.CanvasSize = UDim2.new(0, 0, 0, #robuxItems * 90)
-end
 
 -- Function to update coin count
 local function updateCoinCount(coinCount)
+    print("Coin count updated:", coinCount)
     currentCoins = coinCount
+    -- Store globally so buy buttons can access it
+    _G.currentCoins = coinCount
     -- Update all shop items
     updateAllShopItems()
+    
+    -- If shop is open, refresh the currently visible tab
+    if shopGui.Enabled then
+        print("Shop is open, refreshing current tab with new coin count")
+        if specialContent.Visible then
+            populateRobuxShopItems()
+        elseif coinContent.Visible then
+            populateCoinShopItems()
+        elseif gamepassesContent.Visible then
+            populateGamepassesItems()
+        end
+    end
 end
 
 -- Function to update luck display
@@ -573,6 +784,8 @@ switchToTab = function(tabName)
         populateCoinShopItems()
     elseif tabName == "special" then
         populateRobuxShopItems()
+    elseif tabName == "gamepasses" then
+        populateGamepassesItems()
     end
 end
 
