@@ -42,6 +42,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Gold = "rbxassetid://84142305330257", -- Gold texture
 	Diamond = "rbxassetid://95881293008595", -- Diamond texture
 	Teleporting = "rbxassetid://73544653958153", -- Teleporting texture
+	Pharaoh = "rbxassetid://138858793251784", -- Pharaoh texture
 }
 
 -- Function to apply textures to a part

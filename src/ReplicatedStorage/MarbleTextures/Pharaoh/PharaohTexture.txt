@@ -1,0 +1,33 @@
+Pharaoh Marble Texture Setup Instructions
+=========================================
+
+To create the Pharaoh marble texture in Roblox Studio:
+
+1. In the Pharaoh folder, create a new Texture instance
+2. Set the Texture property to: rbxassetid://138858793251784
+3. Set the Face property to: Front (or leave as default for all faces)
+4. Set StudsPerTileU and StudsPerTileV to: 1
+
+Alternatively, you can create a Decal instance:
+1. Create a new Decal instance
+2. Set the Texture property to: rbxassetid://138858793251784
+3. Set the Face property to: Front (or leave as default for all faces)
+
+The texture ID is: rbxassetid://138858793251784
+
+This will make the Pharaoh marble appear with the correct golden, sandy texture.
+
+Pharaoh Marble Details:
+- Base Color: Gold/Yellow (RGB: 255, 215, 0)
+- Material: Sand with golden appearance
+- Pattern: Ancient Egyptian-inspired golden surface
+- Ability: Creates a scalable yellow pyramid below the marble
+
+The Pharaoh Marble provides:
+- Creates a yellow pyramid that players can scale
+- Pyramid has 4 layers with decreasing size from bottom to top
+- Pyramid lasts for 15 seconds before disappearing
+- 15 second cooldown between pyramid creations
+- Rare marble (1/50 drop chance)
+
+This marble is perfect for players who want to create vertical platforms and reach higher areas. The pyramid provides a stable, scalable structure that other players can also use to climb up to higher platforms or areas.

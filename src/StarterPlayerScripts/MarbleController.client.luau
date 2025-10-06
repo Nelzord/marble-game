@@ -258,6 +258,51 @@ local function removeGoldGlowTrail(character: Model)
 	end
 end
 
+local function createPharaohGlowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("PharaohGlowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create new trail
+	local trail = Instance.new("Trail")
+	trail.Name = "PharaohGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "PharaohTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "PharaohTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with more separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for red/gold pharaoh effect
+	trail.Color = ColorSequence.new(
+		Color3.fromRGB(255, 50, 50), -- Red
+		Color3.fromRGB(255, 215, 0)  -- Gold
+	)
+	trail.Transparency = NumberSequence.new(0.1, 0.9) -- More opaque at start, fade to transparent
+	trail.Lifetime = 5.0 -- Trail duration
+	trail.MinLength = 2.0 -- Trail length
+	trail.MaxLength = 18 -- Maximum trail length
+	trail.WidthScale = NumberSequence.new(0.8, 2.2) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return trail
+end
+
+local function removePharaohGlowTrail(character: Model)
+	local trail = character:FindFirstChild("PharaohGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
 local function setupRedGlowEffect(character: Model, hrp: BasePart)
 	-- Monitor RedGlowActive attribute changes
 	character:GetAttributeChangedSignal("RedGlowActive"):Connect(function()
@@ -330,6 +375,24 @@ local function setupGoldGlowEffect(character: Model, hrp: BasePart)
 	end
 end
 
+local function setupPharaohGlowEffect(character: Model, hrp: BasePart)
+	-- Monitor PharaohGlowActive attribute changes
+	character:GetAttributeChangedSignal("PharaohGlowActive"):Connect(function()
+		local isActive = character:GetAttribute("PharaohGlowActive")
+		if isActive then
+			createPharaohGlowTrail(character, hrp)
+		else
+			removePharaohGlowTrail(character)
+		end
+	end)
+	
+	-- Check initial state
+	local initialGlow = character:GetAttribute("PharaohGlowActive")
+	if initialGlow then
+		createPharaohGlowTrail(character, hrp)
+	end
+end
+
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
 	dprint("applyCosmeticColor", id)
@@ -374,6 +437,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Gold = "rbxassetid://84142305330257", -- Gold texture
 		Diamond = "rbxassetid://95881293008595", -- Diamond texture
 		Teleporting = "rbxassetid://73544653958153", -- Teleporting texture
+		Pharaoh = "rbxassetid://138858793251784", -- Pharaoh texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -908,6 +972,9 @@ local function setupController(character: Model)
 	
 	-- Setup GoldGlowTrail effect
 	setupGoldGlowEffect(character, hrp)
+	
+	-- Setup PharaohGlowTrail effect
+	setupPharaohGlowEffect(character, hrp)
 end
 
 local function onCharacterAdded(character: Model)

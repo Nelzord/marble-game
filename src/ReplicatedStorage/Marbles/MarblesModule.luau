@@ -124,6 +124,14 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Teleporting",
 		color = Color3.fromRGB(100, 200, 255), -- Blue teleportation color
 	},
+	Pharaoh = {
+		id = "Pharaoh",
+		name = "Pharaoh Marble",
+		dropDenominator = 50, -- 1/50 rarity (rare)
+		rollable = true,
+		abilityModule = "Pharaoh",
+		color = Color3.fromRGB(255, 215, 0), -- Gold/yellow color for pharaoh theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?

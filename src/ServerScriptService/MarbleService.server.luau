@@ -379,6 +379,7 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	character:SetAttribute("GumballGlowActive", false)
 	character:SetAttribute("MoonGravityActive", false)
 	character:SetAttribute("MoonGlowActive", false)
+	character:SetAttribute("PharaohGlowActive", false)
 	
 	character.Parent = workspace
 
