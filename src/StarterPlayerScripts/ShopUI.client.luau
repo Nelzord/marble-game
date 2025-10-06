@@ -76,24 +76,41 @@ tabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 tabListLayout.Padding = UDim.new(0, 5) -- 5 pixel spacing between tabs
 tabListLayout.Parent = tabContainer
 
--- Special Shop Tab (Robux)
+-- Gamepasses Tab (First)
+local gamepassesTab = Instance.new("TextButton")
+gamepassesTab.Name = "GamepassesTab"
+gamepassesTab.Size = UDim2.new(0.33, -4, 0, 40) -- 1/3 width minus padding
+gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 200, 255) -- Blue for gamepasses (active by default)
+gamepassesTab.BorderSizePixel = 0
+gamepassesTab.Text = "GAMEPASSES"
+gamepassesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+gamepassesTab.TextScaled = true
+gamepassesTab.Font = Enum.Font.GothamBold
+gamepassesTab.LayoutOrder = 1
+gamepassesTab.Parent = tabContainer
+
+local gamepassesTabCorner = Instance.new("UICorner")
+gamepassesTabCorner.CornerRadius = UDim.new(0, 8)
+gamepassesTabCorner.Parent = gamepassesTab
+
+-- Special Shop Tab (Second)
 local specialTab = Instance.new("TextButton")
 specialTab.Name = "SpecialTab"
 specialTab.Size = UDim2.new(0.33, -4, 0, 40) -- 1/3 width minus padding
-specialTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold color for Robux
+specialTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Gray for Robux
 specialTab.BorderSizePixel = 0
 specialTab.Text = "SPECIAL SHOP"
-specialTab.TextColor3 = Color3.fromRGB(0, 0, 0)
+specialTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 specialTab.TextScaled = true
 specialTab.Font = Enum.Font.GothamBold
-specialTab.LayoutOrder = 1
+specialTab.LayoutOrder = 2
 specialTab.Parent = tabContainer
 
 local specialTabCorner = Instance.new("UICorner")
 specialTabCorner.CornerRadius = UDim.new(0, 8)
 specialTabCorner.Parent = specialTab
 
--- Coin Shop Tab
+-- Coin Shop Tab (Third)
 local coinTab = Instance.new("TextButton")
 coinTab.Name = "CoinTab"
 coinTab.Size = UDim2.new(0.33, -4, 0, 40) -- 1/3 width minus padding
@@ -103,29 +120,12 @@ coinTab.Text = "COIN SHOP"
 coinTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 coinTab.TextScaled = true
 coinTab.Font = Enum.Font.GothamBold
-coinTab.LayoutOrder = 2
+coinTab.LayoutOrder = 3
 coinTab.Parent = tabContainer
 
 local coinTabCorner = Instance.new("UICorner")
 coinTabCorner.CornerRadius = UDim.new(0, 8)
 coinTabCorner.Parent = coinTab
-
--- Gamepasses Tab
-local gamepassesTab = Instance.new("TextButton")
-gamepassesTab.Name = "GamepassesTab"
-gamepassesTab.Size = UDim2.new(0.33, -4, 0, 40) -- 1/3 width minus padding
-gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Gray for gamepasses
-gamepassesTab.BorderSizePixel = 0
-gamepassesTab.Text = "GAMEPASSES"
-gamepassesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-gamepassesTab.TextScaled = true
-gamepassesTab.Font = Enum.Font.GothamBold
-gamepassesTab.LayoutOrder = 3
-gamepassesTab.Parent = tabContainer
-
-local gamepassesTabCorner = Instance.new("UICorner")
-gamepassesTabCorner.CornerRadius = UDim.new(0, 8)
-gamepassesTabCorner.Parent = gamepassesTab
 
 -- Content area
 local contentFrame = Instance.new("Frame")
@@ -140,46 +140,45 @@ local contentCorner = Instance.new("UICorner")
 contentCorner.CornerRadius = UDim.new(0, 8)
 contentCorner.Parent = contentFrame
 
--- Special Shop Content
-local specialContent = Instance.new("Frame")
-specialContent.Name = "SpecialContent"
-specialContent.Size = UDim2.new(1, 0, 1, 0)
-specialContent.BackgroundTransparency = 1
-specialContent.Parent = contentFrame
+-- Gamepasses Content (First)
+local gamepassesContent = Instance.new("Frame")
+gamepassesContent.Name = "GamepassesContent"
+gamepassesContent.Size = UDim2.new(1, 0, 1, 0)
+gamepassesContent.BackgroundTransparency = 1
+gamepassesContent.Parent = contentFrame
 
--- Special shop title
-local specialTitle = Instance.new("TextLabel")
-specialTitle.Name = "SpecialTitle"
-specialTitle.Size = UDim2.new(1, 0, 0, 50)
-specialTitle.Position = UDim2.new(0, 0, 0, 20)
-specialTitle.BackgroundTransparency = 1
-specialTitle.Text = "Premium Items"
-specialTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-specialTitle.TextScaled = true
-specialTitle.Font = Enum.Font.GothamBold
-specialTitle.Parent = specialContent
+-- Gamepasses title
+local gamepassesTitle = Instance.new("TextLabel")
+gamepassesTitle.Name = "GamepassesTitle"
+gamepassesTitle.Size = UDim2.new(1, 0, 0, 50)
+gamepassesTitle.Position = UDim2.new(0, 0, 0, 20)
+gamepassesTitle.BackgroundTransparency = 1
+gamepassesTitle.Text = "Gamepasses"
+gamepassesTitle.TextColor3 = Color3.fromRGB(100, 200, 255)
+gamepassesTitle.TextScaled = true
+gamepassesTitle.Font = Enum.Font.GothamBold
+gamepassesTitle.Parent = gamepassesContent
 
+-- Gamepasses items container
+local gamepassesItemsContainer = Instance.new("ScrollingFrame")
+gamepassesItemsContainer.Name = "GamepassesItemsContainer"
+gamepassesItemsContainer.Size = UDim2.new(1, -40, 1, -100)
+gamepassesItemsContainer.Position = UDim2.new(0, 20, 0, 80)
+gamepassesItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+gamepassesItemsContainer.BorderSizePixel = 0
+gamepassesItemsContainer.ScrollBarThickness = 6
+gamepassesItemsContainer.Parent = gamepassesContent
 
--- Special shop items container
-local specialItemsContainer = Instance.new("ScrollingFrame")
-specialItemsContainer.Name = "SpecialItemsContainer"
-specialItemsContainer.Size = UDim2.new(1, -40, 1, -100)
-specialItemsContainer.Position = UDim2.new(0, 20, 0, 80)
-specialItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-specialItemsContainer.BorderSizePixel = 0
-specialItemsContainer.ScrollBarThickness = 6
-specialItemsContainer.Parent = specialContent
+local gamepassesItemsCorner = Instance.new("UICorner")
+gamepassesItemsCorner.CornerRadius = UDim.new(0, 6)
+gamepassesItemsCorner.Parent = gamepassesItemsContainer
 
-local specialItemsCorner = Instance.new("UICorner")
-specialItemsCorner.CornerRadius = UDim.new(0, 6)
-specialItemsCorner.Parent = specialItemsContainer
-
--- Special shop grid layout
-local specialGridLayout = Instance.new("UIGridLayout")
-specialGridLayout.CellSize = UDim2.new(0, 150, 0, 200)
-specialGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
-specialGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-specialGridLayout.Parent = specialItemsContainer
+-- Gamepasses grid layout
+local gamepassesGridLayout = Instance.new("UIGridLayout")
+gamepassesGridLayout.CellSize = UDim2.new(0, 150, 0, 200)
+gamepassesGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+gamepassesGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+gamepassesGridLayout.Parent = gamepassesItemsContainer
 
 -- Coin Shop Content
 local coinContent = Instance.new("Frame")
@@ -239,46 +238,46 @@ coinGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
 coinGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
 coinGridLayout.Parent = coinItemsContainer
 
--- Gamepasses Content
-local gamepassesContent = Instance.new("Frame")
-gamepassesContent.Name = "GamepassesContent"
-gamepassesContent.Size = UDim2.new(1, 0, 1, 0)
-gamepassesContent.BackgroundTransparency = 1
-gamepassesContent.Visible = false
-gamepassesContent.Parent = contentFrame
+-- Special Shop Content (Second)
+local specialContent = Instance.new("Frame")
+specialContent.Name = "SpecialContent"
+specialContent.Size = UDim2.new(1, 0, 1, 0)
+specialContent.BackgroundTransparency = 1
+specialContent.Visible = false
+specialContent.Parent = contentFrame
 
--- Gamepasses title
-local gamepassesTitle = Instance.new("TextLabel")
-gamepassesTitle.Name = "GamepassesTitle"
-gamepassesTitle.Size = UDim2.new(1, 0, 0, 50)
-gamepassesTitle.Position = UDim2.new(0, 0, 0, 20)
-gamepassesTitle.BackgroundTransparency = 1
-gamepassesTitle.Text = "Gamepasses"
-gamepassesTitle.TextColor3 = Color3.fromRGB(100, 200, 255)
-gamepassesTitle.TextScaled = true
-gamepassesTitle.Font = Enum.Font.GothamBold
-gamepassesTitle.Parent = gamepassesContent
+-- Special shop title
+local specialTitle = Instance.new("TextLabel")
+specialTitle.Name = "SpecialTitle"
+specialTitle.Size = UDim2.new(1, 0, 0, 50)
+specialTitle.Position = UDim2.new(0, 0, 0, 20)
+specialTitle.BackgroundTransparency = 1
+specialTitle.Text = "Premium Items"
+specialTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
+specialTitle.TextScaled = true
+specialTitle.Font = Enum.Font.GothamBold
+specialTitle.Parent = specialContent
 
--- Gamepasses items container
-local gamepassesItemsContainer = Instance.new("ScrollingFrame")
-gamepassesItemsContainer.Name = "GamepassesItemsContainer"
-gamepassesItemsContainer.Size = UDim2.new(1, -40, 1, -100)
-gamepassesItemsContainer.Position = UDim2.new(0, 20, 0, 80)
-gamepassesItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-gamepassesItemsContainer.BorderSizePixel = 0
-gamepassesItemsContainer.ScrollBarThickness = 6
-gamepassesItemsContainer.Parent = gamepassesContent
+-- Special shop items container
+local specialItemsContainer = Instance.new("ScrollingFrame")
+specialItemsContainer.Name = "SpecialItemsContainer"
+specialItemsContainer.Size = UDim2.new(1, -40, 1, -100)
+specialItemsContainer.Position = UDim2.new(0, 20, 0, 80)
+specialItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+specialItemsContainer.BorderSizePixel = 0
+specialItemsContainer.ScrollBarThickness = 6
+specialItemsContainer.Parent = specialContent
 
-local gamepassesItemsCorner = Instance.new("UICorner")
-gamepassesItemsCorner.CornerRadius = UDim.new(0, 6)
-gamepassesItemsCorner.Parent = gamepassesItemsContainer
+local specialItemsCorner = Instance.new("UICorner")
+specialItemsCorner.CornerRadius = UDim.new(0, 6)
+specialItemsCorner.Parent = specialItemsContainer
 
--- Gamepasses grid layout
-local gamepassesGridLayout = Instance.new("UIGridLayout")
-gamepassesGridLayout.CellSize = UDim2.new(0, 150, 0, 200)
-gamepassesGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
-gamepassesGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-gamepassesGridLayout.Parent = gamepassesItemsContainer
+-- Special shop grid layout
+local specialGridLayout = Instance.new("UIGridLayout")
+specialGridLayout.CellSize = UDim2.new(0, 150, 0, 200)
+specialGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+specialGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+specialGridLayout.Parent = specialItemsContainer
 
 -- Initially hide the GUI
 shopGui.Enabled = false
@@ -319,17 +318,54 @@ local function createShopItem(item, container, isRobuxItem)
     imageCorner.CornerRadius = UDim.new(0, 6)
     imageCorner.Parent = imagePlaceholder
     
-    -- Placeholder text
-    local placeholderText = Instance.new("TextLabel")
-    placeholderText.Name = "PlaceholderText"
-    placeholderText.Size = UDim2.new(1, 0, 1, 0)
-    placeholderText.Position = UDim2.new(0, 0, 0, 0)
-    placeholderText.BackgroundTransparency = 1
-    placeholderText.Text = "IMAGE"
-    placeholderText.TextColor3 = Color3.fromRGB(150, 150, 150)
-    placeholderText.TextScaled = true
-    placeholderText.Font = Enum.Font.Gotham
-    placeholderText.Parent = imagePlaceholder
+    -- Item image
+    local itemImage = Instance.new("ImageLabel")
+    itemImage.Name = "ItemImage"
+    itemImage.Size = UDim2.new(1, 0, 1, 0)
+    itemImage.Position = UDim2.new(0, 0, 0, 0)
+    itemImage.BackgroundTransparency = 1
+    itemImage.ScaleType = Enum.ScaleType.Fit
+    itemImage.Parent = imagePlaceholder
+    
+    -- Set specific images based on item type
+    if item.itemType == "nuke_all" then
+        itemImage.Image = "rbxassetid://115934412352825"
+    elseif item.itemType == "permanent_luck" then
+        itemImage.Image = "rbxassetid://80819026897805"
+    elseif item.itemType == "lucky_potion" then
+        -- Set image based on luck multiplier
+        if item.luckMultiplier == 1.25 then
+            itemImage.Image = "rbxassetid://81477674576659"
+        elseif item.luckMultiplier == 1.5 then
+            itemImage.Image = "rbxassetid://104597457196107"
+        elseif item.luckMultiplier == 2 then
+            itemImage.Image = "rbxassetid://89877824960542"
+        else
+            -- Default placeholder for unknown luck multipliers
+            local placeholderText = Instance.new("TextLabel")
+            placeholderText.Name = "PlaceholderText"
+            placeholderText.Size = UDim2.new(1, 0, 1, 0)
+            placeholderText.Position = UDim2.new(0, 0, 0, 0)
+            placeholderText.BackgroundTransparency = 1
+            placeholderText.Text = "IMAGE"
+            placeholderText.TextColor3 = Color3.fromRGB(150, 150, 150)
+            placeholderText.TextScaled = true
+            placeholderText.Font = Enum.Font.Gotham
+            placeholderText.Parent = imagePlaceholder
+        end
+    else
+        -- Default placeholder for other items
+        local placeholderText = Instance.new("TextLabel")
+        placeholderText.Name = "PlaceholderText"
+        placeholderText.Size = UDim2.new(1, 0, 1, 0)
+        placeholderText.Position = UDim2.new(0, 0, 0, 0)
+        placeholderText.BackgroundTransparency = 1
+        placeholderText.Text = "IMAGE"
+        placeholderText.TextColor3 = Color3.fromRGB(150, 150, 150)
+        placeholderText.TextScaled = true
+        placeholderText.Font = Enum.Font.Gotham
+        placeholderText.Parent = imagePlaceholder
+    end
     
     -- Item name
     local nameLabel = Instance.new("TextLabel")
@@ -593,24 +629,24 @@ end
 -- Function to switch tabs
 local function switchToTab(tabName)
     -- Hide all content
+    gamepassesContent.Visible = false
     specialContent.Visible = false
     coinContent.Visible = false
-    gamepassesContent.Visible = false
     
     -- Reset all tab colors
+    gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     specialTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     coinTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     
-    if tabName == "special" then
+    if tabName == "gamepasses" then
+        gamepassesContent.Visible = true
+        gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+    elseif tabName == "special" then
         specialContent.Visible = true
         specialTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
     elseif tabName == "coin" then
         coinContent.Visible = true
         coinTab.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
-    elseif tabName == "gamepasses" then
-        gamepassesContent.Visible = true
-        gamepassesTab.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
     end
 end
 
@@ -630,10 +666,10 @@ local function toggleShop(show)
                 print("RequestCoins remote event not found, using current value")
             end
         end
-        -- When opening the shop, populate the default tab (special shop)
-        populateRobuxShopItems()
-        -- Make sure special tab is active
-        switchToTab("special")
+        -- When opening the shop, populate the default tab (gamepasses)
+        populateGamepassesItems()
+        -- Make sure gamepasses tab is active
+        switchToTab("gamepasses")
     end
 end
 
@@ -728,12 +764,12 @@ local function updateCoinCount(coinCount)
     -- If shop is open, refresh the currently visible tab
     if shopGui.Enabled then
         print("Shop is open, refreshing current tab with new coin count")
-        if specialContent.Visible then
+        if gamepassesContent.Visible then
+            populateGamepassesItems()
+        elseif specialContent.Visible then
             populateRobuxShopItems()
         elseif coinContent.Visible then
             populateCoinShopItems()
-        elseif gamepassesContent.Visible then
-            populateGamepassesItems()
         end
     end
 end
@@ -780,12 +816,12 @@ end
 local originalSwitchToTab = switchToTab
 switchToTab = function(tabName)
     originalSwitchToTab(tabName)
-    if tabName == "coin" then
-        populateCoinShopItems()
+    if tabName == "gamepasses" then
+        populateGamepassesItems()
     elseif tabName == "special" then
         populateRobuxShopItems()
-    elseif tabName == "gamepasses" then
-        populateGamepassesItems()
+    elseif tabName == "coin" then
+        populateCoinShopItems()
     end
 end
 
