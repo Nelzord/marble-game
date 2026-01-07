@@ -18,7 +18,7 @@ end
 
 -- Debug flag: Give 500 coins to players for testing
 -- Set to false to disable this feature in production
-local GIVE_COINS = true
+local GIVE_COINS = false
 
 clog("initializing...")
 
@@ -87,12 +87,16 @@ Players.PlayerAdded:Connect(function(player)
 		amount = 500
 		clog("Gave 500 coins to player:", player.Name)
 	else
+		-- Load coins from DataStore (defaults to 0 for new players)
 		local ok, err = pcall(function()
-			amount = coinsStore:GetAsync("coins_" .. player.UserId) or 0
+			local savedAmount = coinsStore:GetAsync("coins_" .. player.UserId)
+			amount = savedAmount or 0
 		end)
 		if not ok then
 			warn("[CoinService] DataStore GetAsync failed:", err)
+			amount = 0 -- Default to 0 on error
 		end
+		clog("Loaded " .. amount .. " coins for player:", player.Name)
 	end
 	
 	playerCoins[player] = tonumber(amount) or 0

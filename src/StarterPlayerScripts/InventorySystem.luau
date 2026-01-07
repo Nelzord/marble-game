@@ -326,6 +326,9 @@ function InventorySystem.updateInventory(payload)
 	equippedId = payload.equipped
 	print("equippedId set to:", equippedId)
 	
+	-- Expose owned marbles globally for shop UI to check ownership
+	_G.ownedMarbles = ownedSet
+	
 	-- Debug: Check what marble definition we get for Spider
 	if equippedId == "Spider" then
 		print("Spider marble equipped - checking definition")

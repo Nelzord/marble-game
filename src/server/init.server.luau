@@ -12,6 +12,9 @@ print("CoinService loaded successfully!")
 -- Initialize MarbleService
 local MarbleService = require(script.Parent.Parent.ServerScriptService.MarbleService)
 print("MarbleService loaded successfully!")
+-- Ensure it's available globally for other services
+_G.MarbleService = MarbleService
+print("MarbleService set in _G")
 
 -- Initialize BadgeService
 local BadgeService = require(script.Parent.Parent.ServerScriptService.BadgeService)

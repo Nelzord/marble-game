@@ -5,8 +5,15 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DataStoreService = game:GetService("DataStoreService")
 
 local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
+
+-- MarbleService module
+local MarbleService = {}
+
+-- DataStore for persistence
+local marbleDataStore = DataStoreService:GetDataStore("MarblePlayerData")
 
 -- Debug helper
 local DEBUG = false
@@ -18,7 +25,7 @@ end
 
 -- Debug flag: Give all marbles to players for testing
 -- Set to false to disable this feature in production
-local GIVE_ALL_MARBLES = true
+local GIVE_ALL_MARBLES = false
 
 -- Ensure Remotes folder and events exist
 local function getOrCreateRemotes()
@@ -56,7 +63,7 @@ if GIVE_ALL_MARBLES then
 	print("[MarbleService] DEBUG MODE: All marbles will be given to players automatically")
 end
 
--- Per-player in-memory data (session only). Replace with DataStore for persistence across sessions.
+-- Per-player data with DataStore persistence
 export type PlayerData = {
 	owned: { [string]: boolean },
 	equipped: string,
@@ -65,6 +72,7 @@ export type PlayerData = {
 local DEFAULT_ID = "Default"
 local playerData: { [Player]: PlayerData } = {}
 local spawningFlag: { [Player]: boolean } = {}
+local dataStoreCache: { [Player]: boolean } = {} -- Track if data has been loaded from DataStore
 
 -- Ability cooldown tracking
 local abilityCooldowns: { [Player]: number } = {}
@@ -73,9 +81,94 @@ local abilityCooldowns: { [Player]: number } = {}
 local positionRecordingEnabled = true
 local positionRecordingInterval = 0.016 -- ~60fps
 
+-- Function to save player data to DataStore
+local function savePlayerData(player: Player)
+	local data = playerData[player]
+	if not data then return end
+	
+	task.spawn(function()
+		local success, errorMsg = pcall(function()
+			local saveData = {
+				owned = {},
+				equipped = data.equipped or DEFAULT_ID,
+			}
+			
+			-- Convert owned table to array for DataStore
+			for marbleId, isOwned in pairs(data.owned) do
+				if isOwned then
+					table.insert(saveData.owned, marbleId)
+				end
+			end
+			
+			marbleDataStore:SetAsync("marbles_" .. player.UserId, saveData)
+			print("[MarbleService] Saved data for player:", player.Name)
+		end)
+		
+		if not success then
+			warn("[MarbleService] Failed to save data for " .. player.Name .. ": " .. tostring(errorMsg))
+		end
+	end)
+end
+
+-- Function to load player data from DataStore
+local function loadPlayerData(player: Player)
+	task.spawn(function()
+		local success, loadedData = pcall(function()
+			return marbleDataStore:GetAsync("marbles_" .. player.UserId)
+		end)
+		
+		if success and loadedData then
+			local data: PlayerData = {
+				owned = {},
+				equipped = loadedData.equipped or DEFAULT_ID,
+			}
+			
+			-- Convert array back to owned table
+			if loadedData.owned and type(loadedData.owned) == "table" then
+				for _, marbleId in ipairs(loadedData.owned) do
+					data.owned[marbleId] = true
+				end
+			end
+			
+			-- Ensure Default marble is always owned
+			if not data.owned[DEFAULT_ID] then
+				data.owned[DEFAULT_ID] = true
+			end
+			
+			-- Ensure equipped marble is valid
+			if not data.owned[data.equipped] then
+				data.equipped = DEFAULT_ID
+			end
+			
+			playerData[player] = data
+			dataStoreCache[player] = true
+			
+			print("[MarbleService] Loaded data for player:", player.Name, "Owned:", #loadedData.owned or 0, "marbles")
+			sendInventory(player)
+		else
+			-- No saved data, use defaults
+			print("[MarbleService] No saved data for player:", player.Name, "using defaults")
+			dataStoreCache[player] = true
+		end
+	end)
+end
+
 local function getOrCreatePlayerData(player: Player): PlayerData
+	-- Wait for DataStore to load if not already loaded
+	if not dataStoreCache[player] then
+		-- Data is loading or hasn't started, use defaults temporarily
+		if not playerData[player] then
+			playerData[player] = {
+				owned = { [DEFAULT_ID] = true },
+				equipped = DEFAULT_ID,
+			}
+		end
+		return playerData[player]
+	end
+	
 	local data = playerData[player]
 	if not data then
+		-- Create default data if DataStore didn't return anything
 		data = {
 			owned = { [DEFAULT_ID] = true },
 			equipped = DEFAULT_ID,
@@ -161,6 +254,35 @@ local function sendInventory(player: Player)
 		equipped = data.equipped,
 	})
 end
+
+-- Function to grant a marble to a player (for Robux purchases, etc.)
+local function grantMarble(player: Player, marbleId: string)
+	print("[MarbleService] grantMarble called for player:", player.Name, "marbleId:", marbleId)
+	local data = getOrCreatePlayerData(player)
+	local def = Marbles.getById(marbleId)
+	if not def then
+		print("[MarbleService] Cannot grant marble - invalid ID:", marbleId)
+		return false
+	end
+	print("[MarbleService] Marble definition found:", def.name)
+	data.owned[marbleId] = true
+	print("[MarbleService] Set owned[" .. marbleId .. "] = true")
+	sendInventory(player)
+	savePlayerData(player) -- Save to DataStore
+	print("[MarbleService] Sent inventory update to player:", player.Name)
+	print("[MarbleService] Granted marble", marbleId, "to player:", player.Name)
+	return true
+end
+
+-- Function to check if player has a marble
+local function hasMarble(player: Player, marbleId: string): boolean
+	local data = getOrCreatePlayerData(player)
+	return data.owned[marbleId] == true
+end
+
+-- Export functions for other services
+MarbleService.GrantMarble = grantMarble
+MarbleService.HasMarble = hasMarble
 
 local function ensureHumanoid(model: Model): Humanoid
 	local hum = model:FindFirstChildOfClass("Humanoid")
@@ -527,6 +649,7 @@ Remotes.RollForMarble.OnServerEvent:Connect(function(player: Player)
 		new = newlyUnlocked,
 	})
 	sendInventory(player)
+	savePlayerData(player) -- Save to DataStore
 end)
 
 Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: string)
@@ -558,6 +681,7 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 	
 	data.equipped = marbleId
 	sendInventory(player)
+	savePlayerData(player) -- Save to DataStore
 	
 	-- In-place switch: update current character instead of respawn
 	if character and character.Parent then
@@ -626,6 +750,11 @@ Remotes.ActivateAbility.OnServerEvent:Connect(function(player: Player)
 end)
 
 Players.PlayerAdded:Connect(function(player)
+	-- Load data from DataStore first
+	loadPlayerData(player)
+	
+	-- Wait a moment for DataStore to load, then use the data
+	task.wait(0.5)
 	local data = getOrCreatePlayerData(player)
 	data.equipped = data.equipped or DEFAULT_ID
 	sendInventory(player)
@@ -670,6 +799,11 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
+	-- Save data before player leaves
+	if playerData[player] then
+		savePlayerData(player)
+	end
+	
 	-- Deactivate any active ability before player leaves
 	local character = player.Character
 	if character and character.Parent then
@@ -694,6 +828,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerData[player] = nil
 	spawningFlag[player] = nil
 	abilityCooldowns[player] = nil
+	dataStoreCache[player] = nil
 end)
 
 -- Start position recording loop for time travel ability
@@ -706,4 +841,8 @@ RunService.Heartbeat:Connect(function()
 			recordPlayerPosition(player)
 		end
 	end
-end) 
+end)
+
+-- Export functions for other services
+-- Store in global table so other scripts can access even if require fails
+_G.MarbleService = MarbleService 

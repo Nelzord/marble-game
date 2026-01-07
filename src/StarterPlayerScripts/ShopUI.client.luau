@@ -318,42 +318,139 @@ local function createShopItem(item, container, isRobuxItem)
     imageCorner.CornerRadius = UDim.new(0, 6)
     imageCorner.Parent = imagePlaceholder
     
-    -- Item image
-    local itemImage = Instance.new("ImageLabel")
-    itemImage.Name = "ItemImage"
-    itemImage.Size = UDim2.new(1, 0, 1, 0)
-    itemImage.Position = UDim2.new(0, 0, 0, 0)
-    itemImage.BackgroundTransparency = 1
-    itemImage.ScaleType = Enum.ScaleType.Fit
-    itemImage.Parent = imagePlaceholder
+    -- Item image or viewport (for marbles)
+    local itemImage = nil
+    local viewport = nil
     
-    -- Set specific images based on item type
-    if item.itemType == "nuke_all" then
-        itemImage.Image = "rbxassetid://115934412352825"
-    elseif item.itemType == "permanent_luck" then
-        itemImage.Image = "rbxassetid://80819026897805"
-    elseif item.itemType == "lucky_potion" then
-        -- Set image based on luck multiplier
-        if item.luckMultiplier == 1.25 then
-            itemImage.Image = "rbxassetid://81477674576659"
-        elseif item.luckMultiplier == 1.5 then
-            itemImage.Image = "rbxassetid://104597457196107"
-        elseif item.luckMultiplier == 2 then
-            itemImage.Image = "rbxassetid://89877824960542"
-        else
-            -- Default placeholder for unknown luck multipliers
-            local placeholderText = Instance.new("TextLabel")
-            placeholderText.Name = "PlaceholderText"
-            placeholderText.Size = UDim2.new(1, 0, 1, 0)
-            placeholderText.Position = UDim2.new(0, 0, 0, 0)
-            placeholderText.BackgroundTransparency = 1
-            placeholderText.Text = "IMAGE"
-            placeholderText.TextColor3 = Color3.fromRGB(150, 150, 150)
-            placeholderText.TextScaled = true
-            placeholderText.Font = Enum.Font.Gotham
-            placeholderText.Parent = imagePlaceholder
+    -- For Gold and Diamond marbles, use ViewportFrame like inventory
+    if item.itemType == "gold_marble" or item.itemType == "diamond_marble" then
+        viewport = Instance.new("ViewportFrame")
+        viewport.Name = "MarbleViewport"
+        viewport.Size = UDim2.new(1, 0, 1, 0)
+        viewport.Position = UDim2.new(0, 0, 0, 0)
+        viewport.BackgroundTransparency = 1
+        viewport.BorderSizePixel = 0
+        viewport.Parent = imagePlaceholder
+        
+        local world = Instance.new("WorldModel")
+        world.Parent = viewport
+        
+        local sphere = Instance.new("Part")
+        sphere.Shape = Enum.PartType.Ball
+        sphere.Size = Vector3.new(6, 6, 6)
+        sphere.Anchored = true
+        sphere.CanCollide = false
+        sphere.Parent = world
+        
+        -- Apply textures to the sphere
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
+        local marbleId = item.itemType == "gold_marble" and "Gold" or "Diamond"
+        local def = Marbles.getById(marbleId)
+        
+        -- Apply textures using the same logic as inventory
+        local texturesRoot = ReplicatedStorage:FindFirstChild("MarbleTextures")
+        local folder = texturesRoot and texturesRoot:FindFirstChild(marbleId)
+        local assets = {}
+        
+        if folder then
+            for _, inst in ipairs(folder:GetChildren()) do
+                if inst:IsA("Decal") or inst:IsA("Texture") then
+                    table.insert(assets, inst)
+                end
+            end
         end
+        
+        local FALLBACK_DECALS = {
+            Gold = "rbxassetid://84142305330257",
+            Diamond = "rbxassetid://95881293008595",
+        }
+        
+        if #assets == 0 then
+            local fallback = FALLBACK_DECALS[marbleId]
+            if fallback then
+                for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+                    local d = Instance.new("Decal")
+                    d.Texture = fallback
+                    d.Face = face
+                    d.Parent = sphere
+                end
+            end
+        elseif #assets == 1 then
+            local src = assets[1]
+            for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+                local clone = src:Clone()
+                if clone:IsA("Decal") then
+                    clone.Face = face
+                elseif clone:IsA("Texture") then
+                    clone.Face = face
+                end
+                clone.Parent = sphere
+            end
+        else
+            for _, src in ipairs(assets) do
+                local clone = src:Clone()
+                clone.Parent = sphere
+            end
+        end
+        
+        -- Set color if no textures applied
+        if #sphere:GetChildren() == 0 and def and def.color then
+            sphere.Color = def.color
+        end
+        
+        -- Camera setup
+        local cam = Instance.new("Camera")
+        local center = Vector3.new(0, 0, 0)
+        sphere.Position = center
+        cam.CFrame = CFrame.new(center + Vector3.new(0, 0, 12), center)
+        cam.Parent = world
+        viewport.CurrentCamera = cam
+        
+        -- Rotate the sphere slowly for visual effect
+        task.spawn(function()
+            while viewport and viewport.Parent do
+                sphere.CFrame = sphere.CFrame * CFrame.Angles(0, math.rad(1), 0)
+                task.wait(0.05)
+            end
+        end)
     else
+        -- For other items, use ImageLabel
+        itemImage = Instance.new("ImageLabel")
+        itemImage.Name = "ItemImage"
+        itemImage.Size = UDim2.new(1, 0, 1, 0)
+        itemImage.Position = UDim2.new(0, 0, 0, 0)
+        itemImage.BackgroundTransparency = 1
+        itemImage.ScaleType = Enum.ScaleType.Fit
+        itemImage.Parent = imagePlaceholder
+        
+        -- Set specific images based on item type
+        if item.itemType == "nuke_all" then
+            itemImage.Image = "rbxassetid://115934412352825"
+        elseif item.itemType == "permanent_luck" then
+            itemImage.Image = "rbxassetid://80819026897805"
+        elseif item.itemType == "lucky_potion" then
+            -- Set image based on luck multiplier
+            if item.luckMultiplier == 1.25 then
+                itemImage.Image = "rbxassetid://81477674576659"
+            elseif item.luckMultiplier == 1.5 then
+                itemImage.Image = "rbxassetid://104597457196107"
+            elseif item.luckMultiplier == 2 then
+                itemImage.Image = "rbxassetid://89877824960542"
+            else
+                -- Default placeholder for unknown luck multipliers
+                local placeholderText = Instance.new("TextLabel")
+                placeholderText.Name = "PlaceholderText"
+                placeholderText.Size = UDim2.new(1, 0, 1, 0)
+                placeholderText.Position = UDim2.new(0, 0, 0, 0)
+                placeholderText.BackgroundTransparency = 1
+                placeholderText.Text = "IMAGE"
+                placeholderText.TextColor3 = Color3.fromRGB(150, 150, 150)
+                placeholderText.TextScaled = true
+                placeholderText.Font = Enum.Font.Gotham
+                placeholderText.Parent = imagePlaceholder
+            end
+        else
         -- Default placeholder for other items
         local placeholderText = Instance.new("TextLabel")
         placeholderText.Name = "PlaceholderText"
@@ -365,6 +462,7 @@ local function createShopItem(item, container, isRobuxItem)
         placeholderText.TextScaled = true
         placeholderText.Font = Enum.Font.Gotham
         placeholderText.Parent = imagePlaceholder
+    end
     end
     
     -- Item name
@@ -418,6 +516,16 @@ local function createShopItem(item, container, isRobuxItem)
                 buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
                 buyButton.Text = "OWNED"
                 buyButton.Active = false
+            -- Check if player owns Gold Marble
+            elseif item.itemType == "gold_marble" and _G.ownedMarbles and _G.ownedMarbles["Gold"] then
+                buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                buyButton.Text = "OWNED"
+                buyButton.Active = false
+            -- Check if player owns Diamond Marble
+            elseif item.itemType == "diamond_marble" and _G.ownedMarbles and _G.ownedMarbles["Diamond"] then
+                buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                buyButton.Text = "OWNED"
+                buyButton.Active = false
             else
                 -- For other Robux items, always show as purchasable
                 buyButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
@@ -441,29 +549,47 @@ local function createShopItem(item, container, isRobuxItem)
     
     -- Buy button functionality
     buyButton.MouseButton1Click:Connect(function()
-        print("Buy button clicked for item:", item.name, "Type:", item.itemType, "IsRobux:", isRobuxItem)
-        print("Current coins at purchase time:", currentCoins)
+        print("[ShopUI] Buy button clicked for item:", item.name, "Type:", item.itemType, "IsRobux:", isRobuxItem)
+        print("[ShopUI] Current coins at purchase time:", currentCoins)
+        print("[ShopUI] Button Active:", buyButton.Active)
         
         if isRobuxItem then
             -- Don't allow purchase if already owned (for permanent_luck)
             if item.itemType == "permanent_luck" and _G.playerPermanentLuckBonus and _G.playerPermanentLuckBonus >= 2 then
-                print("Item already owned, purchase blocked")
+                print("[ShopUI] Item already owned, purchase blocked")
                 return
+            end
+            -- Don't allow purchase if already owned (for Gold Marble)
+            if item.itemType == "gold_marble" then
+                print("[ShopUI] Checking Gold Marble ownership. _G.ownedMarbles:", _G.ownedMarbles)
+                if _G.ownedMarbles and _G.ownedMarbles["Gold"] then
+                    print("[ShopUI] Gold Marble already owned, purchase blocked")
+                    return
+                end
+            end
+            -- Don't allow purchase if already owned (for Diamond Marble)
+            if item.itemType == "diamond_marble" then
+                print("[ShopUI] Checking Diamond Marble ownership. _G.ownedMarbles:", _G.ownedMarbles)
+                if _G.ownedMarbles and _G.ownedMarbles["Diamond"] then
+                    print("[ShopUI] Diamond Marble already owned, purchase blocked")
+                    return
+                end
             end
             
             -- For Robux items, trigger the purchase
-            print("Attempting Robux purchase for:", item.itemType)
+            print("[ShopUI] Attempting Robux purchase for:", item.itemType)
             local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
             if remotesFolder then
                 local robuxPurchase = remotesFolder:FindFirstChild("RobuxPurchase")
                 if robuxPurchase then
-                    print("Firing RobuxPurchase remote event for:", item.itemType)
+                    print("[ShopUI] Firing RobuxPurchase remote event for:", item.itemType)
                     robuxPurchase:FireServer(item.itemType)
+                    print("[ShopUI] RobuxPurchase remote event fired successfully")
                 else
-                    print("RobuxPurchase remote event not found")
+                    warn("[ShopUI] RobuxPurchase remote event not found in Remotes folder")
                 end
             else
-                print("Remotes folder not found")
+                warn("[ShopUI] Remotes folder not found")
             end
         else
             -- For coin items, check if player has enough coins
@@ -490,6 +616,9 @@ local function createShopItem(item, container, isRobuxItem)
         end
     end)
     
+    -- Initial button state update
+    updateButtonState()
+    
     -- Return update function
     return updateButtonState
 end
@@ -513,6 +642,18 @@ local function populateRobuxShopItems()
             price = 100,
             description = "Instantly kill everyone including yourself with a massive explosion! (One-time use)",
             itemType = "nuke_all"
+        },
+        {
+            name = "Gold Marble",
+            price = 300,
+            description = "Unlock the Gold Marble - Doubles all coins collected while active",
+            itemType = "gold_marble"
+        },
+        {
+            name = "Diamond Marble",
+            price = 500,
+            description = "Unlock the Diamond Marble - Triples all coins collected while active",
+            itemType = "diamond_marble"
         }
     }
     
@@ -777,11 +918,29 @@ end
 -- Function to update luck display
 local function updateLuckDisplay(luckMultiplier, timeLeft)
     if luckDisplay then
-        if luckMultiplier > 1 and timeLeft > 0 then
+        -- Get permanent luck bonus from global
+        local permanentBonus = _G.playerPermanentLuckBonus or 1
+        local hasPermanentBonus = permanentBonus > 1
+        
+        if luckMultiplier > 1 then
             local minutes = math.floor(timeLeft / 60)
             local seconds = timeLeft % 60
-            luckDisplay.Text = "Current Luck: " .. string.format("%.2f", luckMultiplier) .. "x (" .. minutes .. ":" .. string.format("%02d", seconds) .. ")"
-            luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150) -- Purple for active luck
+            if timeLeft > 0 then
+                -- Has active potion
+                luckDisplay.Text = "Current Luck: " .. string.format("%.2f", luckMultiplier) .. "x (" .. minutes .. ":" .. string.format("%02d", seconds) .. ")"
+                luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150) -- Purple for active luck
+            elseif hasPermanentBonus then
+                -- Only permanent bonus, no potion
+                luckDisplay.Text = "Current Luck: " .. string.format("%.2f", permanentBonus) .. "x (Permanent)"
+                luckDisplay.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold for permanent bonus
+            else
+                luckDisplay.Text = "Current Luck: 1.00x"
+                luckDisplay.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Gray for no luck
+            end
+        elseif hasPermanentBonus then
+            -- Only permanent bonus, no potion
+            luckDisplay.Text = "Current Luck: " .. string.format("%.2f", permanentBonus) .. "x (Permanent)"
+            luckDisplay.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold for permanent bonus
         else
             luckDisplay.Text = "Current Luck: 1.00x"
             luckDisplay.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Gray for no luck
@@ -793,6 +952,11 @@ end
 local function updateRobuxDataDisplay(permanentLuckBonus, hasNukeAll)
     -- Store permanent luck bonus globally for shop items to access
     _G.playerPermanentLuckBonus = permanentLuckBonus
+    
+    -- Update luck display to show permanent bonus
+    if luckDisplay then
+        updateLuckDisplay(permanentLuckBonus, 0) -- 0 time left means no potion, but show permanent bonus
+    end
     
     -- Update all shop items to reflect ownership status
     if _G.updateAllShopItems then

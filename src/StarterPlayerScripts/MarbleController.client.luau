@@ -75,6 +75,11 @@ end
 local function ensureCosmeticBall(character: Model, hrp: BasePart): BasePart
 	local existing = character:FindFirstChild("CosmeticBall")
 	if existing and existing:IsA("BasePart") then
+		-- Ensure it's still properly configured
+		existing.Transparency = 0
+		existing.CanCollide = false
+		existing.Massless = true
+		existing.Anchored = false
 		return existing
 	end
 	local ball = Instance.new("Part")
@@ -83,10 +88,12 @@ local function ensureCosmeticBall(character: Model, hrp: BasePart): BasePart
 	ball.Material = Enum.Material.SmoothPlastic
 	ball.Color = Color3.fromRGB(230, 230, 230)
 	ball.Size = hrp.Size
+	ball.Transparency = 0 -- Explicitly set to visible
 	ball.CanCollide = false
 	ball.Massless = true
 	ball.Anchored = false
 	ball.Parent = character
+	
 	return ball
 end
 
@@ -856,6 +863,24 @@ local function setupController(character: Model)
 		if not hrp or not hrp.Parent then
 			if stepConn then stepConn:Disconnect() end
 			return
+		end
+		
+		-- Ensure cosmetic ball exists and is visible
+		local cosmeticCheck = character:FindFirstChild("CosmeticBall")
+		if not cosmeticCheck or not cosmeticCheck:IsA("BasePart") then
+			-- Recreate cosmetic ball if it was removed
+			cosmetic = ensureCosmeticBall(character, hrp)
+			applyCosmeticColorFromEquipped(character, cosmetic)
+			applyCosmeticTexturesFromEquipped(character, cosmetic)
+		else
+			-- Ensure cosmetic ball is visible
+			if cosmeticCheck.Transparency >= 1 then
+				cosmeticCheck.Transparency = 0
+			end
+			-- Update cosmetic reference if it changed
+			if cosmeticCheck ~= cosmetic then
+				cosmetic = cosmeticCheck
+			end
 		end
 
 		-- Physics movement via linear velocity (horizontal only)

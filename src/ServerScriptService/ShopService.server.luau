@@ -59,24 +59,33 @@ function ShopService:GetPlayerLuckMultiplier(player)
         potionMultiplier = potion.multiplier
     end
     
-    -- Get permanent luck bonus from RobuxService (with safe require)
+    -- Get permanent luck bonus from RobuxService
     local permanentBonus = 1 -- Default to 1x if RobuxService not available
     
-    -- Try to get RobuxService, but don't fail if it's not available
-    local success, result = pcall(function()
-        local RobuxService = require(script.Parent.RobuxService)
-        if RobuxService and RobuxService.GetPlayerTotalLuckMultiplier then
-            return RobuxService:GetPlayerTotalLuckMultiplier(player)
+    -- Try to get RobuxService from _G first, then try requiring it
+    local RobuxService = _G.RobuxService
+    if not RobuxService then
+        local success, result = pcall(function()
+            return require(script.Parent.RobuxService)
+        end)
+        if success and result then
+            RobuxService = result
         end
-        return 1
-    end)
+    end
     
-    if success then
-        permanentBonus = result
+    if RobuxService and RobuxService.GetPlayerTotalLuckMultiplier then
+        local success, result = pcall(function()
+            return RobuxService:GetPlayerTotalLuckMultiplier(player)
+        end)
+        if success and result then
+            permanentBonus = result
+        end
     end
     
     -- Combine permanent bonus with potion multiplier
-    return permanentBonus * potionMultiplier
+    local totalMultiplier = permanentBonus * potionMultiplier
+    print("[ShopService] Luck calculation for " .. player.Name .. ": permanent=" .. permanentBonus .. "x, potion=" .. potionMultiplier .. "x, total=" .. totalMultiplier .. "x")
+    return totalMultiplier
 end
 
 -- Function to send luck update to client
@@ -92,6 +101,9 @@ local function sendLuckUpdate(player)
         Remotes.LuckUpdate:FireClient(player, luckMultiplier, timeLeft)
     end
 end
+
+-- Export sendLuckUpdate for other services to use
+ShopService.sendLuckUpdate = sendLuckUpdate
 
 -- Function to purchase item
 function ShopService:PurchaseItem(player, itemName)
