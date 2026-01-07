@@ -368,4 +368,86 @@ function UIComponents.createSoundEffects(screen: ScreenGui)
 	return invOpenSfx
 end
 
+-- Create arrow indicator pointing to roll button
+function UIComponents.createRollButtonArrow(screen: ScreenGui, rollButton: TextButton)
+	local TweenService = game:GetService("TweenService")
+	
+	-- Create container frame for the arrow
+	local arrowContainer = Instance.new("Frame")
+	arrowContainer.Name = "RollButtonArrow"
+	arrowContainer.BackgroundTransparency = 1
+
+	arrowContainer.Size = UDim2.fromOffset(300, 120) -- wider = longer arrow
+
+	-- Stable scaling (no drifting)
+	arrowContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+	arrowContainer.Position = UDim2.new(0.5, 240, 1, -60)
+
+	arrowContainer.Parent = screen
+	arrowContainer.ZIndex = 10
+	arrowContainer.Visible = false
+
+	-- Arrow label
+	local arrowLabel = Instance.new("TextLabel")
+	arrowLabel.Name = "Arrow"
+	arrowLabel.Size = UDim2.new(1, 0, 1, 0)
+	arrowLabel.BackgroundTransparency = 1
+
+	arrowLabel.Text = "←"
+	arrowLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+
+	-- CONTROL SIZE + THICKNESS 👇
+	arrowLabel.TextScaled = false
+	arrowLabel.TextSize = 180 -- increase for thicker arrow
+	arrowLabel.Font = Enum.Font.GothamBlack
+
+	arrowLabel.Parent = arrowContainer
+	arrowLabel.ZIndex = 11
+
+	
+	-- Create pulsing animation
+	local pulseTween: Tween? = nil
+	local function startPulse()
+		-- Cancel existing tween if any
+		if pulseTween then
+			pulseTween:Cancel()
+		end
+		
+		-- Create new pulse animation
+		local pulseInfo = TweenInfo.new(
+			0.8,
+			Enum.EasingStyle.Sine,
+			Enum.EasingDirection.InOut,
+			-1, -- Repeat infinitely
+			true -- Reverse
+		)
+		pulseTween = TweenService:Create(arrowLabel, pulseInfo, {
+			TextTransparency = 0.3
+		})
+		pulseTween:Play()
+	end
+	
+	-- Function to hide the arrow
+	local function hideArrow()
+		if arrowContainer and arrowContainer.Parent then
+			arrowContainer.Visible = false
+		end
+		if pulseTween then
+			pulseTween:Cancel()
+			pulseTween = nil
+		end
+	end
+	
+	-- Function to show the arrow
+	local function showArrow()
+		if arrowContainer and arrowContainer.Parent then
+			arrowContainer.Visible = true
+			arrowLabel.TextTransparency = 0
+			startPulse()
+		end
+	end
+	
+	return arrowContainer, hideArrow, showArrow
+end
+
 return UIComponents

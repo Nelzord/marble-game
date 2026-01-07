@@ -41,6 +41,9 @@ local world1Tab: TextButton? = nil
 local world2Tab: TextButton? = nil
 local currentWorld: number = 1
 local invOpenSfx: Sound? = nil
+local rollButtonArrow: Frame? = nil
+local hideRollButtonArrow: (() -> ())? = nil
+local showRollButtonArrow: (() -> ())? = nil
 
 -- Remote events
 local RemotesFolder: Folder? = nil
@@ -146,6 +149,10 @@ local function createUI()
 	-- Create sound effects
 	invOpenSfx = UIComponents.createSoundEffects(screen)
 	print("Sound effects created")
+	
+	-- Create roll button arrow indicator
+	rollButtonArrow, hideRollButtonArrow, showRollButtonArrow = UIComponents.createRollButtonArrow(screen, rollButton)
+	print("Roll button arrow created")
 	
 	-- Set up grid canvas size refresh
 	invGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -303,6 +310,10 @@ local function setupEventHandlers()
 	
 	-- Roll button click handler
 	rollButton.MouseButton1Click:Connect(function()
+		-- Hide the arrow indicator when roll button is clicked
+		if hideRollButtonArrow then
+			hideRollButtonArrow()
+		end
 		currentRollCallback = RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
 	end)
 	
@@ -536,6 +547,23 @@ function MarbleUIController.init()
 		CooldownSystem.processPendingCooldown(powerButton, powerCooldown, cooldownText, textShadow)
 		if InventorySystem.processPendingInventoryUpdate() then
 			updatePowerButtonForMarble()
+		end
+		
+		-- Show the roll button arrow indicator on join
+		-- Wait a moment for UI to fully render
+		task.wait(0.5)
+		if showRollButtonArrow then
+			showRollButtonArrow()
+			print("Roll button arrow shown")
+			
+			-- Auto-hide after 30 seconds if not clicked (3x longer)
+			task.spawn(function()
+				task.wait(30)
+				if rollButtonArrow and rollButtonArrow.Visible and hideRollButtonArrow then
+					hideRollButtonArrow()
+					print("Roll button arrow auto-hidden after timeout")
+				end
+			end)
 		end
 	else
 		print("WARNING: UI failed to become ready!")
