@@ -858,6 +858,7 @@ local function setupController(character: Model)
 	local logAccum = 0
 	local prevIsInput = false
 	local glideHoriz = Vector3.zero
+	local jumpStuckTimer = 0 -- Track how long jump has been active while on ground and moving
 	local stepConn
 	stepConn = RunService.RenderStepped:Connect(function(dt)
 		if not hrp or not hrp.Parent then
@@ -942,6 +943,29 @@ local function setupController(character: Model)
 				local newYVel = currentVel.Y * gravityReduction
 				hrp.AssemblyLinearVelocity = Vector3.new(currentVel.X, newYVel, currentVel.Z)
 				wrote = true
+			end
+		end
+		
+		-- Fix for mobile jump button getting stuck: reset Humanoid.Jump when moving on ground
+		-- This prevents continuous jumping on iPhone/iPad when the jump button is pressed while moving
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			local currentVel = hrp.AssemblyLinearVelocity
+			local isJumpingUpward = currentVel.Y > 5 -- If moving upward faster than 5 studs/sec, they're actively jumping
+			local isOnGround = humanoid.FloorMaterial ~= Enum.Material.Air
+			
+			if isInput and humanoid.Jump and isOnGround and not isJumpingUpward then
+				-- Player is on ground, moving, and jump is active - increment timer
+				jumpStuckTimer = jumpStuckTimer + dt
+				-- Only reset if jump has been stuck for more than 0.2 seconds
+				-- This allows the initial jump to happen but prevents continuous jumping
+				if jumpStuckTimer > 0.2 then
+					humanoid.Jump = false
+					jumpStuckTimer = 0
+				end
+			else
+				-- Reset timer if conditions aren't met (not moving, not on ground, or not jumping)
+				jumpStuckTimer = 0
 			end
 		end
 
