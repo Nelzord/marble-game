@@ -33,13 +33,59 @@ local boundCharacters: { [Model]: boolean } = {}
 
 local baseSpeed = 35 -- movement magnitude; abilities can scale via SpeedMultiplier
 
+-- Mobile/gamepad controls via PlayerModule
+local controlModule = nil
+
+local function initMobileControls()
+	local playerScripts = player:WaitForChild("PlayerScripts", 5)
+	if playerScripts then
+		local pm = playerScripts:WaitForChild("PlayerModule", 5)
+		if pm then
+			local success, result = pcall(function()
+				return require(pm)
+			end)
+			if success and result then
+				local ctrl = result:GetControls()
+				if ctrl then
+					controlModule = ctrl
+					dprint("Mobile controls initialized successfully")
+				end
+			end
+		end
+	end
+end
+
+task.spawn(initMobileControls)
+
 local function getMoveDirection(camera: Camera): Vector3
 	local cf = camera.CFrame
 	local forward = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z)
 	if forward.Magnitude > 0 then forward = forward.Unit end
 	local right = Vector3.new(cf.RightVector.X, 0, cf.RightVector.Z)
 	if right.Magnitude > 0 then right = right.Unit end
-	local dir = forward * inputState.forward + right * inputState.right
+	
+	-- Start with keyboard input
+	local inputForward = inputState.forward
+	local inputRight = inputState.right
+	
+	-- Get mobile joystick/gamepad input if available
+	if controlModule then
+		local success, moveVector = pcall(function()
+			return controlModule:GetMoveVector()
+		end)
+		if success and moveVector then
+			-- moveVector: X = right/left, Z = forward/back (inverted)
+			if math.abs(moveVector.X) > 0.01 or math.abs(moveVector.Z) > 0.01 then
+				-- Only use mobile input if no keyboard input (prevents double-speed)
+				if inputForward == 0 and inputRight == 0 then
+					inputRight = moveVector.X
+					inputForward = -moveVector.Z -- Z is inverted in Roblox control system
+				end
+			end
+		end
+	end
+	
+	local dir = forward * inputForward + right * inputRight
 	if dir.Magnitude > 1 then dir = dir.Unit end
 	return dir
 end

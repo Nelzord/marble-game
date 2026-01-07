@@ -6,7 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 
 local BADGE_DEBUG = true
-local RESET_BADGES = true -- Set to true to reset all player badges on join
+local RESET_BADGES = false -- Set to true to reset all player badges on join
 
 local function clog(...)
 	if BADGE_DEBUG then
