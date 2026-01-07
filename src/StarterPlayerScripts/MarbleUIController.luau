@@ -44,6 +44,7 @@ local invOpenSfx: Sound? = nil
 local rollButtonArrow: Frame? = nil
 local hideRollButtonArrow: (() -> ())? = nil
 local showRollButtonArrow: (() -> ())? = nil
+local showBadgePopup: ((number, string, boolean) -> ())? = nil
 
 -- Remote events
 local RemotesFolder: Folder? = nil
@@ -153,6 +154,11 @@ local function createUI()
 	-- Create roll button arrow indicator
 	rollButtonArrow, hideRollButtonArrow, showRollButtonArrow = UIComponents.createRollButtonArrow(screen, rollButton)
 	print("Roll button arrow created")
+	
+	-- Create badge popup
+	local badgePopup, showBadgePopupFunc = UIComponents.createBadgePopup(screen)
+	showBadgePopup = showBadgePopupFunc
+	print("Badge popup created")
 	
 	-- Set up grid canvas size refresh
 	invGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -436,6 +442,15 @@ local function setupEventHandlers()
 		-- If badges frame is open, rebuild the current world's UI
 		if badgesFrame and badgesFrame.Visible then
 			BadgeSystem.rebuildBadgesUI(badgesList, badgesGrid, currentWorld)
+		end
+	end)
+	
+	-- Badge touched handler - show popup when badge is touched
+	local BadgeTouched = RemotesFolder:WaitForChild("BadgeTouched")
+	BadgeTouched.OnClientEvent:Connect(function(badgeNumber: number, badgeName: string, alreadyUnlocked: boolean)
+		print("BadgeTouched received:", badgeNumber, badgeName, alreadyUnlocked)
+		if showBadgePopup then
+			showBadgePopup(badgeNumber, badgeName, alreadyUnlocked)
 		end
 	end)
 	

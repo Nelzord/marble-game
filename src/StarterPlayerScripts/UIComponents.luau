@@ -450,4 +450,139 @@ function UIComponents.createRollButtonArrow(screen: ScreenGui, rollButton: TextB
 	return arrowContainer, hideArrow, showArrow
 end
 
+-- Create badge popup notification
+function UIComponents.createBadgePopup(screen: ScreenGui)
+	local TweenService = game:GetService("TweenService")
+	
+	-- Create popup frame
+	local popup = Instance.new("Frame")
+	popup.Name = "BadgePopup"
+	popup.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	popup.BorderSizePixel = 0
+	popup.Size = UDim2.fromOffset(400, 120)
+	popup.Position = UDim2.new(0.5, 0, 0.2, 0)
+	popup.AnchorPoint = Vector2.new(0.5, 0.5)
+	popup.Parent = screen
+	popup.ZIndex = 20
+	popup.Visible = false
+	popup.ClipsDescendants = false
+	
+	UIComponents.createCorner(popup, 12)
+	
+	-- Add border glow effect
+	local border = Instance.new("UIStroke")
+	border.Color = Color3.fromRGB(100, 200, 100)
+	border.Thickness = 3
+	border.Transparency = 0
+	border.Parent = popup
+	
+	-- Badge icon/emoji
+	local icon = Instance.new("TextLabel")
+	icon.Name = "Icon"
+	icon.Size = UDim2.fromOffset(60, 60)
+	icon.Position = UDim2.new(0, 20, 0.5, 0)
+	icon.AnchorPoint = Vector2.new(0, 0.5)
+	icon.BackgroundTransparency = 1
+	icon.Text = "🏆"
+	icon.TextScaled = true
+	icon.Font = Enum.Font.GothamBold
+	icon.TextColor3 = Color3.fromRGB(255, 215, 0)
+	icon.TextTransparency = 0
+	icon.TextXAlignment = Enum.TextXAlignment.Center
+	icon.TextYAlignment = Enum.TextYAlignment.Center
+	icon.ZIndex = 21
+	icon.Visible = true
+	icon.Parent = popup
+	
+	-- Badge name label
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "NameLabel"
+	nameLabel.Size = UDim2.new(1, -100, 0, 40)
+	nameLabel.Position = UDim2.new(0, 100, 0, 20)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = "Badge X"
+	nameLabel.TextScaled = true
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.TextColor3 = Color3.new(1, 1, 1)
+	nameLabel.TextTransparency = 0
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.TextYAlignment = Enum.TextYAlignment.Center
+	nameLabel.ZIndex = 21
+	nameLabel.Visible = true
+	nameLabel.Parent = popup
+	
+	-- Status label (Unlocked/Already Unlocked)
+	local statusLabel = Instance.new("TextLabel")
+	statusLabel.Name = "StatusLabel"
+	statusLabel.Size = UDim2.new(1, -100, 0, 30)
+	statusLabel.Position = UDim2.new(0, 100, 0, 60)
+	statusLabel.BackgroundTransparency = 1
+	statusLabel.Text = "Badge Unlocked!"
+	statusLabel.TextScaled = true
+	statusLabel.Font = Enum.Font.Gotham
+	statusLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
+	statusLabel.TextTransparency = 0
+	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	statusLabel.TextYAlignment = Enum.TextYAlignment.Center
+	statusLabel.ZIndex = 21
+	statusLabel.Visible = true
+	statusLabel.Parent = popup
+	
+	-- Function to show popup
+	local function showPopup(badgeNumber: number, badgeName: string, alreadyUnlocked: boolean)
+		print("showPopup called:", badgeNumber, badgeName, alreadyUnlocked)
+		
+		-- Update popup content
+		nameLabel.Text = badgeName or ("Badge " .. tostring(badgeNumber))
+		nameLabel.TextTransparency = 0
+		nameLabel.Visible = true
+		
+		if alreadyUnlocked then
+			statusLabel.Text = "Already Unlocked"
+			statusLabel.TextColor3 = Color3.fromRGB(255, 255, 150)
+			border.Color = Color3.fromRGB(200, 200, 100)
+		else
+			statusLabel.Text = "Unlocked!"
+			statusLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
+			border.Color = Color3.fromRGB(100, 200, 100)
+		end
+		statusLabel.TextTransparency = 0
+		statusLabel.Visible = true
+		
+		icon.TextTransparency = 0
+		icon.Visible = true
+		
+		-- Reset position and transparency
+		popup.Position = UDim2.new(0.5, 0, 0.1, -50)
+		popup.BackgroundTransparency = 0
+		popup.Visible = true
+		
+		print("Popup visible set to true, nameLabel.Text:", nameLabel.Text, "statusLabel.Text:", statusLabel.Text)
+		
+		-- Animate in
+		local slideIn = TweenService:Create(
+			popup,
+			TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{Position = UDim2.new(0.5, 0, 0.2, 0), BackgroundTransparency = 0}
+		)
+		slideIn:Play()
+		
+		-- Wait then animate out
+		task.wait(2.5)
+		
+		local slideOut = TweenService:Create(
+			popup,
+			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{Position = UDim2.new(0.5, 0, 0.1, -50), BackgroundTransparency = 1}
+		)
+		slideOut:Play()
+		
+		slideOut.Completed:Connect(function()
+			popup.Visible = false
+		end)
+	end
+	
+	return popup, showPopup
+end
+
 return UIComponents

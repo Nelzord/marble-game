@@ -40,6 +40,7 @@ local function getOrCreateRemotes()
 		BadgeUnlocked = ensureEvent("BadgeUnlocked"),
 		BadgeUpdate = ensureEvent("BadgeUpdate"),
 		RequestBadges = ensureEvent("RequestBadges"),
+		BadgeTouched = ensureEvent("BadgeTouched"),
 	}
 end
 
@@ -242,6 +243,22 @@ function BadgeService.getBadgeIdByNumber(badgeNumber: number): string?
 		return "level" .. badgeNumber
 	end
 	return nil
+end
+
+function BadgeService.getBadgeNameByNumber(badgeNumber: number): string?
+	if badgeNumber >= 1 and badgeNumber <= 16 then
+		for _, badge in ipairs(BADGES) do
+			if badge.id == "level" .. badgeNumber then
+				return badge.name
+			end
+		end
+	end
+	return nil
+end
+
+-- Expose Remotes for other scripts
+function BadgeService.getRemotes()
+	return Remotes
 end
 
 -- Function to reset all badges for a player

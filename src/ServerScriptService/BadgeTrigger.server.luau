@@ -51,8 +51,21 @@ local function onBadgeTouched(hit: BasePart, badgeNumber: number)
 		return
 	end
 	
+	-- Get badge name for popup
+	local badgeName = BadgeService.getBadgeNameByNumber(badgeNumber) or ("Badge " .. badgeNumber)
+	
 	-- Check if already unlocked
-	if BadgeService.isBadgeUnlocked(player, badgeId) then
+	local alreadyUnlocked = BadgeService.isBadgeUnlocked(player, badgeId)
+	
+	-- Fire BadgeTouched event to show popup (whether unlocked or not)
+	local Remotes = BadgeService.getRemotes()
+	if Remotes and Remotes.BadgeTouched then
+		Remotes.BadgeTouched:FireClient(player, badgeNumber, badgeName, alreadyUnlocked)
+		clog("Fired BadgeTouched event for", player.Name, "badge", badgeNumber, "unlocked:", alreadyUnlocked)
+	end
+	
+	-- If already unlocked, just show popup and return
+	if alreadyUnlocked then
 		clog("Badge", badgeId, "already unlocked for", player.Name)
 		return
 	end
