@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
 
 local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
 
@@ -629,6 +630,51 @@ end
 -- Initialize hazard system
 setupHazardSystem()
 
+-- Void detection system: Respawn players who fall below the map
+local VOID_Y_THRESHOLD = -100 -- Players below this Y coordinate are considered "in the void"
+
+local function setupVoidDetection()
+	-- Check all players periodically for void detection
+	RunService.Heartbeat:Connect(function()
+		for _, player in ipairs(Players:GetPlayers()) do
+			local character = player.Character
+			if not character then continue end
+			
+			-- Check if this is a marble character
+			if not character:GetAttribute("IsMarbleCharacter") then continue end
+			
+			local hrp = character:FindFirstChild("HumanoidRootPart")
+			if not hrp or not hrp:IsA("BasePart") then continue end
+			
+			-- Check if player has fallen below the void threshold
+			if hrp.Position.Y < VOID_Y_THRESHOLD then
+				dprint("Player", player.Name, "fell into the void at Y =", hrp.Position.Y)
+				
+				-- Find spawn location
+				local spawnLocation = workspace:FindFirstChildOfClass("SpawnLocation")
+				if spawnLocation then
+					local spawnPos = spawnLocation.Position + Vector3.new(0, 5, 0)
+					
+					-- Stop any current velocity
+					hrp.AssemblyLinearVelocity = Vector3.zero
+					hrp.AssemblyAngularVelocity = Vector3.zero
+					
+					-- Teleport to spawn
+					character:PivotTo(CFrame.new(spawnPos))
+					dprint("Teleported player", player.Name, "back to spawn")
+				else
+					-- No spawn location found, respawn the character
+					dprint("No SpawnLocation found, respawning player", player.Name)
+					respawnEquipped(player)
+				end
+			end
+		end
+	end)
+end
+
+-- Initialize void detection system
+setupVoidDetection()
+
 -- Remote connections
 Remotes.RollForMarble.OnServerEvent:Connect(function(player: Player)
 	local data = getOrCreatePlayerData(player)
@@ -832,7 +878,6 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 -- Start position recording loop for time travel ability
-local RunService = game:GetService("RunService")
 RunService.Heartbeat:Connect(function()
 	if not positionRecordingEnabled then return end
 	
