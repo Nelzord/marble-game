@@ -28,8 +28,8 @@ function UIComponents.createPowerButton(screen: ScreenGui)
 	powerButton.Name = "PowerButton"
 	powerButton.Text = "Power (E)"
 	powerButton.TextScaled = true
-	powerButton.Size = UDim2.fromOffset(200, 56)
-	powerButton.Position = UDim2.new(0.5, -110, 1, -24)
+	powerButton.Size = UDim2.fromOffset(150, 56)
+	powerButton.Position = UDim2.new(0.5, 80, 1, -24)
 	powerButton.AnchorPoint = Vector2.new(0.5, 1)
 	powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
 	powerButton.TextColor3 = Color3.new(1, 1, 1)
@@ -86,8 +86,8 @@ function UIComponents.createRollButton(screen: ScreenGui)
 	rollButton.Name = "RollButton"
 	rollButton.Text = "Roll for Marble"
 	rollButton.TextScaled = true
-	rollButton.Size = UDim2.fromOffset(200, 56)
-	rollButton.Position = UDim2.new(0.5, 110, 1, -24)
+	rollButton.Size = UDim2.fromOffset(150, 56)
+	rollButton.Position = UDim2.new(0.5, -80, 1, -24)
 	rollButton.AnchorPoint = Vector2.new(0.5, 1)
 	rollButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	rollButton.TextColor3 = Color3.new(1, 1, 1)
@@ -97,6 +97,27 @@ function UIComponents.createRollButton(screen: ScreenGui)
 	UIComponents.createCorner(rollButton, 8)
 	
 	return rollButton
+end
+
+-- Create the auto roll button (toggle for automatic rolling)
+function UIComponents.createAutoRollButton(screen: ScreenGui)
+	local autoButton = Instance.new("TextButton")
+	autoButton.Name = "AutoRollButton"
+	autoButton.Text = "Auto\nOFF"
+	autoButton.TextScaled = true
+	autoButton.Size = UDim2.fromOffset(56, 56)
+	-- Position to the left of roll button: roll is at -80, width 150, so left edge is at -155
+	-- Auto button (56 wide, anchor 0.5) center at -155 - 10 gap - 28 = -193
+	autoButton.Position = UDim2.new(0.5, -193, 1, -24)
+	autoButton.AnchorPoint = Vector2.new(0.5, 1)
+	autoButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	autoButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+	autoButton.Font = Enum.Font.GothamBold
+	autoButton.Parent = screen
+	
+	UIComponents.createCorner(autoButton, 8)
+	
+	return autoButton
 end
 
 -- Create the inventory button
@@ -377,11 +398,11 @@ function UIComponents.createRollButtonArrow(screen: ScreenGui, rollButton: TextB
 	arrowContainer.Name = "RollButtonArrow"
 	arrowContainer.BackgroundTransparency = 1
 
-	arrowContainer.Size = UDim2.fromOffset(300, 120) -- wider = longer arrow
+	arrowContainer.Size = UDim2.fromOffset(120, 120) -- square for down arrow
 
-	-- Stable scaling (no drifting)
-	arrowContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-	arrowContainer.Position = UDim2.new(0.5, 240, 1, -60)
+	-- Position above the roll button (which is at 0.5, -80)
+	arrowContainer.AnchorPoint = Vector2.new(0.5, 1)
+	arrowContainer.Position = UDim2.new(0.5, -80, 1, -55)
 
 	arrowContainer.Parent = screen
 	arrowContainer.ZIndex = 10
@@ -393,7 +414,7 @@ function UIComponents.createRollButtonArrow(screen: ScreenGui, rollButton: TextB
 	arrowLabel.Size = UDim2.new(1, 0, 1, 0)
 	arrowLabel.BackgroundTransparency = 1
 
-	arrowLabel.Text = "←"
+	arrowLabel.Text = "↓"
 	arrowLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
 
 	-- CONTROL SIZE + THICKNESS 👇

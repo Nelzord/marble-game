@@ -64,24 +64,6 @@ local luckBtnCorner = Instance.new("UICorner")
 luckBtnCorner.CornerRadius = UDim.new(0, 10)
 luckBtnCorner.Parent = luckButton
 
--- Luck price label (small text overlay)
-local luckPriceLabel = Instance.new("TextLabel")
-luckPriceLabel.Name = "PriceLabel"
-luckPriceLabel.Size = UDim2.new(1, 0, 0.3, 0)
-luckPriceLabel.Position = UDim2.new(0, 0, 1, -18)
-luckPriceLabel.AnchorPoint = Vector2.new(0, 0)
-luckPriceLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-luckPriceLabel.BackgroundTransparency = 0.3
-luckPriceLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-luckPriceLabel.Text = "R$200"
-luckPriceLabel.TextScaled = true
-luckPriceLabel.Font = Enum.Font.GothamBold
-luckPriceLabel.Parent = luckButton
-
-local luckPriceCorner = Instance.new("UICorner")
-luckPriceCorner.CornerRadius = UDim.new(0, 4)
-luckPriceCorner.Parent = luckPriceLabel
-
 -- Nuke All Quick Buy Button (Robux item) - BELOW
 local nukeButton = Instance.new("ImageButton")
 nukeButton.Name = "NukeQuickBuy"
@@ -96,24 +78,6 @@ nukeButton.Parent = quickBuyContainer
 local nukeCorner = Instance.new("UICorner")
 nukeCorner.CornerRadius = UDim.new(0, 8)
 nukeCorner.Parent = nukeButton
-
--- Nuke price label (small text overlay)
-local nukePriceLabel = Instance.new("TextLabel")
-nukePriceLabel.Name = "PriceLabel"
-nukePriceLabel.Size = UDim2.new(1, 0, 0.35, 0)
-nukePriceLabel.Position = UDim2.new(0, 0, 1, -16)
-nukePriceLabel.AnchorPoint = Vector2.new(0, 0)
-nukePriceLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-nukePriceLabel.BackgroundTransparency = 0.3
-nukePriceLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-nukePriceLabel.Text = "R$100"
-nukePriceLabel.TextScaled = true
-nukePriceLabel.Font = Enum.Font.GothamBold
-nukePriceLabel.Parent = nukeButton
-
-local nukePriceCorner = Instance.new("UICorner")
-nukePriceCorner.CornerRadius = UDim.new(0, 4)
-nukePriceCorner.Parent = nukePriceLabel
 
 -- Hover effects for quick buy buttons
 local function setupHoverEffects(button, normalColor, hoverColor)

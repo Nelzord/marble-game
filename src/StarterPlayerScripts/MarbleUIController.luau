@@ -25,9 +25,14 @@ local powerCooldown: Frame? = nil
 local cooldownText: TextLabel? = nil
 local textShadow: TextLabel? = nil
 local rollButton: TextButton? = nil
+local autoRollButton: TextButton? = nil
 local inventoryButton: TextButton? = nil
 local badgesButton: TextButton? = nil
 local shopButton: TextButton? = nil
+
+-- Auto roll state
+local isAutoRolling: boolean = false
+local AUTO_ROLL_INTERVAL: number = 0.5 -- seconds between auto rolls
 local resultLabel: TextLabel? = nil
 local invFrame: Frame? = nil
 local invCloseButton: TextButton? = nil
@@ -122,6 +127,10 @@ local function createUI()
 	-- Create roll button
 	rollButton = UIComponents.createRollButton(screen)
 	print("Roll button created")
+	
+	-- Create auto roll button
+	autoRollButton = UIComponents.createAutoRollButton(screen)
+	print("Auto roll button created")
 	
 	-- Create inventory button
 	inventoryButton = UIComponents.createInventoryButton(screen)
@@ -321,6 +330,64 @@ local function setupEventHandlers()
 			hideRollButtonArrow()
 		end
 		currentRollCallback = RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
+	end)
+	
+	-- Function to update auto roll button appearance
+	local function updateAutoRollButtonAppearance()
+		if autoRollButton then
+			if isAutoRolling then
+				autoRollButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+				autoRollButton.TextColor3 = Color3.new(1, 1, 1)
+				autoRollButton.Text = "Auto\nON"
+			else
+				autoRollButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+				autoRollButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+				autoRollButton.Text = "Auto\nOFF"
+			end
+		end
+	end
+	
+	-- Function to perform auto roll
+	local function performAutoRoll()
+		if hideRollButtonArrow then
+			hideRollButtonArrow()
+		end
+		currentRollCallback = RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
+	end
+	
+	-- Function to start auto rolling
+	local function startAutoRoll()
+		-- Perform first roll immediately
+		performAutoRoll()
+		
+		-- Use a spawn to handle the interval timing
+		task.spawn(function()
+			while isAutoRolling do
+				task.wait(AUTO_ROLL_INTERVAL)
+				if isAutoRolling then
+					performAutoRoll()
+				end
+			end
+		end)
+	end
+	
+	-- Function to stop auto rolling (just sets flag, loop will exit)
+	local function stopAutoRoll()
+		-- The loop checks isAutoRolling and will exit naturally
+	end
+	
+	-- Auto roll button click handler
+	autoRollButton.MouseButton1Click:Connect(function()
+		isAutoRolling = not isAutoRolling
+		updateAutoRollButtonAppearance()
+		
+		if isAutoRolling then
+			print("Auto roll enabled")
+			startAutoRoll()
+		else
+			print("Auto roll disabled")
+			stopAutoRoll()
+		end
 	end)
 	
 	-- Inventory button click handler

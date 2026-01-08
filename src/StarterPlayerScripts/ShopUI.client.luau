@@ -191,8 +191,8 @@ coinContent.Parent = contentFrame
 -- Coin shop title
 local coinTitle = Instance.new("TextLabel")
 coinTitle.Name = "CoinTitle"
-coinTitle.Size = UDim2.new(1, 0, 0, 50)
-coinTitle.Position = UDim2.new(0, 0, 0, 20)
+coinTitle.Size = UDim2.new(1, 0, 0, 35)
+coinTitle.Position = UDim2.new(0, 0, 0, 5)
 coinTitle.BackgroundTransparency = 1
 coinTitle.Text = "Regular Items"
 coinTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -203,8 +203,8 @@ coinTitle.Parent = coinContent
 -- Luck display
 local luckDisplay = Instance.new("TextLabel")
 luckDisplay.Name = "LuckDisplay"
-luckDisplay.Size = UDim2.new(1, -20, 0, 30)
-luckDisplay.Position = UDim2.new(0, 10, 0, 70)
+luckDisplay.Size = UDim2.new(1, -20, 0, 25)
+luckDisplay.Position = UDim2.new(0, 10, 0, 42)
 luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
 luckDisplay.BorderSizePixel = 0
 luckDisplay.Text = "Current Luck: 1.0x"
@@ -220,8 +220,8 @@ luckCorner.Parent = luckDisplay
 -- Coin shop items container
 local coinItemsContainer = Instance.new("ScrollingFrame")
 coinItemsContainer.Name = "CoinItemsContainer"
-coinItemsContainer.Size = UDim2.new(1, -40, 1, -130)
-coinItemsContainer.Position = UDim2.new(0, 20, 0, 110)
+coinItemsContainer.Size = UDim2.new(1, -40, 1, -85)
+coinItemsContainer.Position = UDim2.new(0, 20, 0, 75)
 coinItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 coinItemsContainer.BorderSizePixel = 0
 coinItemsContainer.ScrollBarThickness = 6
@@ -541,7 +541,7 @@ local function createShopItem(item, container, isRobuxItem)
                 buyButton.Active = true
             else
                 buyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-                buyButton.Text = "NO COINS"
+                buyButton.Text = "NOT ENOUGH"
                 buyButton.Active = false
             end
         end
