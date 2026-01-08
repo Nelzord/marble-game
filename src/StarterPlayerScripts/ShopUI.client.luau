@@ -428,7 +428,7 @@ local function createShopItem(item, container, isRobuxItem)
         if item.itemType == "nuke_all" then
             itemImage.Image = "rbxassetid://115934412352825"
         elseif item.itemType == "permanent_luck" then
-            itemImage.Image = "rbxassetid://80819026897805"
+            itemImage.Image = "rbxassetid://122460327748810"
         elseif item.itemType == "lucky_potion" then
             -- Set image based on luck multiplier
             if item.luckMultiplier == 1.25 then

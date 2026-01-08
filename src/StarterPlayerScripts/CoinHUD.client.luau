@@ -33,6 +33,117 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = label
 
+-- Quick Buy Icons Container (below coins, vertical layout)
+local quickBuyContainer = Instance.new("Frame")
+quickBuyContainer.Name = "QuickBuyContainer"
+quickBuyContainer.BackgroundTransparency = 1
+quickBuyContainer.Size = UDim2.fromOffset(70, 130)
+quickBuyContainer.Position = UDim2.new(1, -20, 0, 65)
+quickBuyContainer.AnchorPoint = Vector2.new(1, 0)
+quickBuyContainer.Parent = screen
+
+local quickBuyLayout = Instance.new("UIListLayout")
+quickBuyLayout.FillDirection = Enum.FillDirection.Vertical
+quickBuyLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+quickBuyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+quickBuyLayout.Padding = UDim.new(0, 6)
+quickBuyLayout.Parent = quickBuyContainer
+
+-- Permanent 2x Luck Quick Buy Button (Robux item) - BIGGER, ON TOP
+local luckButton = Instance.new("ImageButton")
+luckButton.Name = "LuckQuickBuy"
+luckButton.Size = UDim2.fromOffset(60, 60)
+luckButton.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
+luckButton.BorderSizePixel = 0
+luckButton.Image = "rbxassetid://122460327748810"
+luckButton.ScaleType = Enum.ScaleType.Fit
+luckButton.LayoutOrder = 1
+luckButton.Parent = quickBuyContainer
+
+local luckBtnCorner = Instance.new("UICorner")
+luckBtnCorner.CornerRadius = UDim.new(0, 10)
+luckBtnCorner.Parent = luckButton
+
+-- Luck price label (small text overlay)
+local luckPriceLabel = Instance.new("TextLabel")
+luckPriceLabel.Name = "PriceLabel"
+luckPriceLabel.Size = UDim2.new(1, 0, 0.3, 0)
+luckPriceLabel.Position = UDim2.new(0, 0, 1, -18)
+luckPriceLabel.AnchorPoint = Vector2.new(0, 0)
+luckPriceLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+luckPriceLabel.BackgroundTransparency = 0.3
+luckPriceLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+luckPriceLabel.Text = "R$200"
+luckPriceLabel.TextScaled = true
+luckPriceLabel.Font = Enum.Font.GothamBold
+luckPriceLabel.Parent = luckButton
+
+local luckPriceCorner = Instance.new("UICorner")
+luckPriceCorner.CornerRadius = UDim.new(0, 4)
+luckPriceCorner.Parent = luckPriceLabel
+
+-- Nuke All Quick Buy Button (Robux item) - BELOW
+local nukeButton = Instance.new("ImageButton")
+nukeButton.Name = "NukeQuickBuy"
+nukeButton.Size = UDim2.fromOffset(60, 60)
+nukeButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+nukeButton.BorderSizePixel = 0
+nukeButton.Image = "rbxassetid://115934412352825"
+nukeButton.ScaleType = Enum.ScaleType.Fit
+nukeButton.LayoutOrder = 2
+nukeButton.Parent = quickBuyContainer
+
+local nukeCorner = Instance.new("UICorner")
+nukeCorner.CornerRadius = UDim.new(0, 8)
+nukeCorner.Parent = nukeButton
+
+-- Nuke price label (small text overlay)
+local nukePriceLabel = Instance.new("TextLabel")
+nukePriceLabel.Name = "PriceLabel"
+nukePriceLabel.Size = UDim2.new(1, 0, 0.35, 0)
+nukePriceLabel.Position = UDim2.new(0, 0, 1, -16)
+nukePriceLabel.AnchorPoint = Vector2.new(0, 0)
+nukePriceLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+nukePriceLabel.BackgroundTransparency = 0.3
+nukePriceLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+nukePriceLabel.Text = "R$100"
+nukePriceLabel.TextScaled = true
+nukePriceLabel.Font = Enum.Font.GothamBold
+nukePriceLabel.Parent = nukeButton
+
+local nukePriceCorner = Instance.new("UICorner")
+nukePriceCorner.CornerRadius = UDim.new(0, 4)
+nukePriceCorner.Parent = nukePriceLabel
+
+-- Hover effects for quick buy buttons
+local function setupHoverEffects(button, normalColor, hoverColor)
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = hoverColor
+    end)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = normalColor
+    end)
+end
+
+setupHoverEffects(luckButton, Color3.fromRGB(100, 50, 150), Color3.fromRGB(140, 70, 190))
+setupHoverEffects(nukeButton, Color3.fromRGB(180, 60, 60), Color3.fromRGB(220, 80, 80))
+
+-- Handle Permanent 2x Luck quick buy (Robux purchase)
+luckButton.MouseButton1Click:Connect(function()
+    local robuxPurchase = remotes:FindFirstChild("RobuxPurchase")
+    if robuxPurchase then
+        robuxPurchase:FireServer("permanent_luck")
+    end
+end)
+
+-- Handle Nuke All quick buy (Robux purchase)
+nukeButton.MouseButton1Click:Connect(function()
+    local robuxPurchase = remotes:FindFirstChild("RobuxPurchase")
+    if robuxPurchase then
+        robuxPurchase:FireServer("nuke_all")
+    end
+end)
+
 -- Luck timer label
 local luckLabel = Instance.new("TextLabel")
 luckLabel.BackgroundTransparency = 0.2
@@ -41,7 +152,7 @@ luckLabel.TextColor3 = Color3.new(1,1,1)
 luckLabel.Font = Enum.Font.GothamBold
 luckLabel.TextScaled = true
 luckLabel.Size = UDim2.fromOffset(160, 30)
-luckLabel.Position = UDim2.new(1, -20, 0, 70)
+luckLabel.Position = UDim2.new(1, -20, 0, 200)
 luckLabel.AnchorPoint = Vector2.new(1, 0)
 luckLabel.Text = "Luck: 1.0x"
 luckLabel.Visible = false -- Initially hidden
