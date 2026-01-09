@@ -388,7 +388,7 @@ local function getRarityTier(def): { tier: string, font: Enum.Font, textColor: C
 	
 	local denominator = def.dropDenominator
 	
-	-- Rarity tiers based on drop chance
+	-- Rarity tiers based on drop chance (must match InventorySystem.luau)
 	if denominator <= 2 then
 		-- Common: 1/1, 1/2
 		return {
@@ -406,8 +406,8 @@ local function getRarityTier(def): { tier: string, font: Enum.Font, textColor: C
 			glowColor = Color3.fromRGB(50, 150, 50),
 			scale = 1.1
 		}
-	elseif denominator <= 10 then
-		-- Rare: 1/6, 1/7, 1/8, 1/9, 1/10
+	elseif denominator <= 9 then
+		-- Rare: 1/6, 1/7, 1/8, 1/9
 		return {
 			tier = "Rare",
 			font = Enum.Font.Antique,
@@ -415,8 +415,8 @@ local function getRarityTier(def): { tier: string, font: Enum.Font, textColor: C
 			glowColor = Color3.fromRGB(50, 100, 200),
 			scale = 1.2
 		}
-	elseif denominator <= 20 then
-		-- Epic: 1/11 to 1/20
+	elseif denominator <= 49 then
+		-- Epic: 1/10 to 1/49
 		return {
 			tier = "Epic",
 			font = Enum.Font.Fondamento,
@@ -424,14 +424,23 @@ local function getRarityTier(def): { tier: string, font: Enum.Font, textColor: C
 			glowColor = Color3.fromRGB(150, 50, 200),
 			scale = 1.3
 		}
-	else
-		-- Legendary: 1/21+
+	elseif denominator <= 199 then
+		-- Legendary: 1/50 to 1/199
 		return {
 			tier = "Legendary",
 			font = Enum.Font.Highway,
 			textColor = Color3.fromRGB(255, 200, 50),
 			glowColor = Color3.fromRGB(255, 150, 0),
 			scale = 1.4
+		}
+	else
+		-- Mythic: 1/200+
+		return {
+			tier = "Mythic",
+			font = Enum.Font.Highway,
+			textColor = Color3.fromRGB(255, 50, 50),
+			glowColor = Color3.fromRGB(255, 0, 0),
+			scale = 1.5
 		}
 	end
 end

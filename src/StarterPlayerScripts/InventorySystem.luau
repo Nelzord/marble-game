@@ -26,6 +26,7 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Diamond = "Diamond: Triples all coins collected while active.",
 	Teleporting = "Teleporting: Teleport upward in the air to gain height advantage.",
 	Leaf = "Leaf: Create a gust of swirling leaves that lifts you into the air.",
+	Volcano = "Volcano: Summon a volcano that erupts, launching you skyward as magma rains down.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -45,6 +46,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Teleporting = "rbxassetid://73544653958153", -- Teleporting texture
 	Pharaoh = "rbxassetid://138858793251784", -- Pharaoh texture
 	Leaf = "rbxassetid://107199178243113", -- Leaf texture
+	Volcano = "rbxassetid://72936982579332", -- Volcano texture
 }
 
 -- Function to apply textures to a part

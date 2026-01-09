@@ -140,6 +140,14 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Leaf",
 		color = Color3.fromRGB(34, 139, 34), -- Forest green color for leaf theme
 	},
+	Volcano = {
+		id = "Volcano",
+		name = "Volcano Marble",
+		dropDenominator = 60, -- 1/60 rarity
+		rollable = true,
+		abilityModule = "Volcano",
+		color = Color3.fromRGB(255, 69, 0), -- Red-orange color for volcano/lava theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?
