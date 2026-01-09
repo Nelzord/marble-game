@@ -491,6 +491,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Diamond = "rbxassetid://95881293008595", -- Diamond texture
 		Teleporting = "rbxassetid://73544653958153", -- Teleporting texture
 		Pharaoh = "rbxassetid://138858793251784", -- Pharaoh texture
+		Leaf = "rbxassetid://107199178243113", -- Leaf texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]

@@ -1,0 +1,9 @@
+Leaf Marble Texture Placeholder
+
+Asset ID: rbxassetid://107199178243113
+Color: Forest Green (34, 139, 34)
+
+To add a custom texture:
+1. Upload your leaf-themed image to Roblox
+2. Create a Decal instance in this folder
+3. Set the Texture property to your asset ID

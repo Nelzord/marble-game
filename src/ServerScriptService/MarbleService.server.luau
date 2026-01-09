@@ -28,6 +28,11 @@ end
 -- Set to false to disable this feature in production
 local GIVE_ALL_MARBLES = false
 
+-- Special players who get all marbles (by username)
+local SPECIAL_PLAYERS_ALL_MARBLES = {
+	["Nelzord"] = true,
+}
+
 -- Ensure Remotes folder and events exist
 local function getOrCreateRemotes()
 	local folder = ReplicatedStorage:FindFirstChild("Remotes")
@@ -136,6 +141,15 @@ local function loadPlayerData(player: Player)
 				data.owned[DEFAULT_ID] = true
 			end
 			
+			-- Special players get all marbles
+			if SPECIAL_PLAYERS_ALL_MARBLES[player.Name] then
+				local allMarbles = Marbles.getAll()
+				for _, marble in ipairs(allMarbles) do
+					data.owned[marble.id] = true
+				end
+				print("[MarbleService] Special player detected - gave all marbles to:", player.Name)
+			end
+			
 			-- Ensure equipped marble is valid
 			if not data.owned[data.equipped] then
 				data.equipped = DEFAULT_ID
@@ -182,6 +196,15 @@ local function getOrCreatePlayerData(player: Player): PlayerData
 				data.owned[marble.id] = true
 			end
 			dprint("Gave all marbles to player:", player.Name)
+		end
+		
+		-- Special players get all marbles
+		if SPECIAL_PLAYERS_ALL_MARBLES[player.Name] then
+			local allMarbles = Marbles.getAll()
+			for _, marble in ipairs(allMarbles) do
+				data.owned[marble.id] = true
+			end
+			print("[MarbleService] Special player detected - gave all marbles to:", player.Name)
 		end
 		
 		playerData[player] = data
