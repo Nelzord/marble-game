@@ -185,6 +185,118 @@ local function removeRedGlowTrail(character: Model)
 	end
 end
 
+-- Red marble permanent fire effects
+local function createRedFireEffects(character: Model, cosmetic: BasePart)
+	-- Remove existing fire effects if they exist
+	local existingFire = cosmetic:FindFirstChild("RedFireAttachment")
+	if existingFire then
+		existingFire:Destroy()
+	end
+	
+	-- Create attachment for fire particles
+	local fireAttachment = Instance.new("Attachment")
+	fireAttachment.Name = "RedFireAttachment"
+	fireAttachment.Parent = cosmetic
+	
+	-- Main fire particles
+	local fireParticles = Instance.new("ParticleEmitter")
+	fireParticles.Name = "RedFireParticles"
+	fireParticles.Texture = "rbxasset://textures/particles/fire_main.dds"
+	fireParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 150)), -- Bright yellow core
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(255, 150, 50)), -- Orange
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(255, 50, 0)),   -- Red-orange
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 20, 0))      -- Dark red
+	})
+	fireParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.8),
+		NumberSequenceKeypoint.new(0.3, 1.2),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	fireParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	fireParticles.Rate = 200
+	fireParticles.Lifetime = NumberRange.new(0.3, 0.6)
+	fireParticles.Speed = NumberRange.new(3, 8)
+	fireParticles.SpreadAngle = Vector2.new(180, 180) -- Emit in all directions (sphere)
+	fireParticles.RotSpeed = NumberRange.new(-100, 100)
+	fireParticles.Rotation = NumberRange.new(0, 360)
+	fireParticles.Acceleration = Vector3.new(0, 5, 0) -- Slight upward drift
+	fireParticles.LightEmission = 0.8
+	fireParticles.LightInfluence = 0.2
+	fireParticles.Parent = fireAttachment
+	
+	-- Add ember/spark particles
+	local emberParticles = Instance.new("ParticleEmitter")
+	emberParticles.Name = "RedEmberParticles"
+	emberParticles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	emberParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 200, 50)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 0))
+	})
+	emberParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.15),
+		NumberSequenceKeypoint.new(0.5, 0.25),
+		NumberSequenceKeypoint.new(1, 0.05)
+	})
+	emberParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.8, 0.3),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	emberParticles.Rate = 15
+	emberParticles.Lifetime = NumberRange.new(0.5, 1.0)
+	emberParticles.Speed = NumberRange.new(5, 12)
+	emberParticles.SpreadAngle = Vector2.new(180, 180)
+	emberParticles.Acceleration = Vector3.new(0, 3, 0)
+	emberParticles.LightEmission = 1
+	emberParticles.LightInfluence = 0
+	emberParticles.Parent = fireAttachment
+	
+	-- Add a warm glow light
+	local fireGlow = Instance.new("PointLight")
+	fireGlow.Name = "RedFireGlow"
+	fireGlow.Color = Color3.fromRGB(255, 100, 30)
+	fireGlow.Brightness = 1.5
+	fireGlow.Range = 8
+	fireGlow.Parent = cosmetic
+	
+	return fireAttachment
+end
+
+local function removeRedFireEffects(cosmetic: BasePart)
+	local fireAttachment = cosmetic:FindFirstChild("RedFireAttachment")
+	if fireAttachment then
+		fireAttachment:Destroy()
+	end
+	
+	local fireGlow = cosmetic:FindFirstChild("RedFireGlow")
+	if fireGlow then
+		fireGlow:Destroy()
+	end
+end
+
+local function setupRedFireEffect(character: Model, cosmetic: BasePart)
+	-- Function to update fire effects based on equipped marble
+	local function updateFireEffects()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Red" then
+			createRedFireEffects(character, cosmetic)
+		else
+			removeRedFireEffects(cosmetic)
+		end
+	end
+	
+	-- Initial check
+	updateFireEffects()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateFireEffects)
+end
+
 local function createGumballGlowTrail(character: Model, hrp: BasePart)
 	-- Remove existing trail if it exists
 	local existingTrail = character:FindFirstChild("GumballGlowTrail")
@@ -1072,6 +1184,9 @@ local function setupController(character: Model)
 	
 	-- Setup PharaohGlowTrail effect
 	setupPharaohGlowEffect(character, hrp)
+	
+	-- Setup Red marble permanent fire effects
+	setupRedFireEffect(character, cosmetic)
 end
 
 local function onCharacterAdded(character: Model)
