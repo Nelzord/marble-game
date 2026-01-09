@@ -1193,9 +1193,128 @@ local function onCharacterAdded(character: Model)
 	setupController(character)
 end
 
+-- Setup visual cosmetics only for other players' characters (no movement controls)
+local function setupOtherPlayerVisuals(character: Model)
+	if not character:GetAttribute("IsMarbleCharacter") then return end
+	
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp or not hrp:IsA("BasePart") then
+		-- Wait for HumanoidRootPart to be added
+		local conn
+		conn = character.ChildAdded:Connect(function(child)
+			if child.Name == "HumanoidRootPart" and child:IsA("BasePart") then
+				conn:Disconnect()
+				setupOtherPlayerVisuals(character)
+			end
+		end)
+		return
+	end
+	
+	-- Make physical root invisible
+	hrp.Transparency = 1
+	
+	-- Create visual marble
+	local cosmetic = ensureCosmeticBall(character, hrp)
+	applyCosmeticColorFromEquipped(character, cosmetic)
+	applyCosmeticTexturesFromEquipped(character, cosmetic)
+	
+	-- Listen for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(function()
+		applyCosmeticColorFromEquipped(character, cosmetic)
+		applyCosmeticTexturesFromEquipped(character, cosmetic)
+	end)
+	
+	-- Setup nameplate scaling and styling
+	setupNameplateScaling(character)
+	setupEnhancedNameplate(character)
+	
+	-- Setup glow effects
+	setupRedGlowEffect(character, hrp)
+	setupGumballGlowEffect(character, hrp)
+	setupMoonGlowEffect(character, hrp)
+	setupGoldGlowEffect(character, hrp)
+	setupPharaohGlowEffect(character, hrp)
+	
+	-- Setup Red marble permanent fire effects
+	setupRedFireEffect(character, cosmetic)
+	
+	-- Track orientation for cosmetic rolling (visual only, no physics control)
+	local visualCFrame = CFrame.new()
+	local lastPos = hrp.Position
+	
+	local stepConn
+	stepConn = RunService.RenderStepped:Connect(function(dt)
+		if not hrp or not hrp.Parent then
+			if stepConn then stepConn:Disconnect() end
+			return
+		end
+		
+		-- Ensure cosmetic ball exists and is visible
+		local cosmeticCheck = character:FindFirstChild("CosmeticBall")
+		if not cosmeticCheck or not cosmeticCheck:IsA("BasePart") then
+			cosmetic = ensureCosmeticBall(character, hrp)
+			applyCosmeticColorFromEquipped(character, cosmetic)
+			applyCosmeticTexturesFromEquipped(character, cosmetic)
+		else
+			if cosmeticCheck.Transparency >= 1 then
+				cosmeticCheck.Transparency = 0
+			end
+			if cosmeticCheck ~= cosmetic then
+				cosmetic = cosmeticCheck
+			end
+		end
+		
+		-- Update cosmetic rotation to match traveled distance (visual only)
+		local currentPos = hrp.Position
+		local deltaPos = currentPos - lastPos
+		lastPos = currentPos
+		local deltaXZ = Vector3.new(deltaPos.X, 0, deltaPos.Z)
+		local dist = deltaXZ.Magnitude
+		if dist > 0.0001 then
+			local radius = (hrp.Size.X + hrp.Size.Y + hrp.Size.Z) / 6
+			if radius <= 0 then radius = 2 end
+			local angle = dist / radius
+			local moveDir = deltaXZ.Unit
+			local axis = Vector3.new(moveDir.Z, 0, -moveDir.X)
+			visualCFrame = CFrame.fromAxisAngle(axis, angle) * visualCFrame
+		end
+		cosmetic.CFrame = CFrame.new(hrp.Position) * visualCFrame
+	end)
+	
+	character.AncestryChanged:Connect(function(_, parent)
+		if not parent and stepConn then
+			stepConn:Disconnect()
+		end
+	end)
+end
+
+-- Handle other players joining and their characters
+local function onOtherPlayerAdded(otherPlayer: Player)
+	if otherPlayer == player then return end -- Skip local player
+	
+	-- Setup existing character
+	if otherPlayer.Character then
+		setupOtherPlayerVisuals(otherPlayer.Character)
+	end
+	
+	-- Setup future characters
+	otherPlayer.CharacterAdded:Connect(function(character)
+		-- Small delay to ensure attributes are replicated
+		task.wait(0.1)
+		setupOtherPlayerVisuals(character)
+	end)
+end
+
 bindInputs()
 
+-- Setup local player's character
 if player.Character then
 	onCharacterAdded(player.Character)
 end
-player.CharacterAdded:Connect(onCharacterAdded) 
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- Setup other players' characters (visuals only)
+for _, otherPlayer in ipairs(Players:GetPlayers()) do
+	onOtherPlayerAdded(otherPlayer)
+end
+Players.PlayerAdded:Connect(onOtherPlayerAdded) 
