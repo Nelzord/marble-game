@@ -23,10 +23,10 @@ label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 label.TextColor3 = Color3.new(1,1,1)
 label.Font = Enum.Font.GothamBold
 label.TextScaled = true
-label.Size = UDim2.fromOffset(160, 40)
+label.Size = UDim2.fromOffset(70, 40)
 label.Position = UDim2.new(1, -20, 0, 20)
 label.AnchorPoint = Vector2.new(1, 0)
-label.Text = "Coins: 0"
+label.Text = "$ 0"
 label.Parent = screen
 
 local corner = Instance.new("UICorner")
@@ -180,7 +180,7 @@ local function startLuckTimer(multiplier, duration)
 end
 
 CoinCountUpdate.OnClientEvent:Connect(function(count: number)
-	label.Text = string.format("Coins: %d", count or 0)
+	label.Text = string.format("$ %d", count or 0)
 end)
 
 -- Listen for luck updates

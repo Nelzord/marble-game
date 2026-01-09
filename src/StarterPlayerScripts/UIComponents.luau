@@ -124,7 +124,7 @@ end
 function UIComponents.createInventoryButton(screen: ScreenGui)
 	local inventoryButton = Instance.new("TextButton")
 	inventoryButton.Name = "InventoryButton"
-	inventoryButton.Text = "Inventory"
+	inventoryButton.Text = "Marbles"
 	inventoryButton.TextScaled = true
 	inventoryButton.Size = UDim2.fromOffset(160, 40)
 	inventoryButton.Position = UDim2.new(0, 16, 0, 16)
