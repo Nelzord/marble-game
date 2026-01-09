@@ -568,15 +568,22 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 		hrp:SetNetworkOwner(player)
 	end)
 	
-	-- Activate the marble's ability if it has one
+	-- Only activate PASSIVE abilities on spawn (cooldown = 0)
+	-- Active abilities (cooldown > 0) should only be triggered by player input
 	local ability = Marbles.getAbilityModule(marbleId)
 	if ability and ability.ActivateAbility then
-		dprint("Activating marble ability on spawn:", marbleId)
-		local success, error = pcall(function()
-			ability.ActivateAbility(player, character)
-		end)
-		if not success then
-			dprint("Failed to activate marble ability on spawn:", error)
+		local cooldown = ability.Cooldown and ability.Cooldown() or 0
+		if cooldown == 0 then
+			-- Passive ability - activate automatically on spawn
+			dprint("Activating passive marble ability on spawn:", marbleId)
+			local success, error = pcall(function()
+				ability.ActivateAbility(player, character)
+			end)
+			if not success then
+				dprint("Failed to activate passive marble ability on spawn:", error)
+			end
+		else
+			dprint("Skipping active ability on spawn (requires manual activation):", marbleId)
 		end
 	end
 end
@@ -767,15 +774,22 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 		applyMarbleVisual(character, marbleId)
 		ensureNameplate(character, player, marbleId)
 		
-		-- Activate the new marble's ability if it has one
+		-- Only activate PASSIVE abilities on equip (cooldown = 0)
+		-- Active abilities (cooldown > 0) should only be triggered by player input
 		local newAbility = Marbles.getAbilityModule(def)
 		if newAbility and newAbility.ActivateAbility then
-			dprint("Activating new marble ability:", def.id)
-			local success, error = pcall(function()
-				newAbility.ActivateAbility(player, character)
-			end)
-			if not success then
-				dprint("Failed to activate new marble ability:", error)
+			local cooldown = newAbility.Cooldown and newAbility.Cooldown() or 0
+			if cooldown == 0 then
+				-- Passive ability - activate automatically on equip
+				dprint("Activating passive marble ability on equip:", def.id)
+				local success, error = pcall(function()
+					newAbility.ActivateAbility(player, character)
+				end)
+				if not success then
+					dprint("Failed to activate passive marble ability on equip:", error)
+				end
+			else
+				dprint("Skipping active ability on equip (requires manual activation):", def.id)
 			end
 		end
 	end
