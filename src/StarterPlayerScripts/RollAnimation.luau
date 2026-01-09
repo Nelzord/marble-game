@@ -17,7 +17,7 @@ function RollAnimation.createRollAnimationUI(screen)
 	
 	rollAnimationFrame = Instance.new("Frame")
 	rollAnimationFrame.Name = "RollAnimationFrame"
-	rollAnimationFrame.Size = UDim2.new(0, 600, 0, 120)
+	rollAnimationFrame.Size = UDim2.new(0, 450, 0, 90)
 	rollAnimationFrame.Position = UDim2.new(0.5, 0, 0, -40)
 	rollAnimationFrame.AnchorPoint = Vector2.new(0.5, 0)
 	rollAnimationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -41,61 +41,6 @@ function RollAnimation.createRollAnimationUI(screen)
 		element.Parent = rollAnimationFrame
 		return element
 	end
-	
-	-- Title (left side)
-	local title = createElementInFrame("TextLabel", {
-		Name = "Title",
-		Text = "ROLLING FOR MARBLE...",
-		TextScaled = true,
-		Size = UDim2.new(0.4, 0, 0, 35),
-		Position = UDim2.new(0, 20, 0, 15),
-		BackgroundTransparency = 1,
-		TextColor3 = Color3.new(1, 1, 1),
-		Font = Enum.Font.GothamBold,
-		ZIndex = 11
-	})
-	
-	-- Ticket icon (center-right)
-	local ticketIcon = createElementInFrame("TextLabel", {
-		Name = "TicketIcon",
-		Text = "🎫",
-		TextScaled = true,
-		Size = UDim2.new(0, 30, 0, 30),
-		Position = UDim2.new(0.5, -15, 0, 15),
-		BackgroundTransparency = 1,
-		TextColor3 = Color3.new(1, 1, 1), -- White color to match theme
-		Font = Enum.Font.GothamBold,
-		ZIndex = 11
-	})
-	
-	-- Close button (top-right)
-	local closeButton = createElementInFrame("TextButton", {
-		Name = "CloseButton",
-		Text = "X",
-		TextScaled = true,
-		Size = UDim2.new(0, 25, 0, 25),
-		Position = UDim2.new(1, -35, 0, 15),
-		BackgroundColor3 = Color3.fromRGB(255, 100, 100),
-		TextColor3 = Color3.new(1, 1, 1),
-		Font = Enum.Font.GothamBold,
-		ZIndex = 12
-	})
-	
-	local closeCorner = Instance.new("UICorner")
-	closeCorner.CornerRadius = UDim.new(0, 6)
-	closeCorner.Parent = closeButton
-	
-	-- Close button functionality
-	closeButton.MouseButton1Click:Connect(function()
-		print("Close button clicked!")
-		if rollAnimationFrame and rollAnimationFrame.Parent then
-			print("Destroying roll animation frame")
-			rollAnimationFrame:Destroy()
-			isRolling = false
-		else
-			print("rollAnimationFrame not found or not parented")
-		end
-	end)
 	
 	-- Rolling text (main display - center)
 	rollAnimationText = createElementInFrame("TextLabel", {
@@ -127,7 +72,7 @@ function RollAnimation.createRollAnimationUI(screen)
 	local progressBar = createElementInFrame("Frame", {
 		Name = "ProgressBar",
 		Size = UDim2.new(0, 0, 0, 6),
-		Position = UDim2.new(0, 20, 1, -30),
+		Position = UDim2.new(0, 20, 1, -15),
 		BackgroundColor3 = Color3.fromRGB(100, 100, 100), -- Grey color to match theme
 		BorderSizePixel = 0,
 		ZIndex = 11
@@ -141,7 +86,7 @@ function RollAnimation.createRollAnimationUI(screen)
 	local progressBg = createElementInFrame("Frame", {
 		Name = "ProgressBackground",
 		Size = UDim2.new(1, -40, 0, 6),
-		Position = UDim2.new(0, 20, 1, -30),
+		Position = UDim2.new(0, 20, 1, -15),
 		BackgroundColor3 = Color3.fromRGB(60, 60, 60),
 		BorderSizePixel = 0,
 		ZIndex = 10
@@ -407,6 +352,30 @@ function RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
 	end
 end
 
+-- Get rarity name and color based on drop denominator
+local function getRarityInfo(dropDenominator: number?): (string, Color3)
+	local denom = dropDenominator or 1
+	if denom >= 1000 then
+		-- Mythic: Pink/Magenta
+		return "Mythic", Color3.fromRGB(255, 100, 255)
+	elseif denom >= 100 then
+		-- Legendary: Gold/Orange
+		return "Legendary", Color3.fromRGB(255, 170, 0)
+	elseif denom >= 25 then
+		-- Epic: Purple
+		return "Epic", Color3.fromRGB(170, 85, 255)
+	elseif denom >= 5 then
+		-- Rare: Blue
+		return "Rare", Color3.fromRGB(85, 170, 255)
+	elseif denom >= 3 then
+		-- Uncommon: Green
+		return "Uncommon", Color3.fromRGB(85, 255, 85)
+	else
+		-- Common: White
+		return "Common", Color3.fromRGB(255, 255, 255)
+	end
+end
+
 -- Function to handle roll result
 function RollAnimation.handleRollResult(result)
 	print("RollResult received:", result.success, result.marbleName or result.marbleId or "nil")
@@ -418,8 +387,10 @@ function RollAnimation.handleRollResult(result)
 			-- Store the result text but keep it hidden
 			if result.success then
 				local suffix = result.new and " (NEW!)" or ""
-				resultDisplay.Text = string.format("YOU GOT: %s%s", result.marbleName or result.marbleId or "?", suffix)
-				resultDisplay.TextColor3 = Color3.fromRGB(0, 255, 0) -- Green for success
+				local rarityName, rarityColor = getRarityInfo(result.dropDenominator)
+				local rarityText = result.dropDenominator and string.format(" %s (1/%d)", rarityName, result.dropDenominator) or ""
+				resultDisplay.Text = string.format("YOU GOT: %s%s%s", result.marbleName or result.marbleId or "?", rarityText, suffix)
+				resultDisplay.TextColor3 = rarityColor
 				print("Stored result display text:", resultDisplay.Text)
 			else
 				resultDisplay.Text = result.message or "Roll failed"

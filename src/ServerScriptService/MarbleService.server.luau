@@ -731,6 +731,7 @@ Remotes.RollForMarble.OnServerEvent:Connect(function(player: Player)
 		success = true,
 		marbleId = rolled.id,
 		marbleName = rolled.name,
+		dropDenominator = rolled.dropDenominator,
 		new = newlyUnlocked,
 	})
 	sendInventory(player)
