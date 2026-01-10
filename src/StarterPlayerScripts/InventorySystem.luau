@@ -236,24 +236,30 @@ function InventorySystem.createMarbleTile(def, list, grid, EquipMarble)
 	sphere.Position = center
 	cam.CFrame = CFrame.new(center + Vector3.new(0, 0, 12), center)
 
-	-- Name label
+	-- Name label (show name even when locked)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Size = UDim2.new(1, -16, 0, 16)
 	nameLabel.Position = UDim2.new(0, 8, 1, -44)
-	nameLabel.Text = isOwned and def.name or "???"
-	nameLabel.TextColor3 = Color3.new(1, 1, 1)
+	nameLabel.Text = def.name -- Always show the marble name
+	nameLabel.TextColor3 = isOwned and Color3.new(1, 1, 1) or Color3.fromRGB(150, 150, 150) -- Dimmed when locked
 	nameLabel.TextScaled = true
 	nameLabel.Parent = tile
 
-	-- Rarity label
+	-- Rarity label (show odds even when locked, but indicate it's locked)
 	local rarityLabel = Instance.new("TextLabel")
 	rarityLabel.BackgroundTransparency = 1
 	rarityLabel.Size = UDim2.new(1, -16, 0, 20)
 	rarityLabel.Position = UDim2.new(0, 8, 1, -24)
 	rarityLabel.TextScaled = true
 	rarityLabel.TextColor3 = isOwned and getRarityColor(def) or Color3.fromRGB(220, 180, 180)
-	rarityLabel.Text = isOwned and getRarityText(def) or "Locked"
+	-- Show odds and "Locked" text when not owned
+	if isOwned then
+		rarityLabel.Text = getRarityText(def)
+	else
+		local oddsText = getRarityText(def)
+		rarityLabel.Text = oddsText .. " (Locked)"
+	end
 	rarityLabel.Parent = tile
 
 	-- Equip interaction (only if owned)
