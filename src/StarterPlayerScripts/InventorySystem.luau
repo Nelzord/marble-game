@@ -27,6 +27,7 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Teleporting = "Teleporting: Teleport upward in the air to gain height advantage.",
 	Leaf = "Leaf: Create a gust of swirling leaves that lifts you into the air.",
 	Volcano = "Volcano: Summon a volcano that erupts, launching you skyward as magma rains down.",
+	Tsunami = "Tsunami: Summon a massive wave from below that launches you skyward with ocean sparkles.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -47,6 +48,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Pharaoh = "rbxassetid://138858793251784", -- Pharaoh texture
 	Leaf = "rbxassetid://107199178243113", -- Leaf texture
 	Volcano = "rbxassetid://72936982579332", -- Volcano texture
+		Tsunami = "rbxassetid://109162306563849", -- Tsunami texture
 }
 
 -- Function to apply textures to a part

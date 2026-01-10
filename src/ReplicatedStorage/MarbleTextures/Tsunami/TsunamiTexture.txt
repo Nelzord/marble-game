@@ -1,0 +1,14 @@
+Tsunami Marble Texture Placeholder
+
+Asset ID: rbxassetid://0
+Color: Ocean Blue (100, 200, 255)
+
+To add a custom texture:
+1. Upload your tsunami/ocean-themed image to Roblox
+2. Create a Decal instance in this folder
+3. Set the Texture property to your asset ID
+
+Suggested Texture Style:
+- Primary colors: Ocean blue (#64C8FF), cyan, white foam, and teal
+- Pattern: Wave patterns with sparkles and ocean foam
+- Material feel: Shimmering ocean water with light reflections and sparkles

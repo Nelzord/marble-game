@@ -468,6 +468,116 @@ local function removePharaohGlowTrail(character: Model)
 	end
 end
 
+local function createTsunamiWaterGlow(character: Model, hrp: BasePart)
+	-- Remove existing effects if they exist
+	local existingGlow = character:FindFirstChild("TsunamiWaterGlow")
+	if existingGlow then
+		existingGlow:Destroy()
+	end
+	
+	-- Create water glow container
+	local glowContainer = Instance.new("Model")
+	glowContainer.Name = "TsunamiWaterGlow"
+	glowContainer.Parent = character
+	
+	-- Create point light for ocean glow
+	local waterLight = Instance.new("PointLight")
+	waterLight.Name = "TsunamiWaterLight"
+	waterLight.Color = Color3.fromRGB(100, 200, 255) -- Ocean blue
+	waterLight.Brightness = 2
+	waterLight.Range = 12
+	waterLight.Parent = hrp
+	
+	-- Create attachment for water particles
+	local waterAttachment = Instance.new("Attachment")
+	waterAttachment.Name = "TsunamiWaterAttachment"
+	waterAttachment.Parent = hrp
+	
+	-- Create water particle emitter
+	local waterParticles = Instance.new("ParticleEmitter")
+	waterParticles.Name = "TsunamiWaterParticles"
+	waterParticles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	waterParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(200, 230, 255)),
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(100, 200, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
+	})
+	waterParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(0.5, 1.2),
+		NumberSequenceKeypoint.new(1, 0.3)
+	})
+	waterParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.4),
+		NumberSequenceKeypoint.new(0.7, 0.7),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	waterParticles.Rate = 30
+	waterParticles.Lifetime = NumberRange.new(1, 2)
+	waterParticles.Speed = NumberRange.new(2, 5)
+	waterParticles.SpreadAngle = Vector2.new(360, 360)
+	waterParticles.Acceleration = Vector3.new(0, -2, 0)
+	waterParticles.Parent = waterAttachment
+	
+	-- Create sparkle particles for ocean sparkles
+	local sparkleAttachment = Instance.new("Attachment")
+	sparkleAttachment.Name = "TsunamiSparkleAttachment"
+	sparkleAttachment.Parent = hrp
+	
+	local sparkleParticles = Instance.new("ParticleEmitter")
+	sparkleParticles.Name = "TsunamiSparkleParticles"
+	sparkleParticles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	sparkleParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(173, 216, 230)),
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(100, 200, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+	})
+	sparkleParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.8),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	sparkleParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.8, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	sparkleParticles.Rate = 20
+	sparkleParticles.Lifetime = NumberRange.new(0.8, 1.5)
+	sparkleParticles.Speed = NumberRange.new(1, 3)
+	sparkleParticles.SpreadAngle = Vector2.new(360, 360)
+	sparkleParticles.Parent = sparkleAttachment
+	
+	-- Container is just for tracking - attachments and light stay on HRP
+	return glowContainer
+end
+
+local function removeTsunamiWaterGlow(character: Model)
+	local glow = character:FindFirstChild("TsunamiWaterGlow")
+	if glow then
+		glow:Destroy()
+	end
+	
+	-- Also clean up any attachments that might be left on HRP
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local waterLight = hrp:FindFirstChild("TsunamiWaterLight")
+		if waterLight then
+			waterLight:Destroy()
+		end
+		local waterAttachment = hrp:FindFirstChild("TsunamiWaterAttachment")
+		if waterAttachment then
+			waterAttachment:Destroy()
+		end
+		local sparkleAttachment = hrp:FindFirstChild("TsunamiSparkleAttachment")
+		if sparkleAttachment then
+			sparkleAttachment:Destroy()
+		end
+	end
+end
+
 local function setupRedGlowEffect(character: Model, hrp: BasePart)
 	-- Monitor RedGlowActive attribute changes
 	character:GetAttributeChangedSignal("RedGlowActive"):Connect(function()
@@ -558,6 +668,24 @@ local function setupPharaohGlowEffect(character: Model, hrp: BasePart)
 	end
 end
 
+local function setupTsunamiWaterGlowEffect(character: Model, hrp: BasePart)
+	-- Function to update water glow based on equipped marble
+	local function updateWaterGlow()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Tsunami" then
+			createTsunamiWaterGlow(character, hrp)
+		else
+			removeTsunamiWaterGlow(character)
+		end
+	end
+	
+	-- Initial check
+	updateWaterGlow()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateWaterGlow)
+end
+
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
 	dprint("applyCosmeticColor", id)
@@ -605,6 +733,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Pharaoh = "rbxassetid://138858793251784", -- Pharaoh texture
 		Leaf = "rbxassetid://107199178243113", -- Leaf texture
 		Volcano = "rbxassetid://72936982579332", -- Volcano texture
+		Tsunami = "rbxassetid://109162306563849", -- Tsunami texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -955,6 +1084,17 @@ local function setupController(character: Model)
 	-- Setup enhanced rarity-based nameplate styling
 	setupEnhancedNameplate(character)
 	
+	-- Setup glow effects for local player
+	setupRedGlowEffect(character, hrp)
+	setupGumballGlowEffect(character, hrp)
+	setupMoonGlowEffect(character, hrp)
+	setupGoldGlowEffect(character, hrp)
+	setupPharaohGlowEffect(character, hrp)
+	setupTsunamiWaterGlowEffect(character, hrp)
+	
+	-- Setup Red marble permanent fire effects
+	setupRedFireEffect(character, cosmetic)
+	
 	-- Monitor SpeedMultiplier attribute changes for debugging
 	character:GetAttributeChangedSignal("SpeedMultiplier"):Connect(function()
 		local newValue = character:GetAttribute("SpeedMultiplier")
@@ -1185,6 +1325,9 @@ local function setupController(character: Model)
 	-- Setup PharaohGlowTrail effect
 	setupPharaohGlowEffect(character, hrp)
 	
+	-- Setup TsunamiWaterGlow effect
+	setupTsunamiWaterGlowEffect(character, hrp)
+	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)
 end
@@ -1234,6 +1377,7 @@ local function setupOtherPlayerVisuals(character: Model)
 	setupMoonGlowEffect(character, hrp)
 	setupGoldGlowEffect(character, hrp)
 	setupPharaohGlowEffect(character, hrp)
+	setupTsunamiWaterGlowEffect(character, hrp)
 	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)
