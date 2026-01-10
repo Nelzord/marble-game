@@ -514,6 +514,7 @@ function RobuxService:Init()
             RobuxDataUpdate = ensureEvent("RobuxDataUpdate"),
             UseNukeAll = ensureEvent("UseNukeAll"),
             ScreenShake = ensureEvent("ScreenShake"),
+            RequestRobuxData = ensureEvent("RequestRobuxData"),
         }
     end
     
@@ -551,6 +552,19 @@ function RobuxService:Init()
         print("[RobuxService] " .. player.Name .. " is using nuke all")
         local success, message = RobuxService:UseNukeAll(player)
         print(message)
+    end)
+    
+    -- Handle client requesting their Robux data (for refreshing shop ownership display)
+    Remotes.RequestRobuxData.OnServerEvent:Connect(function(player)
+        clog("Player " .. player.Name .. " requested Robux data refresh")
+        
+        -- Check gamepass ownership first to ensure we have latest data
+        RobuxService:CheckGamePassOwnership(player)
+        
+        -- Send current data to client
+        local data = getPlayerData(player)
+        Remotes.RobuxDataUpdate:FireClient(player, data.permanentLuckBonus, data.hasNukeAll)
+        clog("Sent RobuxDataUpdate to " .. player.Name .. " on request: permanentLuckBonus=" .. tostring(data.permanentLuckBonus))
     end)
     
     -- Handle MarketplaceService events

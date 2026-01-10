@@ -806,6 +806,13 @@ local function toggleShop(show)
             else
                 print("RequestCoins remote event not found, using current value")
             end
+            
+            -- Request Robux data to ensure ownership status is up-to-date
+            local requestRobuxData = remotesFolder:FindFirstChild("RequestRobuxData")
+            if requestRobuxData then
+                print("Requesting Robux data from server for ownership check")
+                requestRobuxData:FireServer()
+            end
         end
         -- When opening the shop, populate the default tab (gamepasses)
         populateGamepassesItems()
@@ -970,11 +977,26 @@ coinCountUpdate.OnClientEvent:Connect(updateCoinCount)
 -- Listen for luck updates
 luckUpdate.OnClientEvent:Connect(updateLuckDisplay)
 
--- Listen for Robux data updates
-local robuxDataUpdate = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("RobuxDataUpdate")
+-- Listen for Robux data updates (use WaitForChild to ensure we don't miss initial data)
+local robuxDataUpdate = remotes:WaitForChild("RobuxDataUpdate", 10)
 if robuxDataUpdate then
-    robuxDataUpdate.OnClientEvent:Connect(updateRobuxDataDisplay)
+    robuxDataUpdate.OnClientEvent:Connect(function(permanentLuckBonus, hasNukeAll)
+        updateRobuxDataDisplay(permanentLuckBonus, hasNukeAll)
+        
+        -- Refresh the gamepasses tab if shop is open and gamepasses is visible
+        if shopGui.Enabled and gamepassesContent.Visible then
+            populateGamepassesItems()
+        end
+    end)
 end
+
+-- Request Robux data on script load to ensure we have the latest ownership info
+task.spawn(function()
+    local requestRobuxData = remotes:FindFirstChild("RequestRobuxData")
+    if requestRobuxData then
+        requestRobuxData:FireServer()
+    end
+end)
 
 -- Populate shop when switching tabs
 local originalSwitchToTab = switchToTab
