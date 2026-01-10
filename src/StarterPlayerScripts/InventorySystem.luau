@@ -28,6 +28,8 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Leaf = "Leaf: Create a gust of swirling leaves that lifts you into the air.",
 	Volcano = "Volcano: Summon a volcano that erupts, launching you skyward as magma rains down.",
 	Tsunami = "Tsunami: Summon a massive wave from below that launches you skyward with ocean sparkles.",
+	Meteor = "Meteor: Teleport high into the sky as meteors rain down around you.",
+	Coin = "Coin: Drops coins behind you as you move.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -49,7 +51,9 @@ local FALLBACK_DECALS: { [string]: string } = {
 	Leaf = "rbxassetid://107199178243113", -- Leaf texture
 	Volcano = "rbxassetid://72936982579332", -- Volcano texture
 		Tsunami = "rbxassetid://109162306563849", -- Tsunami texture
-}
+		Meteor = "rbxassetid://135554382256334", -- Meteor texture
+		Coin = "rbxassetid://98528749229098", -- Coin texture
+	}
 
 -- Function to apply textures to a part
 local function applyTexturesToPart(part: BasePart, marbleId: string)

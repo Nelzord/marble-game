@@ -1,0 +1,14 @@
+Coin Marble Texture Placeholder
+
+Asset ID: rbxassetid://98528749229098
+Color: Gold (255, 215, 0)
+
+To add a custom texture:
+1. Upload your coin/gold-themed image to Roblox
+2. Create a Decal instance in this folder
+3. Set the Texture property to your asset ID
+
+Suggested Texture Style:
+- Primary colors: Gold (#FFD700), yellow, and bronze
+- Pattern: Coin patterns with dollar signs, coins, or treasure effects
+- Material feel: Shiny gold with metallic reflections and coin textures

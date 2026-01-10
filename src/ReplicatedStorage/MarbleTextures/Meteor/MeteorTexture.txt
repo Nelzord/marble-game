@@ -1,0 +1,14 @@
+Meteor Marble Texture Placeholder
+
+Asset ID: rbxassetid://135554382256334
+Color: Orange-Red (255, 100, 0)
+
+To add a custom texture:
+1. Upload your meteor/space-themed image to Roblox
+2. Create a Decal instance in this folder
+3. Set the Texture property to your asset ID
+
+Suggested Texture Style:
+- Primary colors: Orange-red (#FF6400), yellow-orange, and dark red
+- Pattern: Meteor/asteroid patterns with fire and space effects
+- Material feel: Fiery space rock with glowing embers and cosmic textures

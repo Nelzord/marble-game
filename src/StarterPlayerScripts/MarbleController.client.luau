@@ -686,6 +686,137 @@ local function setupTsunamiWaterGlowEffect(character: Model, hrp: BasePart)
 	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateWaterGlow)
 end
 
+local function createMeteorFireEffect(character: Model, hrp: BasePart)
+	-- Remove existing effects if they exist
+	local existingEffect = character:FindFirstChild("MeteorFireEffect")
+	if existingEffect then
+		existingEffect:Destroy()
+	end
+	
+	-- Create fire effect container
+	local effectContainer = Instance.new("Model")
+	effectContainer.Name = "MeteorFireEffect"
+	effectContainer.Parent = character
+	
+	-- Create fire particles attachment
+	local fireAttachment = Instance.new("Attachment")
+	fireAttachment.Name = "MeteorFireAttachment"
+	fireAttachment.Parent = hrp
+	
+	-- Create fire particle emitter
+	local fireParticles = Instance.new("ParticleEmitter")
+	fireParticles.Name = "MeteorFireParticles"
+	fireParticles.Texture = "rbxasset://textures/particles/fire_main.dds"
+	fireParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 100)),
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(255, 150, 0)),
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(255, 100, 0)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 50, 0))
+	})
+	fireParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.8),
+		NumberSequenceKeypoint.new(0.5, 1.5),
+		NumberSequenceKeypoint.new(1, 0.5)
+	})
+	fireParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.7, 0.6),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	fireParticles.Rate = 40
+	fireParticles.Lifetime = NumberRange.new(0.5, 1)
+	fireParticles.Speed = NumberRange.new(2, 5)
+	fireParticles.SpreadAngle = Vector2.new(360, 360)
+	fireParticles.Parent = fireAttachment
+	
+	-- Create fire glow
+	local fireLight = Instance.new("PointLight")
+	fireLight.Name = "MeteorFireLight"
+	fireLight.Color = Color3.fromRGB(255, 150, 0)
+	fireLight.Brightness = 2.5
+	fireLight.Range = 15
+	fireLight.Parent = hrp
+	
+	-- Create grey trail
+	local trail = Instance.new("Trail")
+	trail.Name = "MeteorGreyTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "MeteorTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "MeteorTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for grey meteor effect
+	trail.Color = ColorSequence.new(Color3.fromRGB(120, 120, 120)) -- Grey color
+	trail.Transparency = NumberSequence.new(0.2, 0.9) -- More opaque at start, fade to transparent
+	trail.Lifetime = 2.5 -- Trail duration
+	trail.MinLength = 1.5 -- Trail length
+	trail.MaxLength = 15 -- Maximum trail length
+	trail.WidthScale = NumberSequence.new(0.8, 2.0) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return effectContainer
+end
+
+local function removeMeteorFireEffect(character: Model)
+	local effect = character:FindFirstChild("MeteorFireEffect")
+	if effect then
+		effect:Destroy()
+	end
+	
+	-- Clean up trail
+	local trail = character:FindFirstChild("MeteorGreyTrail")
+	if trail then
+		trail:Destroy()
+	end
+	
+	-- Clean up attachments on HRP
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local fireLight = hrp:FindFirstChild("MeteorFireLight")
+		if fireLight then
+			fireLight:Destroy()
+		end
+		local fireAttachment = hrp:FindFirstChild("MeteorFireAttachment")
+		if fireAttachment then
+			fireAttachment:Destroy()
+		end
+		local trailAttachment0 = hrp:FindFirstChild("MeteorTrailAttachment0")
+		if trailAttachment0 then
+			trailAttachment0:Destroy()
+		end
+		local trailAttachment1 = hrp:FindFirstChild("MeteorTrailAttachment1")
+		if trailAttachment1 then
+			trailAttachment1:Destroy()
+		end
+	end
+end
+
+local function setupMeteorFireEffect(character: Model, hrp: BasePart)
+	-- Function to update fire effect based on equipped marble
+	local function updateFireEffect()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Meteor" then
+			createMeteorFireEffect(character, hrp)
+		else
+			removeMeteorFireEffect(character)
+		end
+	end
+	
+	-- Initial check
+	updateFireEffect()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateFireEffect)
+end
+
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
 	dprint("applyCosmeticColor", id)
@@ -734,6 +865,8 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Leaf = "rbxassetid://107199178243113", -- Leaf texture
 		Volcano = "rbxassetid://72936982579332", -- Volcano texture
 		Tsunami = "rbxassetid://109162306563849", -- Tsunami texture
+		Meteor = "rbxassetid://135554382256334", -- Meteor texture
+		Coin = "rbxassetid://98528749229098", -- Coin texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -1091,6 +1224,7 @@ local function setupController(character: Model)
 	setupGoldGlowEffect(character, hrp)
 	setupPharaohGlowEffect(character, hrp)
 	setupTsunamiWaterGlowEffect(character, hrp)
+	setupMeteorFireEffect(character, hrp)
 	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)
@@ -1327,6 +1461,9 @@ local function setupController(character: Model)
 	
 	-- Setup TsunamiWaterGlow effect
 	setupTsunamiWaterGlowEffect(character, hrp)
+	
+	-- Setup MeteorFire effect
+	setupMeteorFireEffect(character, hrp)
 	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)

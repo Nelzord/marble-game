@@ -156,6 +156,22 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Tsunami",
 		color = Color3.fromRGB(100, 200, 255), -- Ocean blue color for tsunami theme
 	},
+	Meteor = {
+		id = "Meteor",
+		name = "Meteor Marble",
+		dropDenominator = 75, -- 1/75 rarity
+		rollable = true,
+		abilityModule = "Meteor",
+		color = Color3.fromRGB(255, 100, 0), -- Orange-red color for meteor theme
+	},
+	Coin = {
+		id = "Coin",
+		name = "Coin Marble",
+		dropDenominator = 20000, -- 1/20000 rarity (extremely rare)
+		rollable = true,
+		abilityModule = "Coin",
+		color = Color3.fromRGB(255, 215, 0), -- Gold color for coin theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?
