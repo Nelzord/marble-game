@@ -14,8 +14,8 @@ shopGui.Parent = playerGui
 -- Main frame (larger size)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 800, 0, 500)
-mainFrame.Position = UDim2.new(0.5, -400, 0.5, -250)
+mainFrame.Size = UDim2.new(0, 640, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -320, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = shopGui
@@ -147,23 +147,11 @@ gamepassesContent.Size = UDim2.new(1, 0, 1, 0)
 gamepassesContent.BackgroundTransparency = 1
 gamepassesContent.Parent = contentFrame
 
--- Gamepasses title
-local gamepassesTitle = Instance.new("TextLabel")
-gamepassesTitle.Name = "GamepassesTitle"
-gamepassesTitle.Size = UDim2.new(1, 0, 0, 50)
-gamepassesTitle.Position = UDim2.new(0, 0, 0, 20)
-gamepassesTitle.BackgroundTransparency = 1
-gamepassesTitle.Text = "Gamepasses"
-gamepassesTitle.TextColor3 = Color3.fromRGB(100, 200, 255)
-gamepassesTitle.TextScaled = true
-gamepassesTitle.Font = Enum.Font.GothamBold
-gamepassesTitle.Parent = gamepassesContent
-
 -- Gamepasses items container
 local gamepassesItemsContainer = Instance.new("ScrollingFrame")
 gamepassesItemsContainer.Name = "GamepassesItemsContainer"
-gamepassesItemsContainer.Size = UDim2.new(1, -40, 1, -100)
-gamepassesItemsContainer.Position = UDim2.new(0, 20, 0, 80)
+gamepassesItemsContainer.Size = UDim2.new(1, -40, 1, -40)
+gamepassesItemsContainer.Position = UDim2.new(0, 20, 0, 20)
 gamepassesItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 gamepassesItemsContainer.BorderSizePixel = 0
 gamepassesItemsContainer.ScrollBarThickness = 6
@@ -188,23 +176,11 @@ coinContent.BackgroundTransparency = 1
 coinContent.Visible = false
 coinContent.Parent = contentFrame
 
--- Coin shop title
-local coinTitle = Instance.new("TextLabel")
-coinTitle.Name = "CoinTitle"
-coinTitle.Size = UDim2.new(1, 0, 0, 35)
-coinTitle.Position = UDim2.new(0, 0, 0, 5)
-coinTitle.BackgroundTransparency = 1
-coinTitle.Text = "Regular Items"
-coinTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-coinTitle.TextScaled = true
-coinTitle.Font = Enum.Font.GothamBold
-coinTitle.Parent = coinContent
-
 -- Luck display
 local luckDisplay = Instance.new("TextLabel")
 luckDisplay.Name = "LuckDisplay"
 luckDisplay.Size = UDim2.new(1, -20, 0, 25)
-luckDisplay.Position = UDim2.new(0, 10, 0, 42)
+luckDisplay.Position = UDim2.new(0, 10, 0, 5)
 luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
 luckDisplay.BorderSizePixel = 0
 luckDisplay.Text = "Current Luck: 1.0x"
@@ -220,8 +196,8 @@ luckCorner.Parent = luckDisplay
 -- Coin shop items container
 local coinItemsContainer = Instance.new("ScrollingFrame")
 coinItemsContainer.Name = "CoinItemsContainer"
-coinItemsContainer.Size = UDim2.new(1, -40, 1, -85)
-coinItemsContainer.Position = UDim2.new(0, 20, 0, 75)
+coinItemsContainer.Size = UDim2.new(1, -40, 1, -60)
+coinItemsContainer.Position = UDim2.new(0, 20, 0, 35)
 coinItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 coinItemsContainer.BorderSizePixel = 0
 coinItemsContainer.ScrollBarThickness = 6
@@ -246,23 +222,11 @@ specialContent.BackgroundTransparency = 1
 specialContent.Visible = false
 specialContent.Parent = contentFrame
 
--- Special shop title
-local specialTitle = Instance.new("TextLabel")
-specialTitle.Name = "SpecialTitle"
-specialTitle.Size = UDim2.new(1, 0, 0, 50)
-specialTitle.Position = UDim2.new(0, 0, 0, 20)
-specialTitle.BackgroundTransparency = 1
-specialTitle.Text = "Premium Items"
-specialTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-specialTitle.TextScaled = true
-specialTitle.Font = Enum.Font.GothamBold
-specialTitle.Parent = specialContent
-
 -- Special shop items container
 local specialItemsContainer = Instance.new("ScrollingFrame")
 specialItemsContainer.Name = "SpecialItemsContainer"
-specialItemsContainer.Size = UDim2.new(1, -40, 1, -100)
-specialItemsContainer.Position = UDim2.new(0, 20, 0, 80)
+specialItemsContainer.Size = UDim2.new(1, -40, 1, -40)
+specialItemsContainer.Position = UDim2.new(0, 20, 0, 20)
 specialItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 specialItemsContainer.BorderSizePixel = 0
 specialItemsContainer.ScrollBarThickness = 6

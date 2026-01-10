@@ -200,7 +200,7 @@ function UIComponents.createInventoryFrame(screen: ScreenGui)
 	invFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	invFrame.BackgroundTransparency = 0
 	invFrame.BorderSizePixel = 0
-	invFrame.Size = UDim2.new(0, 860, 0, 520)
+	invFrame.Size = UDim2.new(0, 688, 0, 416)
 	invFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	invFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	invFrame.Visible = false
@@ -273,7 +273,7 @@ function UIComponents.createBadgesFrame(screen: ScreenGui)
 	badgesFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	badgesFrame.BackgroundTransparency = 0
 	badgesFrame.BorderSizePixel = 0
-	badgesFrame.Size = UDim2.new(0, 720, 0, 520)
+	badgesFrame.Size = UDim2.new(0, 576, 0, 416)
 	badgesFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	badgesFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	badgesFrame.Visible = false

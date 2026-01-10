@@ -215,6 +215,8 @@ function ShopService:Init()
         return {
             ShopPurchase = ensureEvent("ShopPurchase"),
             LuckUpdate = ensureEvent("LuckUpdate"),
+            OpenShop = ensureEvent("OpenShop"),
+            CloseShop = ensureEvent("CloseShop"),
         }
     end
     
@@ -244,6 +246,71 @@ function ShopService:Init()
             wait(60) -- Check every minute
         end
     end)
+    
+    -- Set up ProximityPrompt for shop
+    local function setupShopProximityPrompt(proximityPrompt: ProximityPrompt)
+        -- Track if this specific prompt has already been set up to avoid duplicate connections
+        if proximityPrompt:GetAttribute("ShopPromptSetup") then
+            return
+        end
+        proximityPrompt:SetAttribute("ShopPromptSetup", true)
+        
+        -- Connect to the Triggered event
+        proximityPrompt.Triggered:Connect(function(player: Player)
+            print("[ShopService] Shop proximity prompt triggered by", player.Name)
+            -- Always open the shop when ProximityPrompt is triggered
+            -- The close button in the UI will handle closing
+            Remotes.OpenShop:FireClient(player)
+        end)
+        
+        print("[ShopService] Set up shop proximity prompt:", proximityPrompt:GetFullName())
+    end
+    
+    -- Function to find and set up shop proximity prompts
+    local function findAndSetupShopProximityPrompts()
+        local count = 0
+        
+        -- Search through all descendants in workspace
+        for _, descendant in pairs(workspace:GetDescendants()) do
+            if descendant:IsA("ProximityPrompt") then
+                local name = descendant.Name:lower()
+                -- Match prompts with "shop" in the name (case-insensitive)
+                if name:find("shop") and not name:find("community") then
+                    setupShopProximityPrompt(descendant)
+                    count = count + 1
+                end
+            end
+        end
+        
+        print("[ShopService] Found and set up", count, "shop proximity prompts")
+        return count
+    end
+    
+    -- Handle new proximity prompts that get added dynamically
+    local function onDescendantAdded(descendant: Instance)
+        if descendant:IsA("ProximityPrompt") then
+            local name = descendant.Name:lower()
+            if name:find("shop") and not name:find("community") then
+                -- Small delay to ensure the prompt is fully initialized
+                task.defer(function()
+                    setupShopProximityPrompt(descendant)
+                end)
+            end
+        end
+    end
+    
+    -- Set up existing proximity prompts
+    local promptCount = findAndSetupShopProximityPrompts()
+    
+    -- Listen for new proximity prompts added to workspace
+    workspace.DescendantAdded:Connect(onDescendantAdded)
+    
+    -- If no prompts were found, log a helpful message
+    if promptCount == 0 then
+        print("[ShopService] WARNING: No shop proximity prompts found!")
+        print("[ShopService] Make sure your ProximityPrompts have 'shop' in their name")
+        print("[ShopService] For example: 'Shop Proximity Prompt' or 'ShopProximityPrompt'")
+    end
 end
 
 -- Start the service
