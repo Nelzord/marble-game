@@ -381,6 +381,90 @@ local function removeMoonGlowTrail(character: Model)
 	end
 end
 
+local function createBlueGlowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("BlueGlowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create new trail
+	local trail = Instance.new("Trail")
+	trail.Name = "BlueGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "BlueTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "BlueTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with more separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for blue effect
+	trail.Color = ColorSequence.new(Color3.fromRGB(60, 120, 220)) -- Blue color
+	trail.Transparency = NumberSequence.new(0.1, 0.9) -- More opaque at start, fade to transparent
+	trail.Lifetime = 4.0 -- Long trail duration
+	trail.MinLength = 2.0 -- Trail length
+	trail.MaxLength = 20 -- Long maximum trail length
+	trail.WidthScale = NumberSequence.new(0.8, 2.0) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return trail
+end
+
+local function removeBlueGlowTrail(character: Model)
+	local trail = character:FindFirstChild("BlueGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
+local function createGreenGlowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("GreenGlowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create new trail
+	local trail = Instance.new("Trail")
+	trail.Name = "GreenGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "GreenTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "GreenTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with more separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance for green effect
+	trail.Color = ColorSequence.new(Color3.fromRGB(70, 200, 90)) -- Green color
+	trail.Transparency = NumberSequence.new(0.1, 0.9) -- More opaque at start, fade to transparent
+	trail.Lifetime = 4.0 -- Long trail duration
+	trail.MinLength = 2.0 -- Trail length
+	trail.MaxLength = 20 -- Long maximum trail length
+	trail.WidthScale = NumberSequence.new(0.8, 2.0) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return trail
+end
+
+local function removeGreenGlowTrail(character: Model)
+	local trail = character:FindFirstChild("GreenGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
 local function createGoldGlowTrail(character: Model, hrp: BasePart)
 	-- Remove existing trail if it exists
 	local existingTrail = character:FindFirstChild("GoldGlowTrail")
@@ -630,6 +714,42 @@ local function setupMoonGlowEffect(character: Model, hrp: BasePart)
 	if initialGlow then
 		createMoonGlowTrail(character, hrp)
 	end
+end
+
+local function setupBlueGlowEffect(character: Model, hrp: BasePart)
+	-- Function to update blue trail based on equipped marble
+	local function updateBlueTrail()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Blue" then
+			createBlueGlowTrail(character, hrp)
+		else
+			removeBlueGlowTrail(character)
+		end
+	end
+	
+	-- Initial check
+	updateBlueTrail()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateBlueTrail)
+end
+
+local function setupGreenGlowEffect(character: Model, hrp: BasePart)
+	-- Function to update green trail based on equipped marble
+	local function updateGreenTrail()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Green" then
+			createGreenGlowTrail(character, hrp)
+		else
+			removeGreenGlowTrail(character)
+		end
+	end
+	
+	-- Initial check
+	updateGreenTrail()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateGreenTrail)
 end
 
 local function setupGoldGlowEffect(character: Model, hrp: BasePart)
@@ -1221,6 +1341,8 @@ local function setupController(character: Model)
 	setupRedGlowEffect(character, hrp)
 	setupGumballGlowEffect(character, hrp)
 	setupMoonGlowEffect(character, hrp)
+	setupBlueGlowEffect(character, hrp)
+	setupGreenGlowEffect(character, hrp)
 	setupGoldGlowEffect(character, hrp)
 	setupPharaohGlowEffect(character, hrp)
 	setupTsunamiWaterGlowEffect(character, hrp)
@@ -1453,6 +1575,12 @@ local function setupController(character: Model)
 	-- Setup MoonGlowTrail effect
 	setupMoonGlowEffect(character, hrp)
 	
+	-- Setup BlueGlowTrail effect
+	setupBlueGlowEffect(character, hrp)
+	
+	-- Setup GreenGlowTrail effect
+	setupGreenGlowEffect(character, hrp)
+	
 	-- Setup GoldGlowTrail effect
 	setupGoldGlowEffect(character, hrp)
 	
@@ -1512,6 +1640,8 @@ local function setupOtherPlayerVisuals(character: Model)
 	setupRedGlowEffect(character, hrp)
 	setupGumballGlowEffect(character, hrp)
 	setupMoonGlowEffect(character, hrp)
+	setupBlueGlowEffect(character, hrp)
+	setupGreenGlowEffect(character, hrp)
 	setupGoldGlowEffect(character, hrp)
 	setupPharaohGlowEffect(character, hrp)
 	setupTsunamiWaterGlowEffect(character, hrp)
