@@ -888,6 +888,8 @@ Players.PlayerAdded:Connect(function(player)
 		end
 	end)
 	
+	-- Wait 1 second before spawning character to let everything catch up
+	task.wait(1)
 	respawnEquipped(player)
 end)
 

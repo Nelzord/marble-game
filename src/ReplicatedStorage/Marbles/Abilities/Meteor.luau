@@ -241,14 +241,11 @@ function Ability.ActivateAbility(player: Player, character: Model)
 	
 	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
 	
-	-- Check if meteor is already active
-	local prev = character:GetAttribute("MeteorActive")
-	if typeof(prev) == "boolean" and prev then
-		print("METEOR ABILITY: Already active")
-		return
-	end
+	-- Always clear any previous MeteorActive state first to ensure fresh activation
+	-- This prevents issues when switching to Meteor marble where the attribute might still be set
+	character:SetAttribute("MeteorActive", false)
 	
-	-- Set meteor attribute to true
+	-- Set meteor attribute to true for this activation
 	character:SetAttribute("MeteorActive", true)
 	
 	print("METEOR ABILITY: Teleporting player and raining meteors")
@@ -369,7 +366,19 @@ function Ability.DeactivateAbility(player: Player, character: Model)
 	print("METEOR ABILITY: Deactivating for player:", player.Name)
 	
 	if character then
+		-- Clear the MeteorActive attribute
 		character:SetAttribute("MeteorActive", false)
+		
+		-- Also clean up any remaining downward force
+		local hrp = character:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			local downwardForce = hrp:FindFirstChild("MeteorDownwardForce")
+			if downwardForce then
+				downwardForce:Destroy()
+			end
+		end
+		
+		print("METEOR ABILITY: Deactivation complete - MeteorActive cleared")
 	end
 end
 
