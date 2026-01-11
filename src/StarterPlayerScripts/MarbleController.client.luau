@@ -987,6 +987,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Tsunami = "rbxassetid://109162306563849", -- Tsunami texture
 		Meteor = "rbxassetid://135554382256334", -- Meteor texture
 		Coin = "rbxassetid://98528749229098", -- Coin texture
+		Castle = "rbxassetid://136095563046974", -- Castle texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]

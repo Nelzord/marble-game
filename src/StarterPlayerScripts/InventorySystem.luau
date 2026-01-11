@@ -53,6 +53,7 @@ local FALLBACK_DECALS: { [string]: string } = {
 		Tsunami = "rbxassetid://109162306563849", -- Tsunami texture
 		Meteor = "rbxassetid://135554382256334", -- Meteor texture
 		Coin = "rbxassetid://98528749229098", -- Coin texture
+		Castle = "rbxassetid://136095563046974", -- Castle texture
 	}
 
 -- Function to apply textures to a part

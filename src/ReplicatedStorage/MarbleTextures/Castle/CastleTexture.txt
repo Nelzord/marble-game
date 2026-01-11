@@ -1,0 +1,32 @@
+Castle Marble Texture Setup Instructions
+========================================
+
+To create the Castle marble texture in Roblox Studio:
+
+1. In the Castle folder, create a new Texture instance
+2. Set the Texture property to: rbxassetid://136095563046974
+3. Set the Face property to: Front (or leave as default for all faces)
+4. Set StudsPerTileU and StudsPerTileV to: 1
+
+Alternatively, you can create a Decal instance:
+1. Create a new Decal instance
+2. Set the Texture property to: rbxassetid://136095563046974
+3. Set the Face property to: Front (or leave as default for all faces)
+
+The texture ID is: rbxassetid://136095563046974
+
+This will make the Castle marble appear with the correct castle-themed texture.
+
+Castle Marble Details:
+- Base Color: Stone Gray (RGB: 139, 139, 122)
+- Material: Brick/Stone with medieval castle appearance
+- Pattern: Castle-themed surface with stone texture
+- Ability: Creates a majestic castle structure and teleports you to the top
+
+The Castle Marble provides:
+- Active ability: Creates a detailed castle with battlements, towers, and walls
+- Teleports player to the top of the castle
+- 25 second cooldown
+- Mythic (1/200 drop chance)
+
+This marble is perfect for players who want to create impressive structures and gain a high vantage point. The castle includes detailed battlements, corner towers, windows, and a flag at the top.
