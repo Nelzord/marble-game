@@ -43,6 +43,27 @@ local shopItems = {
         description = "Increases luck by 2x for 5 minutes",
         itemType = "lucky_potion",
         luckMultiplier = 2
+    },
+    {
+        name = "Meteor Marble",
+        price = 100,
+        description = "Unlock the Meteor Marble - Teleport high into the sky as meteors rain down around you",
+        itemType = "meteor_marble",
+        marbleId = "Meteor"
+    },
+    {
+        name = "Tsunami Marble",
+        price = 200,
+        description = "Unlock the Tsunami Marble - Summon a massive wave from below that launches you skyward",
+        itemType = "tsunami_marble",
+        marbleId = "Tsunami"
+    },
+    {
+        name = "Glass Marble",
+        price = 300,
+        description = "Unlock the Glass Marble - Leaves behind a glass trail while moving that makes marbles slip",
+        itemType = "glass_marble",
+        marbleId = "Glass"
     }
 }
 
@@ -162,6 +183,48 @@ function ShopService:PurchaseItem(player, itemName)
         
         print(player.Name .. " purchased " .. itemName .. " for " .. item.price .. " coins")
         return true, "Lucky potion activated!"
+    elseif item.itemType == "meteor_marble" or item.itemType == "tsunami_marble" or item.itemType == "glass_marble" then
+        -- Handle marble purchases
+        local marbleId = item.marbleId
+        if not marbleId then
+            return false, "Marble ID not specified"
+        end
+        
+        -- Get MarbleService
+        local MarbleService = _G.MarbleService
+        if not MarbleService then
+            -- Try to require it
+            local success, result = pcall(function()
+                return require(script.Parent.MarbleService)
+            end)
+            if success and result then
+                MarbleService = result
+            end
+        end
+        
+        if not MarbleService then
+            return false, "MarbleService unavailable"
+        end
+        
+        -- Check if player already has the marble
+        if MarbleService.HasMarble and MarbleService.HasMarble(player, marbleId) then
+            return false, "You already own this marble!"
+        end
+        
+        -- Grant the marble
+        if MarbleService.GrantMarble then
+            local success = MarbleService.GrantMarble(player, marbleId)
+            if success then
+                -- Deduct coins
+                CoinService:RemoveCoins(player, item.price)
+                print(player.Name .. " purchased " .. itemName .. " for " .. item.price .. " coins")
+                return true, "Marble unlocked!"
+            else
+                return false, "Failed to grant marble"
+            end
+        else
+            return false, "MarbleService.GrantMarble not available"
+        end
     else
         -- Handle other item types here in the future
         return false, "Item type not implemented yet"

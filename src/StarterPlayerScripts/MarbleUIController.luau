@@ -540,8 +540,14 @@ local function setupEventHandlers()
 	
 	-- Ability cooldown handler
 	AbilityCooldown.OnClientEvent:Connect(function(cooldownData)
-		print("AbilityCooldown received:", cooldownData.duration, "seconds")
-		CooldownSystem.startPowerCooldown(cooldownData.duration, powerButton, powerCooldown, cooldownText, textShadow)
+		if cooldownData.clear then
+			-- Clear cooldown when switching marbles
+			print("Clearing cooldown due to marble switch")
+			CooldownSystem.forceResetCooldown(powerButton, powerCooldown, cooldownText, textShadow)
+		else
+			print("AbilityCooldown received:", cooldownData.duration, "seconds")
+			CooldownSystem.startPowerCooldown(cooldownData.duration, powerButton, powerCooldown, cooldownText, textShadow)
+		end
 	end)
 	
 	-- E key handler for ability activation

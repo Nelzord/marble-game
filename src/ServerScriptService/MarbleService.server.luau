@@ -778,6 +778,17 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 		end
 	end
 	
+	-- Clear cooldown when switching marbles
+	abilityCooldowns[player] = nil
+	dprint("Cleared ability cooldown for player:", player.Name, "when switching to marble:", marbleId)
+	
+	-- Notify client to clear cooldown
+	Remotes.AbilityCooldown:FireClient(player, {
+		duration = 0,
+		startTime = 0,
+		clear = true, -- Signal to clear cooldown
+	})
+	
 	data.equipped = marbleId
 	sendInventory(player)
 	savePlayerData(player) -- Save to DataStore

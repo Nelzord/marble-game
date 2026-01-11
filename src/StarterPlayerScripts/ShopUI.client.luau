@@ -485,8 +485,9 @@ local function createShopItem(item, container, isRobuxItem)
     local itemImage = nil
     local viewport = nil
     
-    -- For Gold, Diamond, and Coin marbles, use ViewportFrame like inventory
-    if item.itemType == "gold_marble" or item.itemType == "diamond_marble" or item.itemType == "coin_marble" then
+    -- For marbles, use ViewportFrame like inventory
+    if item.itemType == "gold_marble" or item.itemType == "diamond_marble" or item.itemType == "coin_marble" 
+       or item.itemType == "meteor_marble" or item.itemType == "tsunami_marble" or item.itemType == "glass_marble" then
         viewport = Instance.new("ViewportFrame")
         viewport.Name = "MarbleViewport"
         viewport.Size = UDim2.new(1, 0, 1, 0)
@@ -508,7 +509,7 @@ local function createShopItem(item, container, isRobuxItem)
         -- Apply textures to the sphere
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
         local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
-        local marbleId = item.itemType == "gold_marble" and "Gold" or (item.itemType == "diamond_marble" and "Diamond" or "Coin")
+        local marbleId = item.marbleId or (item.itemType == "gold_marble" and "Gold" or (item.itemType == "diamond_marble" and "Diamond" or (item.itemType == "coin_marble" and "Coin" or nil)))
         local def = Marbles.getById(marbleId)
         
         -- Apply textures using the same logic as inventory
@@ -528,6 +529,9 @@ local function createShopItem(item, container, isRobuxItem)
             Gold = "rbxassetid://84142305330257",
             Diamond = "rbxassetid://95881293008595",
             Coin = "rbxassetid://98528749229098", -- Coin marble texture
+            Meteor = "rbxassetid://135554382256334", -- Meteor marble texture
+            Tsunami = "rbxassetid://109162306563849", -- Tsunami marble texture
+            Glass = "rbxassetid://101699002274981", -- Glass marble texture
         }
         
         if #assets == 0 then
@@ -880,6 +884,23 @@ local function createShopItem(item, container, isRobuxItem)
                 warn("[ShopUI] Remotes folder not found")
             end
         else
+            -- For coin items, check if already owned (for marbles)
+            if item.itemType == "meteor_marble" then
+                if _G.ownedMarbles and _G.ownedMarbles["Meteor"] then
+                    print("[ShopUI] Meteor Marble already owned, purchase blocked")
+                    return
+                end
+            elseif item.itemType == "tsunami_marble" then
+                if _G.ownedMarbles and _G.ownedMarbles["Tsunami"] then
+                    print("[ShopUI] Tsunami Marble already owned, purchase blocked")
+                    return
+                end
+            elseif item.itemType == "glass_marble" then
+                if _G.ownedMarbles and _G.ownedMarbles["Glass"] then
+                    print("[ShopUI] Glass Marble already owned, purchase blocked")
+                    return
+                end
+            end
             -- For coin items, check if player has enough coins
             -- Use the global currentCoins variable, not the captured one
             local currentCoinCount = _G.currentCoins or currentCoins
@@ -987,7 +1008,29 @@ local function populateCoinShopItems()
     coinUpdateFunctions = {}
     
     -- Get shop items from server (for now, we'll use hardcoded items)
+    -- Marbles first, then potions
     local shopItems = {
+        {
+            name = "Meteor Marble",
+            price = 100,
+            description = "Unlock the Meteor Marble - Teleport high into the sky as meteors rain down around you",
+            itemType = "meteor_marble",
+            marbleId = "Meteor"
+        },
+        {
+            name = "Tsunami Marble",
+            price = 200,
+            description = "Unlock the Tsunami Marble - Summon a massive wave from below that launches you skyward",
+            itemType = "tsunami_marble",
+            marbleId = "Tsunami"
+        },
+        {
+            name = "Glass Marble",
+            price = 300,
+            description = "Unlock the Glass Marble - Leaves behind a glass trail while moving that makes marbles slip",
+            itemType = "glass_marble",
+            marbleId = "Glass"
+        },
         {
             name = "Lucky Potion (1.25x)",
             price = 50,
