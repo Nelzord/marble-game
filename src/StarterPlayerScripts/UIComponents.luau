@@ -174,6 +174,39 @@ function UIComponents.createShopButton(screen: ScreenGui)
 	
 	UIComponents.createCorner(shopButton, 8)
 	
+	-- "Sale!" banner in top-right corner
+	local saleBanner = Instance.new("Frame")
+	saleBanner.Name = "SaleBanner"
+	saleBanner.Size = UDim2.new(0, 0, 0, 16)
+	saleBanner.Position = UDim2.new(1, -5, 0, -3)
+	saleBanner.AnchorPoint = Vector2.new(1, 0)
+	saleBanner.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold/yellow
+	saleBanner.BorderSizePixel = 0
+	saleBanner.ZIndex = 10
+	saleBanner.Parent = shopButton
+	
+	local saleBannerCorner = Instance.new("UICorner")
+	saleBannerCorner.CornerRadius = UDim.new(0, 3)
+	saleBannerCorner.Parent = saleBanner
+	
+	local saleBannerLabel = Instance.new("TextLabel")
+	saleBannerLabel.Name = "SaleBannerLabel"
+	saleBannerLabel.Size = UDim2.new(1, -6, 1, -4)
+	saleBannerLabel.Position = UDim2.new(0, 3, 0, 2)
+	saleBannerLabel.BackgroundTransparency = 1
+	saleBannerLabel.Text = "Sale!"
+	saleBannerLabel.TextColor3 = Color3.fromRGB(0, 0, 0) -- Black text
+	saleBannerLabel.TextSize = 10
+	saleBannerLabel.Font = Enum.Font.GothamBold
+	saleBannerLabel.TextXAlignment = Enum.TextXAlignment.Center
+	saleBannerLabel.ZIndex = 11
+	saleBannerLabel.Parent = saleBanner
+	
+	-- Update banner width based on text
+	saleBannerLabel:GetPropertyChangedSignal("TextBounds"):Connect(function()
+		saleBanner.Size = UDim2.new(0, saleBannerLabel.TextBounds.X + 6, 0, 16)
+	end)
+	
 	return shopButton
 end
 

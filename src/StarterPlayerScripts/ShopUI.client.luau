@@ -176,28 +176,11 @@ coinContent.BackgroundTransparency = 1
 coinContent.Visible = false
 coinContent.Parent = contentFrame
 
--- Luck display
-local luckDisplay = Instance.new("TextLabel")
-luckDisplay.Name = "LuckDisplay"
-luckDisplay.Size = UDim2.new(1, -20, 0, 25)
-luckDisplay.Position = UDim2.new(0, 10, 0, 5)
-luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
-luckDisplay.BorderSizePixel = 0
-luckDisplay.Text = "Current Luck: 1.0x"
-luckDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-luckDisplay.TextScaled = true
-luckDisplay.Font = Enum.Font.GothamBold
-luckDisplay.Parent = coinContent
-
-local luckCorner = Instance.new("UICorner")
-luckCorner.CornerRadius = UDim.new(0, 6)
-luckCorner.Parent = luckDisplay
-
 -- Coin shop items container
 local coinItemsContainer = Instance.new("ScrollingFrame")
 coinItemsContainer.Name = "CoinItemsContainer"
-coinItemsContainer.Size = UDim2.new(1, -40, 1, -60)
-coinItemsContainer.Position = UDim2.new(0, 20, 0, 35)
+coinItemsContainer.Size = UDim2.new(1, -40, 1, -40)
+coinItemsContainer.Position = UDim2.new(0, 20, 0, 20)
 coinItemsContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 coinItemsContainer.BorderSizePixel = 0
 coinItemsContainer.ScrollBarThickness = 6
@@ -502,8 +485,8 @@ local function createShopItem(item, container, isRobuxItem)
     local itemImage = nil
     local viewport = nil
     
-    -- For Gold and Diamond marbles, use ViewportFrame like inventory
-    if item.itemType == "gold_marble" or item.itemType == "diamond_marble" then
+    -- For Gold, Diamond, and Coin marbles, use ViewportFrame like inventory
+    if item.itemType == "gold_marble" or item.itemType == "diamond_marble" or item.itemType == "coin_marble" then
         viewport = Instance.new("ViewportFrame")
         viewport.Name = "MarbleViewport"
         viewport.Size = UDim2.new(1, 0, 1, 0)
@@ -525,7 +508,7 @@ local function createShopItem(item, container, isRobuxItem)
         -- Apply textures to the sphere
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
         local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
-        local marbleId = item.itemType == "gold_marble" and "Gold" or "Diamond"
+        local marbleId = item.itemType == "gold_marble" and "Gold" or (item.itemType == "diamond_marble" and "Diamond" or "Coin")
         local def = Marbles.getById(marbleId)
         
         -- Apply textures using the same logic as inventory
@@ -544,6 +527,7 @@ local function createShopItem(item, container, isRobuxItem)
         local FALLBACK_DECALS = {
             Gold = "rbxassetid://84142305330257",
             Diamond = "rbxassetid://95881293008595",
+            Coin = "rbxassetid://98528749229098", -- Coin marble texture
         }
         
         if #assets == 0 then
@@ -658,29 +642,140 @@ local function createShopItem(item, container, isRobuxItem)
     nameLabel.TextXAlignment = Enum.TextXAlignment.Center
     nameLabel.Parent = itemFrame
     
-    -- Price label
-    local priceLabel = Instance.new("TextLabel")
-    priceLabel.Name = "PriceLabel"
-    priceLabel.Size = UDim2.new(1, -10, 0, 25)
-    priceLabel.Position = UDim2.new(0, 5, 0, 145)
-    priceLabel.BackgroundTransparency = 1
-    priceLabel.Text = item.price .. (isRobuxItem and " Robux" or " Coins")
-    priceLabel.TextColor3 = isRobuxItem and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 215, 0)
-    priceLabel.TextScaled = true
-    priceLabel.Font = Enum.Font.GothamBold
-    priceLabel.TextXAlignment = Enum.TextXAlignment.Center
-    priceLabel.Parent = itemFrame
+    -- Price label container (fixed height for alignment)
+    local priceContainer = Instance.new("Frame")
+    priceContainer.Name = "PriceContainer"
+    local isOnSale = item.originalPrice and item.originalPrice > item.price
+    priceContainer.Size = UDim2.new(1, -10, 0, 25)
+    priceContainer.Position = UDim2.new(0, 5, 0, 145)
+    priceContainer.BackgroundTransparency = 1
+    priceContainer.Parent = itemFrame
     
-    -- Buy button
+    -- Check if item has originalPrice (on sale)
+    if isOnSale then
+        -- Calculate discount percentage
+        local discountPercent = math.floor(((item.originalPrice - item.price) / item.originalPrice) * 100)
+        
+        -- "BEST VALUE" badge positioned to the left of info icon (top-right corner)
+        local badgeFrame = Instance.new("Frame")
+        badgeFrame.Name = "BestValueBadge"
+        badgeFrame.Size = UDim2.new(0, 0, 0, 18)
+        badgeFrame.Position = UDim2.new(0, 5, 0, 5) -- Start at left edge, will be adjusted
+        badgeFrame.AnchorPoint = Vector2.new(0, 0) -- Anchor to top-left
+        badgeFrame.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold
+        badgeFrame.BorderSizePixel = 0
+        badgeFrame.ZIndex = 10
+        badgeFrame.Parent = itemFrame -- Parent to itemFrame, not priceContainer
+        
+        -- Don't clip the entire itemFrame to avoid cutting off the button
+        -- The badge positioning logic already ensures it stays within bounds
+        
+        local badgeCorner = Instance.new("UICorner")
+        badgeCorner.CornerRadius = UDim.new(0, 3)
+        badgeCorner.Parent = badgeFrame
+        
+        local badgeLabel = Instance.new("TextLabel")
+        badgeLabel.Name = "BadgeLabel"
+        badgeLabel.Size = UDim2.new(1, -6, 1, -4)
+        badgeLabel.Position = UDim2.new(0, 3, 0, 2)
+        badgeLabel.BackgroundTransparency = 1
+        badgeLabel.Text = discountPercent .. "% OFF"
+        badgeLabel.TextColor3 = Color3.fromRGB(0, 0, 0) -- Black text
+        badgeLabel.TextSize = 10
+        badgeLabel.Font = Enum.Font.GothamBold
+        badgeLabel.TextXAlignment = Enum.TextXAlignment.Center
+        badgeLabel.ZIndex = 11
+        badgeLabel.Parent = badgeFrame
+        
+        -- Update badge width and position based on text
+        task.spawn(function()
+            wait(0.1) -- Wait for itemFrame to be fully sized
+            local badgeWidth = badgeLabel.TextBounds.X + 6
+            badgeFrame.Size = UDim2.new(0, badgeWidth, 0, 18)
+            
+            -- Info icon is at (1, -30) with size 24, so it starts at width - 54
+            -- Position badge to end 5 pixels before info icon starts
+            -- Use UDim2 to position from right edge: 1 (right) - (54 + 5 + badgeWidth) / itemFrameWidth
+            local itemFrameWidth = itemFrame.AbsoluteSize.X
+            if itemFrameWidth > 0 then
+                local infoIconStart = itemFrameWidth - 54
+                local badgeEndX = infoIconStart - 5
+                local badgeStartX = badgeEndX - badgeWidth
+                
+                -- Ensure badge doesn't go beyond left edge (minimum 5px from left)
+                if badgeStartX < 5 then
+                    badgeStartX = 5
+                    -- Adjust width if needed to not overlap with info icon
+                    if badgeStartX + badgeWidth > infoIconStart - 5 then
+                        badgeWidth = math.max(50, infoIconStart - 5 - badgeStartX)
+                        badgeFrame.Size = UDim2.new(0, badgeWidth, 0, 18)
+                    end
+                end
+                
+                badgeFrame.Position = UDim2.new(0, badgeStartX, 0, 5)
+            end
+        end)
+        
+        -- Also update when itemFrame size changes
+        itemFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+            local badgeWidth = badgeLabel.TextBounds.X + 6
+            badgeFrame.Size = UDim2.new(0, badgeWidth, 0, 18)
+            
+            local itemFrameWidth = itemFrame.AbsoluteSize.X
+            if itemFrameWidth > 0 then
+                local infoIconStart = itemFrameWidth - 54
+                local badgeEndX = infoIconStart - 5
+                local badgeStartX = badgeEndX - badgeWidth
+                
+                if badgeStartX < 5 then
+                    badgeStartX = 5
+                    if badgeStartX + badgeWidth > infoIconStart - 5 then
+                        badgeWidth = math.max(50, infoIconStart - 5 - badgeStartX)
+                        badgeFrame.Size = UDim2.new(0, badgeWidth, 0, 18)
+                    end
+                end
+                
+                badgeFrame.Position = UDim2.new(0, badgeStartX, 0, 5)
+            end
+        end)
+        
+        -- Sale price (prominent, center)
+        local salePriceLabel = Instance.new("TextLabel")
+        salePriceLabel.Name = "SalePriceLabel"
+        salePriceLabel.Size = UDim2.new(1, 0, 1, 0)
+        salePriceLabel.Position = UDim2.new(0, 0, 0, 0)
+        salePriceLabel.BackgroundTransparency = 1
+        salePriceLabel.Text = item.price .. (isRobuxItem and " Robux" or " Coins")
+        salePriceLabel.TextColor3 = Color3.fromRGB(100, 255, 100) -- Bright green for sale
+        salePriceLabel.TextSize = 18
+        salePriceLabel.Font = Enum.Font.GothamBold
+        salePriceLabel.TextXAlignment = Enum.TextXAlignment.Center
+        salePriceLabel.Parent = priceContainer
+    else
+        -- Normal price display (matching sale price style)
+        local priceLabel = Instance.new("TextLabel")
+        priceLabel.Name = "PriceLabel"
+        priceLabel.Size = UDim2.new(1, 0, 1, 0)
+        priceLabel.Position = UDim2.new(0, 0, 0, 0)
+        priceLabel.BackgroundTransparency = 1
+        priceLabel.Text = item.price .. (isRobuxItem and " Robux" or " Coins")
+        priceLabel.TextColor3 = isRobuxItem and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 215, 0)
+        priceLabel.TextSize = 18
+        priceLabel.Font = Enum.Font.GothamBold
+        priceLabel.TextXAlignment = Enum.TextXAlignment.Center
+        priceLabel.Parent = priceContainer
+    end
+    
+    -- Buy button (always at same position for alignment)
     local buyButton = Instance.new("TextButton")
     buyButton.Name = "BuyButton"
     buyButton.Size = UDim2.new(1, -10, 0, 30)
-    buyButton.Position = UDim2.new(0, 5, 0, 175)
-    buyButton.BackgroundColor3 = isRobuxItem and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(0, 150, 0)
+    buyButton.Position = UDim2.new(0, 5, 0, 170) -- Moved up 5px to fit within 200px frame
+    buyButton.BackgroundColor3 = isRobuxItem and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(0, 150, 0)
     buyButton.BorderSizePixel = 0
     buyButton.Text = isRobuxItem and "BUY (R$)" or "BUY"
     buyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    buyButton.TextScaled = true
+    buyButton.TextSize = 16
     buyButton.Font = Enum.Font.GothamBold
     buyButton.Parent = itemFrame
     
@@ -706,9 +801,14 @@ local function createShopItem(item, container, isRobuxItem)
                 buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
                 buyButton.Text = "OWNED"
                 buyButton.Active = false
+            -- Check if player owns Coin Marble
+            elseif item.itemType == "coin_marble" and _G.ownedMarbles and _G.ownedMarbles["Coin"] then
+                buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+                buyButton.Text = "OWNED"
+                buyButton.Active = false
             else
                 -- For other Robux items, always show as purchasable
-                buyButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+                buyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
                 buyButton.Text = "BUY (R$)"
                 buyButton.Active = true
             end
@@ -752,6 +852,14 @@ local function createShopItem(item, container, isRobuxItem)
                 print("[ShopUI] Checking Diamond Marble ownership. _G.ownedMarbles:", _G.ownedMarbles)
                 if _G.ownedMarbles and _G.ownedMarbles["Diamond"] then
                     print("[ShopUI] Diamond Marble already owned, purchase blocked")
+                    return
+                end
+            end
+            -- Don't allow purchase if already owned (for Coin Marble)
+            if item.itemType == "coin_marble" then
+                print("[ShopUI] Checking Coin Marble ownership. _G.ownedMarbles:", _G.ownedMarbles)
+                if _G.ownedMarbles and _G.ownedMarbles["Coin"] then
+                    print("[ShopUI] Coin Marble already owned, purchase blocked")
                     return
                 end
             end
@@ -827,6 +935,13 @@ local function populateRobuxShopItems()
             price = 100,
             description = "Instantly kill everyone including yourself with a massive explosion! (One-time use)",
             itemType = "nuke_all"
+        },
+        {
+            name = "Coin Marble",
+            price = 350, -- Sale price
+            originalPrice = 1000, -- Original price
+            description = "Unlock the Coin Marble - Drops coins behind you as you move while active",
+            itemType = "coin_marble"
         },
         {
             name = "Gold Marble",
@@ -929,7 +1044,8 @@ local function populateGamepassesItems()
     local gamepassesItems = {
         {
             name = "Permanent 2x Luck",
-            price = 200,
+            price = 200, -- Sale price
+            originalPrice = 500, -- Original price
             description = "Permanent 2x luck bonus (applies to all potions)",
             itemType = "permanent_luck"
         }
@@ -1107,48 +1223,10 @@ local function updateCoinCount(coinCount)
     end
 end
 
--- Function to update luck display
-local function updateLuckDisplay(luckMultiplier, timeLeft)
-    if luckDisplay then
-        -- Get permanent luck bonus from global
-        local permanentBonus = _G.playerPermanentLuckBonus or 1
-        local hasPermanentBonus = permanentBonus > 1
-        
-        if luckMultiplier > 1 then
-            local minutes = math.floor(timeLeft / 60)
-            local seconds = timeLeft % 60
-            if timeLeft > 0 then
-                -- Has active potion
-                luckDisplay.Text = "Current Luck: " .. string.format("%.2f", luckMultiplier) .. "x (" .. minutes .. ":" .. string.format("%02d", seconds) .. ")"
-                luckDisplay.BackgroundColor3 = Color3.fromRGB(100, 50, 150) -- Purple for active luck
-            elseif hasPermanentBonus then
-                -- Only permanent bonus, no potion
-                luckDisplay.Text = "Current Luck: " .. string.format("%.2f", permanentBonus) .. "x (Permanent)"
-                luckDisplay.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold for permanent bonus
-            else
-                luckDisplay.Text = "Current Luck: 1.00x"
-                luckDisplay.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Gray for no luck
-            end
-        elseif hasPermanentBonus then
-            -- Only permanent bonus, no potion
-            luckDisplay.Text = "Current Luck: " .. string.format("%.2f", permanentBonus) .. "x (Permanent)"
-            luckDisplay.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold for permanent bonus
-        else
-            luckDisplay.Text = "Current Luck: 1.00x"
-            luckDisplay.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Gray for no luck
-        end
-    end
-end
-
 -- Function to update Robux data display
 local function updateRobuxDataDisplay(permanentLuckBonus, hasNukeAll)
     -- Store permanent luck bonus globally for shop items to access
     _G.playerPermanentLuckBonus = permanentLuckBonus
-    
-    -- Update luck display to show permanent bonus
-    if luckDisplay then
-        updateLuckDisplay(permanentLuckBonus, 0) -- 0 time left means no potion, but show permanent bonus
-    end
     
     -- Update all shop items to reflect ownership status
     if _G.updateAllShopItems then
@@ -1158,9 +1236,6 @@ end
 
 -- Listen for coin count updates
 coinCountUpdate.OnClientEvent:Connect(updateCoinCount)
-
--- Listen for luck updates
-luckUpdate.OnClientEvent:Connect(updateLuckDisplay)
 
 -- Listen for Robux data updates (use WaitForChild to ensure we don't miss initial data)
 local robuxDataUpdate = remotes:WaitForChild("RobuxDataUpdate", 10)

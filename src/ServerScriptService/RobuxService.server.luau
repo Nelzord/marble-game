@@ -42,14 +42,16 @@ local PRODUCT_IDS = {
     Permanent2xLuck = 1496268446, -- Game pass ID for 2x luck
     GoldMarble = 3505060302, -- Developer Product ID for Gold Marble (one-time purchase)
     DiamondMarble = 3505060590, -- Developer Product ID for Diamond Marble (one-time purchase)
+    CoinMarble = 3510527115, -- Developer Product ID for Coin Marble (one-time purchase)
 }
 
 -- Robux prices (these should match your Roblox Studio settings)
 local ROBUX_PRICES = {
     NukeAll = 100,
-    Permanent2xLuck = 200, -- Adjust price as needed
+    Permanent2xLuck = 200, -- Sale price (original: 500)
     GoldMarble = 300,
     DiamondMarble = 500,
+    CoinMarble = 350, -- Sale price (original: 1000)
 }
 
 -- Function to get or create player data
@@ -313,6 +315,39 @@ function RobuxService:PurchaseDiamondMarble(player: Player)
     return true, "Purchase prompt shown!"
 end
 
+-- Function to purchase Coin Marble (Developer Product - one-time purchase)
+function RobuxService:PurchaseCoinMarble(player: Player)
+    clog("PurchaseCoinMarble called for player:", player.Name)
+    
+    -- Check if player already owns the marble
+    local MarbleService = _G.MarbleService
+    if MarbleService and MarbleService.HasMarble then
+        local hasMarble = MarbleService.HasMarble(player, "Coin")
+        clog("Player has Coin Marble:", hasMarble)
+        if hasMarble then
+            return false, "You already own the Coin Marble!"
+        end
+    else
+        clog("MarbleService not available for ownership check, proceeding with purchase")
+    end
+    
+    -- Prompt the user to purchase the developer product
+    local productId = PRODUCT_IDS.CoinMarble
+    clog("Prompting developer product purchase for Coin Marble, Product ID:", productId)
+    
+    local success, errorMsg = pcall(function()
+        MarketplaceService:PromptProductPurchase(player, productId)
+    end)
+    
+    if not success then
+        clog("Error prompting product purchase:", errorMsg)
+        return false, "Failed to show purchase prompt: " .. tostring(errorMsg)
+    end
+    
+    clog("Developer product purchase prompt shown successfully for Coin Marble")
+    return true, "Purchase prompt shown!"
+end
+
 -- Function to grant a marble to a player
 function RobuxService:GrantMarble(player: Player, marbleId: string)
     clog("GrantMarble called for player:", player.Name, "marbleId:", marbleId)
@@ -536,6 +571,9 @@ function RobuxService:Init()
         elseif itemType == "diamond_marble" then
             clog("Handling diamond_marble purchase request")
             success, message = RobuxService:PurchaseDiamondMarble(player)
+        elseif itemType == "coin_marble" then
+            clog("Handling coin_marble purchase request")
+            success, message = RobuxService:PurchaseCoinMarble(player)
         else
             clog("Unknown item type received:", itemType)
         end
@@ -710,11 +748,28 @@ function RobuxService:Init()
                 RobuxService:GrantMarble(player, "Diamond")
                 clog("Player " .. player.Name .. " purchased Diamond Marble developer product!")
             end
+        elseif prodId == PRODUCT_IDS.CoinMarble and wasPurchased then
+            clog("Coin Marble purchase confirmed for " .. player.Name)
+            
+            -- Check if player already has the marble
+            local MarbleService = _G.MarbleService
+            if MarbleService and MarbleService.HasMarble then
+                if not MarbleService.HasMarble(player, "Coin") then
+                    RobuxService:GrantMarble(player, "Coin")
+                    clog("Player " .. player.Name .. " purchased Coin Marble developer product!")
+                else
+                    clog("Player " .. player.Name .. " already has Coin Marble")
+                end
+            else
+                -- Grant anyway if MarbleService not available
+                RobuxService:GrantMarble(player, "Coin")
+                clog("Player " .. player.Name .. " purchased Coin Marble developer product!")
+            end
         else
-            if prodId == PRODUCT_IDS.NukeAll or prodId == PRODUCT_IDS.GoldMarble or prodId == PRODUCT_IDS.DiamondMarble then
+            if prodId == PRODUCT_IDS.NukeAll or prodId == PRODUCT_IDS.GoldMarble or prodId == PRODUCT_IDS.DiamondMarble or prodId == PRODUCT_IDS.CoinMarble then
                 clog("Product recognized but purchase not completed. ProductId: " .. tostring(prodId) .. ", WasPurchased: " .. tostring(wasPurchased))
             else
-                clog("Product not recognized. ProductId: " .. tostring(prodId) .. " (expected NukeAll: " .. tostring(PRODUCT_IDS.NukeAll) .. ", Gold: " .. tostring(PRODUCT_IDS.GoldMarble) .. ", Diamond: " .. tostring(PRODUCT_IDS.DiamondMarble) .. "), WasPurchased: " .. tostring(wasPurchased))
+                clog("Product not recognized. ProductId: " .. tostring(prodId) .. " (expected NukeAll: " .. tostring(PRODUCT_IDS.NukeAll) .. ", Gold: " .. tostring(PRODUCT_IDS.GoldMarble) .. ", Diamond: " .. tostring(PRODUCT_IDS.DiamondMarble) .. ", Coin: " .. tostring(PRODUCT_IDS.CoinMarble) .. "), WasPurchased: " .. tostring(wasPurchased))
             end
         end
     end)

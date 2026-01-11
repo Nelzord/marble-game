@@ -130,39 +130,47 @@ luckCorner.Parent = luckLabel
 local currentLuckMultiplier = 1.0
 local luckEndTime = 0
 local luckTimerConnection = nil
+local permanentLuckBonus = 1.0
 
 -- Function to update luck display
 local function updateLuckDisplay()
-    if currentLuckMultiplier > 1.0 and luckEndTime > 0 then
-        local currentTime = os.time()
-        local timeLeft = math.max(0, luckEndTime - currentTime)
-        
-        if timeLeft > 0 then
-            local minutes = math.floor(timeLeft / 60)
-            local seconds = timeLeft % 60
-            luckLabel.Text = string.format("Luck: %.1fx (%d:%02d)", currentLuckMultiplier, minutes, seconds)
-            luckLabel.Visible = true
-        else
-            -- Luck expired
-            currentLuckMultiplier = 1.0
-            luckEndTime = 0
-            luckLabel.Visible = false
-            if luckTimerConnection then
-                luckTimerConnection:Disconnect()
-                luckTimerConnection = nil
-            end
-        end
+    local currentTime = os.time()
+    local timeLeft = math.max(0, luckEndTime - currentTime)
+    
+    -- Check if there's an active potion
+    if currentLuckMultiplier > 1.0 and luckEndTime > 0 and timeLeft > 0 then
+        -- Active potion with timer
+        local minutes = math.floor(timeLeft / 60)
+        local seconds = timeLeft % 60
+        luckLabel.Text = string.format("Luck: %.1fx (%d:%02d)", currentLuckMultiplier, minutes, seconds)
+        luckLabel.BackgroundColor3 = Color3.fromRGB(100, 50, 150) -- Purple for active potion
+        luckLabel.Visible = true
+    elseif permanentLuckBonus > 1.0 then
+        -- Only permanent luck, no active potion
+        luckLabel.Text = string.format("Luck: %.1fx (Permanent)", permanentLuckBonus)
+        luckLabel.BackgroundColor3 = Color3.fromRGB(100, 50, 150) -- Purple for permanent
+        luckLabel.Visible = true
     else
+        -- No luck bonus
         luckLabel.Visible = false
+    end
+    
+    -- Clean up timer if potion expired
+    if luckEndTime > 0 and timeLeft <= 0 then
+        luckEndTime = 0
         if luckTimerConnection then
             luckTimerConnection:Disconnect()
             luckTimerConnection = nil
         end
+        -- Update display to show permanent luck if available
+        updateLuckDisplay()
     end
 end
 
 -- Function to start luck timer
 local function startLuckTimer(multiplier, duration)
+    -- The multiplier includes both permanent bonus and potion multiplier
+    -- Store the total multiplier for display
     currentLuckMultiplier = multiplier
     luckEndTime = os.time() + duration
     
@@ -185,15 +193,46 @@ end)
 
 -- Listen for luck updates
 LuckUpdate.OnClientEvent:Connect(function(multiplier: number, timeLeft: number)
-    if multiplier > 1.0 and timeLeft > 0 then
+    -- Extract permanent bonus from total multiplier
+    -- The multiplier includes both permanent bonus and potion multiplier
+    if timeLeft > 0 then
+        -- Active potion - start timer
         startLuckTimer(multiplier, timeLeft)
     else
-        currentLuckMultiplier = 1.0
-        luckEndTime = 0
-        luckLabel.Visible = false
+        -- No active potion - check if there's permanent luck
+        -- The multiplier should be the permanent bonus when timeLeft is 0
+        if multiplier > 1.0 then
+            permanentLuckBonus = multiplier
+            currentLuckMultiplier = 1.0
+            luckEndTime = 0
+        else
+            permanentLuckBonus = 1.0
+            currentLuckMultiplier = 1.0
+            luckEndTime = 0
+        end
+        
         if luckTimerConnection then
             luckTimerConnection:Disconnect()
             luckTimerConnection = nil
         end
+        
+        updateLuckDisplay()
+    end
+end)
+
+-- Listen for Robux data updates to get permanent luck bonus
+local robuxDataUpdate = remotes:WaitForChild("RobuxDataUpdate", 10)
+if robuxDataUpdate then
+    robuxDataUpdate.OnClientEvent:Connect(function(permanentLuckBonusValue: number, hasNukeAll: boolean)
+        permanentLuckBonus = permanentLuckBonusValue or 1.0
+        updateLuckDisplay()
+    end)
+end
+
+-- Request Robux data on script load to get permanent luck bonus
+task.spawn(function()
+    local requestRobuxData = remotes:FindFirstChild("RequestRobuxData")
+    if requestRobuxData then
+        requestRobuxData:FireServer()
     end
 end) 
