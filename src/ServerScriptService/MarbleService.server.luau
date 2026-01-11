@@ -536,6 +536,19 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	character:SetAttribute("MoonGlowActive", false)
 	character:SetAttribute("PharaohGlowActive", false)
 	
+	-- Set coin multipliers for Gold and Diamond marbles (passive effect)
+	if marbleId == "Gold" then
+		character:SetAttribute("GoldMultiplier", 5.0) -- 5x coins
+		dprint("Set GoldMultiplier to 5.0 for Gold marble")
+	elseif marbleId == "Diamond" then
+		character:SetAttribute("DiamondMultiplier", 10.0) -- 10x coins
+		dprint("Set DiamondMultiplier to 10.0 for Diamond marble")
+	else
+		-- Clear multipliers for other marbles
+		character:SetAttribute("GoldMultiplier", nil)
+		character:SetAttribute("DiamondMultiplier", nil)
+	end
+	
 	character.Parent = workspace
 
 	local hrp = ensureHRP(character)
@@ -774,6 +787,21 @@ Remotes.EquipMarble.OnServerEvent:Connect(function(player: Player, marbleId: str
 		clearHRPTextures(character)
 		applyMarbleVisual(character, marbleId)
 		ensureNameplate(character, player, marbleId)
+		
+		-- Set coin multipliers for Gold and Diamond marbles (passive effect)
+		if marbleId == "Gold" then
+			character:SetAttribute("GoldMultiplier", 5.0) -- 5x coins
+			character:SetAttribute("DiamondMultiplier", nil) -- Clear Diamond multiplier
+			dprint("Set GoldMultiplier to 5.0 for Gold marble on equip")
+		elseif marbleId == "Diamond" then
+			character:SetAttribute("DiamondMultiplier", 10.0) -- 10x coins
+			character:SetAttribute("GoldMultiplier", nil) -- Clear Gold multiplier
+			dprint("Set DiamondMultiplier to 10.0 for Diamond marble on equip")
+		else
+			-- Clear multipliers for other marbles
+			character:SetAttribute("GoldMultiplier", nil)
+			character:SetAttribute("DiamondMultiplier", nil)
+		end
 		
 		-- Only activate PASSIVE abilities on equip (cooldown = 0)
 		-- Active abilities (cooldown > 0) should only be triggered by player input
