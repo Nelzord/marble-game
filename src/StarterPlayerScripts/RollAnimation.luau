@@ -206,6 +206,8 @@ function RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
 	local changeInterval = 0.1 -- Change odds display every 0.1 seconds
 	local waitingForResult = false
 	local resultReceived = false
+	local waitStartTime = nil
+	local MAX_WAIT_TIME = 5 -- Maximum time to wait for result (5 seconds)
 	
 	connection = game:GetService("RunService").Heartbeat:Connect(function()
 		local elapsed = tick() - startTime
@@ -255,14 +257,20 @@ function RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
 			-- Animation complete - but wait for server result
 			if not waitingForResult then
 				waitingForResult = true
+				waitStartTime = currentTime
 				
-				-- Change text to waiting for result
-				if rollAnimationText then
-					rollAnimationText.Text = "WAITING FOR RESULT..."
-					rollAnimationText.TextColor3 = Color3.fromRGB(255, 255, 255)
-				end
-				if rollAnimationShadow then
-					rollAnimationShadow.Text = "WAITING FOR RESULT..."
+				-- If result was already received (arrived early), proceed immediately
+				if resultReceived then
+					-- Result already received, proceed to show it
+				else
+					-- Change text to waiting for result
+					if rollAnimationText then
+						rollAnimationText.Text = "WAITING FOR RESULT..."
+						rollAnimationText.TextColor3 = Color3.fromRGB(255, 255, 255)
+					end
+					if rollAnimationShadow then
+						rollAnimationShadow.Text = "WAITING FOR RESULT..."
+					end
 				end
 				
 				-- Stop the rolling sound
@@ -272,6 +280,27 @@ function RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
 				-- Keep progress bar at max width (respecting margins)
 				local maxWidth = (frame.AbsoluteSize.X - 40) / frame.AbsoluteSize.X
 				progressBar.Size = UDim2.new(maxWidth, 0, 0, 6)
+			else
+				-- Check timeout - if we've been waiting too long, proceed anyway
+				if waitStartTime and not resultReceived then
+					local waitElapsed = currentTime - waitStartTime
+					if waitElapsed >= MAX_WAIT_TIME then
+						print("WARNING: Roll result timeout after", waitElapsed, "seconds - proceeding without result")
+						resultReceived = true -- Force proceed
+						-- Set a default error message if resultDisplay doesn't have text
+						local resultDisplay = frame:FindFirstChild("ResultDisplay")
+						if resultDisplay then
+							if resultDisplay.Text == "" then
+								resultDisplay.Text = "Roll timeout - please try again"
+								resultDisplay.TextColor3 = Color3.fromRGB(255, 100, 100)
+							else
+								print("ResultDisplay already has text:", resultDisplay.Text)
+							end
+						else
+							print("ERROR: ResultDisplay not found during timeout")
+						end
+					end
+				end
 			end
 		end
 		
@@ -348,7 +377,11 @@ function RollAnimation.startRollAnimation(screen, Marbles, RollForMarble)
 	-- Return a function that can be called when we get the result
 	return function()
 		print("Roll callback called - setting resultReceived to true")
-		resultReceived = true
+		if not resultReceived then
+			resultReceived = true
+		else
+			print("WARNING: Roll callback called multiple times")
+		end
 	end
 end
 
