@@ -256,6 +256,196 @@ local currentCoins = 0
 -- Store globally so buy buttons can access it
 _G.currentCoins = 0
 
+-- Item info popup (created once, reused)
+local itemInfoPopup = nil
+local function createItemInfoPopup()
+    if itemInfoPopup then
+        return itemInfoPopup
+    end
+    
+    local TweenService = game:GetService("TweenService")
+    
+    -- Create popup background overlay (TextButton so it can receive clicks)
+    local overlay = Instance.new("TextButton")
+    overlay.Name = "ItemInfoOverlay"
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.Position = UDim2.new(0, 0, 0, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.5
+    overlay.BorderSizePixel = 0
+    overlay.Text = ""
+    overlay.AutoButtonColor = false
+    overlay.ZIndex = 50
+    overlay.Visible = false
+    overlay.Parent = shopGui
+    
+    -- Create popup frame
+    local popup = Instance.new("Frame")
+    popup.Name = "ItemInfoPopup"
+    popup.Size = UDim2.new(0, 400, 0, 300)
+    popup.Position = UDim2.new(0.5, 0, 0.5, 0)
+    popup.AnchorPoint = Vector2.new(0.5, 0.5)
+    popup.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    popup.BorderSizePixel = 0
+    popup.ZIndex = 51
+    popup.Visible = false
+    popup.Parent = shopGui
+    
+    local popupCorner = Instance.new("UICorner")
+    popupCorner.CornerRadius = UDim.new(0, 12)
+    popupCorner.Parent = popup
+    
+    -- Header
+    local header = Instance.new("TextLabel")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 50)
+    header.Position = UDim2.new(0, 0, 0, 0)
+    header.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    header.BorderSizePixel = 0
+    header.Text = "Item Information"
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.TextSize = 22
+    header.Font = Enum.Font.GothamBold
+    header.TextXAlignment = Enum.TextXAlignment.Center
+    header.TextYAlignment = Enum.TextYAlignment.Center
+    header.ZIndex = 52
+    header.Parent = popup
+    
+    local headerCorner = Instance.new("UICorner")
+    headerCorner.CornerRadius = UDim.new(0, 12)
+    headerCorner.Parent = header
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 40, 0, 40)
+    closeButton.Position = UDim2.new(1, -50, 0, 5)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    closeButton.BorderSizePixel = 0
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextScaled = true
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.ZIndex = 52
+    closeButton.Parent = header
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.Parent = closeButton
+    
+    -- Item name
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Size = UDim2.new(1, -40, 0, 40)
+    nameLabel.Position = UDim2.new(0, 20, 0, 60)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = "Item Name"
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextSize = 24
+    nameLabel.TextWrapped = true
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.TextYAlignment = Enum.TextYAlignment.Center
+    nameLabel.ZIndex = 52
+    nameLabel.Parent = popup
+    
+    -- Price label
+    local priceLabel = Instance.new("TextLabel")
+    priceLabel.Name = "PriceLabel"
+    priceLabel.Size = UDim2.new(1, -40, 0, 30)
+    priceLabel.Position = UDim2.new(0, 20, 0, 100)
+    priceLabel.BackgroundTransparency = 1
+    priceLabel.Text = "Price: 100 Coins"
+    priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+    priceLabel.TextSize = 20
+    priceLabel.TextWrapped = true
+    priceLabel.Font = Enum.Font.Gotham
+    priceLabel.TextXAlignment = Enum.TextXAlignment.Left
+    priceLabel.TextYAlignment = Enum.TextYAlignment.Center
+    priceLabel.ZIndex = 52
+    priceLabel.Parent = popup
+    
+    -- Description label (scrollable)
+    local descriptionFrame = Instance.new("Frame")
+    descriptionFrame.Name = "DescriptionFrame"
+    descriptionFrame.Size = UDim2.new(1, -40, 1, -150)
+    descriptionFrame.Position = UDim2.new(0, 20, 0, 140)
+    descriptionFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    descriptionFrame.BorderSizePixel = 0
+    descriptionFrame.ZIndex = 52
+    descriptionFrame.Parent = popup
+    
+    local descCorner = Instance.new("UICorner")
+    descCorner.CornerRadius = UDim.new(0, 8)
+    descCorner.Parent = descriptionFrame
+    
+    local descriptionLabel = Instance.new("TextLabel")
+    descriptionLabel.Name = "DescriptionLabel"
+    descriptionLabel.Size = UDim2.new(1, -20, 1, -20)
+    descriptionLabel.Position = UDim2.new(0, 10, 0, 10)
+    descriptionLabel.BackgroundTransparency = 1
+    descriptionLabel.Text = "Item description goes here..."
+    descriptionLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    descriptionLabel.TextSize = 20
+    descriptionLabel.TextWrapped = true
+    descriptionLabel.Font = Enum.Font.Gotham
+    descriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descriptionLabel.TextYAlignment = Enum.TextYAlignment.Top
+    descriptionLabel.ZIndex = 53
+    descriptionLabel.Parent = descriptionFrame
+    
+    -- Close button functionality
+    local function closePopup()
+        overlay.Visible = false
+        popup.Visible = false
+    end
+    
+    closeButton.MouseButton1Click:Connect(closePopup)
+    overlay.MouseButton1Click:Connect(closePopup)
+    
+    itemInfoPopup = {
+        overlay = overlay,
+        popup = popup,
+        nameLabel = nameLabel,
+        priceLabel = priceLabel,
+        descriptionLabel = descriptionLabel,
+        close = closePopup
+    }
+    
+    return itemInfoPopup
+end
+
+-- Function to show item info popup
+local function showItemInfoPopup(itemName, description, price, isRobuxItem)
+    local popup = createItemInfoPopup()
+    
+    -- Update popup content
+    popup.nameLabel.Text = itemName
+    popup.priceLabel.Text = "Price: " .. price .. (isRobuxItem and " Robux" or " Coins")
+    popup.priceLabel.TextColor3 = isRobuxItem and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(255, 215, 0)
+    popup.descriptionLabel.Text = description
+    
+    -- Show popup with animation
+    popup.overlay.Visible = true
+    popup.popup.Visible = true
+    
+    -- Make sure text is visible
+    popup.nameLabel.Visible = true
+    popup.priceLabel.Visible = true
+    popup.descriptionLabel.Visible = true
+    
+    local TweenService = game:GetService("TweenService")
+    popup.popup.Position = UDim2.new(0.5, 0, 0.4, -50)
+    popup.popup.BackgroundTransparency = 1
+    
+    local slideIn = TweenService:Create(
+        popup.popup,
+        TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 0}
+    )
+    slideIn:Play()
+end
+
 -- Function to create shop item UI
 local function createShopItem(item, container, isRobuxItem)
     local itemFrame = Instance.new("Frame")
@@ -281,6 +471,32 @@ local function createShopItem(item, container, isRobuxItem)
     local imageCorner = Instance.new("UICorner")
     imageCorner.CornerRadius = UDim.new(0, 6)
     imageCorner.Parent = imagePlaceholder
+    
+    -- Info icon button (top-right corner of item frame)
+    local infoButton = Instance.new("TextButton")
+    infoButton.Name = "InfoButton"
+    infoButton.Size = UDim2.new(0, 24, 0, 24)
+    infoButton.Position = UDim2.new(1, -30, 0, 5)
+    infoButton.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+    infoButton.BorderSizePixel = 0
+    infoButton.Text = "i"
+    infoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    infoButton.TextScaled = true
+    infoButton.Font = Enum.Font.GothamBold
+    infoButton.ZIndex = 10
+    infoButton.Parent = itemFrame
+    
+    local infoCorner = Instance.new("UICorner")
+    infoCorner.CornerRadius = UDim.new(0, 12)
+    infoCorner.Parent = infoButton
+    
+    -- Hover effects for info button
+    infoButton.MouseEnter:Connect(function()
+        infoButton.BackgroundColor3 = Color3.fromRGB(120, 170, 255)
+    end)
+    infoButton.MouseLeave:Connect(function()
+        infoButton.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+    end)
     
     -- Item image or viewport (for marbles)
     local itemImage = nil
@@ -583,6 +799,11 @@ local function createShopItem(item, container, isRobuxItem)
     -- Initial button state update
     updateButtonState()
     
+    -- Info button functionality - show item description popup
+    infoButton.MouseButton1Click:Connect(function()
+        showItemInfoPopup(item.name, item.description or "No description available.", item.price, isRobuxItem)
+    end)
+    
     -- Return update function
     return updateButtonState
 end
@@ -610,13 +831,13 @@ local function populateRobuxShopItems()
         {
             name = "Gold Marble",
             price = 300,
-            description = "Unlock the Gold Marble - Doubles all coins collected while active",
+            description = "Unlock the Gold Marble - Multiplies all coins collected by 5x while active",
             itemType = "gold_marble"
         },
         {
             name = "Diamond Marble",
             price = 500,
-            description = "Unlock the Diamond Marble - Triples all coins collected while active",
+            description = "Unlock the Diamond Marble - Multiplies all coins collected by 10x while active",
             itemType = "diamond_marble"
         }
     }

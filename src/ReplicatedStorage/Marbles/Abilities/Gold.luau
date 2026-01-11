@@ -1,11 +1,11 @@
--- Gold marble ability: 2x coin multiplier
+-- Gold marble ability: 5x coin multiplier
 local Ability = {}
 
 -- Services
 local Players = game:GetService("Players")
 
 function Ability.Description()
-	return "Gold: Doubles all coins collected while active."
+	return "Gold: Multiplies all coins collected by 5x while active."
 end
 
 function Ability.Cooldown()
@@ -24,15 +24,15 @@ function Ability.ActivateAbility(player: Player, character: Model)
 		return 
 	end
 	
-	-- Set gold multiplier to 2.0 (2x coins)
-	character:SetAttribute("GoldMultiplier", 2.0)
-	print("GOLD ABILITY: Set GoldMultiplier attribute to 2.0")
+	-- Set gold multiplier to 5.0 (5x coins)
+	character:SetAttribute("GoldMultiplier", 5.0)
+	print("GOLD ABILITY: Set GoldMultiplier attribute to 5.0")
 	
 	-- Set gold glow attribute to true for visual effect
 	character:SetAttribute("GoldGlowActive", true)
 	print("GOLD ABILITY: Set GoldGlowActive attribute to true")
 	
-	print("GOLD ABILITY: Gold multiplier activated - 2x coins")
+	print("GOLD ABILITY: Gold multiplier activated - 5x coins")
 end
 
 function Ability.DeactivateAbility(player: Player, character: Model)

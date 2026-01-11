@@ -1,11 +1,11 @@
--- Diamond marble ability: 3x coin multiplier
+-- Diamond marble ability: 10x coin multiplier
 local Ability = {}
 
 -- Services
 local Players = game:GetService("Players")
 
 function Ability.Description()
-	return "Diamond: Triples all coins collected while active."
+	return "Diamond: Multiplies all coins collected by 10x while active."
 end
 
 function Ability.Cooldown()
@@ -24,15 +24,15 @@ function Ability.ActivateAbility(player: Player, character: Model)
 		return 
 	end
 	
-	-- Set diamond multiplier to 3.0 (3x coins)
-	character:SetAttribute("DiamondMultiplier", 3.0)
-	print("DIAMOND ABILITY: Set DiamondMultiplier attribute to 3.0")
+	-- Set diamond multiplier to 10.0 (10x coins)
+	character:SetAttribute("DiamondMultiplier", 10.0)
+	print("DIAMOND ABILITY: Set DiamondMultiplier attribute to 10.0")
 	
 	-- Set diamond glow attribute to true for visual effect
 	character:SetAttribute("DiamondGlowActive", true)
 	print("DIAMOND ABILITY: Set DiamondGlowActive attribute to true")
 	
-	print("DIAMOND ABILITY: Diamond multiplier activated - 3x coins")
+	print("DIAMOND ABILITY: Diamond multiplier activated - 10x coins")
 end
 
 function Ability.DeactivateAbility(player: Player, character: Model)
