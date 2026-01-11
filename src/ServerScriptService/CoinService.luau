@@ -56,6 +56,10 @@ local Remotes = getOrCreateRemotes()
 local coinsStore = DataStoreService:GetDataStore("MarbleCoins")
 local playerCoins: { [Player]: number } = {}
 
+-- Debounce DataStore saves to prevent throttling during rapid coin collection
+local saveDebounce: { [Player]: thread? } = {}
+local SAVE_DEBOUNCE_TIME = 2 -- Save after 2 seconds of no coin changes
+
 local function getCoins(player: Player): number
 	return playerCoins[player] or 0
 end
@@ -64,15 +68,29 @@ local function sendCoins(player: Player)
 	Remotes.CoinCountUpdate:FireClient(player, getCoins(player))
 end
 
+local function saveCoinsToDataStore(player: Player, amount: number)
+	-- Cancel previous save attempt for this player
+	if saveDebounce[player] then
+		task.cancel(saveDebounce[player])
+		saveDebounce[player] = nil
+	end
+	
+	-- Schedule new save after debounce time
+	saveDebounce[player] = task.delay(SAVE_DEBOUNCE_TIME, function()
+		saveDebounce[player] = nil
+		task.spawn(function()
+			pcall(function()
+				coinsStore:SetAsync("coins_" .. player.UserId, amount)
+			end)
+		end)
+	end)
+end
+
 local function setCoins(player: Player, amount: number)
 	playerCoins[player] = amount
 	sendCoins(player)
-	-- Save async
-	task.spawn(function()
-		pcall(function()
-			coinsStore:SetAsync("coins_" .. player.UserId, amount)
-		end)
-	end)
+	-- Save with debounce to prevent DataStore throttling
+	saveCoinsToDataStore(player, amount)
 end
 
 local function addCoins(player: Player, delta: number)
@@ -105,6 +123,14 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	local amount = getCoins(player)
+	
+	-- Cancel any pending debounced save
+	if saveDebounce[player] then
+		task.cancel(saveDebounce[player])
+		saveDebounce[player] = nil
+	end
+	
+	-- Force immediate save when player leaves
 	local ok, err = pcall(function()
 		coinsStore:SetAsync("coins_" .. player.UserId, amount)
 	end)
@@ -112,6 +138,7 @@ Players.PlayerRemoving:Connect(function(player)
 		warn("[CoinService] DataStore SetAsync failed:", err)
 	end
 	playerCoins[player] = nil
+	saveDebounce[player] = nil
 end)
 
 -- Handle coin count requests

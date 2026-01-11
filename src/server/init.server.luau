@@ -23,3 +23,7 @@ print("BadgeService loaded successfully!")
 -- Initialize ShopService
 local ShopService = require(script.Parent.Parent.ServerScriptService.ShopService)
 print("ShopService loaded successfully!")
+
+-- Initialize CoinDropEventService
+local CoinDropEventService = require(script.Parent.Parent.ServerScriptService.CoinDropEventService)
+print("CoinDropEventService loaded successfully!")
