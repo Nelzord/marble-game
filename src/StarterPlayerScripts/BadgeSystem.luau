@@ -243,22 +243,23 @@ function BadgeSystem.rebuildBadgesUI(list, grid, worldNumber: number?)
 		
 		-- Set canvas size to show the message
 		list.CanvasSize = UDim2.new(0, 0, 0, listHeight)
-	else
-		-- Get badges to display
-		local badgesToShow
-		if worldNumber then
-			badgesToShow = BadgeSystem.getBadgesByWorld(worldNumber)
-		else
-			badgesToShow = BadgeSystem.getAllBadges()
-		end
-		
-		for _, badge in ipairs(badgesToShow) do
-			local tile = BadgeSystem.createBadgeTile(badge, list, grid)
-			tile.Parent = list
-		end
-		
-		BadgeSystem.refreshCanvasSize(list, grid)
+		return
 	end
+	
+	-- Get badges to display
+	local badgesToShow
+	if worldNumber then
+		badgesToShow = BadgeSystem.getBadgesByWorld(worldNumber)
+	else
+		badgesToShow = BadgeSystem.getAllBadges()
+	end
+	
+	for _, badge in ipairs(badgesToShow) do
+		local tile = BadgeSystem.createBadgeTile(badge, list, grid)
+		tile.Parent = list
+	end
+	
+	BadgeSystem.refreshCanvasSize(list, grid)
 end
 
 return BadgeSystem

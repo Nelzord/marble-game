@@ -4,9 +4,13 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
+local RobloxBadgeService = game:GetService("BadgeService")
 
 local BADGE_DEBUG = true
 local RESET_BADGES = false -- Set to true to reset all player badges on join
+
+-- Roblox badge ID for first join
+local FIRST_JOIN_BADGE_ID = 827475206998729
 
 local function clog(...)
 	if BADGE_DEBUG then
@@ -195,6 +199,31 @@ Players.PlayerAdded:Connect(function(player)
 	end
 	
 	playerBadges[player] = badges
+	
+	-- Award first join Roblox badge
+	task.spawn(function()
+		local success, hasBadge = pcall(function()
+			return RobloxBadgeService:UserHasBadgeAsync(player.UserId, FIRST_JOIN_BADGE_ID)
+		end)
+		
+		if success and not hasBadge then
+			-- Player doesn't have the badge yet, award it
+			local awardSuccess, result = pcall(function()
+				RobloxBadgeService:AwardBadge(player.UserId, FIRST_JOIN_BADGE_ID)
+				return true
+			end)
+			
+			if awardSuccess then
+				clog("Awarded first join badge", FIRST_JOIN_BADGE_ID, "to", player.Name)
+			else
+				clog("Failed to award first join badge to", player.Name, ":", result)
+			end
+		elseif success and hasBadge then
+			clog("Player", player.Name, "already has first join badge")
+		else
+			clog("Failed to check first join badge status for", player.Name)
+		end
+	end)
 	
 	-- Send initial badge update
 	sendBadgeUpdate(player)
