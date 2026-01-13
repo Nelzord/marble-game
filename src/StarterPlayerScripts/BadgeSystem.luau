@@ -217,15 +217,48 @@ function BadgeSystem.rebuildBadgesUI(list, grid, worldNumber: number?)
 		end
 	end
 	
-	-- Get badges to display
-	local badgesToShow = if worldNumber then BadgeSystem.getBadgesByWorld(worldNumber) else BadgeSystem.getAllBadges()
-	
-	for _, badge in ipairs(badgesToShow) do
-		local tile = BadgeSystem.createBadgeTile(badge, list, grid)
-		tile.Parent = list
+	-- If World 2 is selected, show "Coming Soon" instead of badges
+	if worldNumber == 2 then
+		-- Get list height to center the message
+		local listHeight = list.AbsoluteSize.Y
+		local messageHeight = 200
+		local topOffset = (listHeight - messageHeight) / 2
+		
+		-- Create "Coming Soon" message
+		local comingSoonFrame = Instance.new("Frame")
+		comingSoonFrame.Size = UDim2.new(1, -24, 0, messageHeight)
+		comingSoonFrame.Position = UDim2.new(0, 12, 0, math.max(0, topOffset))
+		comingSoonFrame.BackgroundTransparency = 1
+		comingSoonFrame.Parent = list
+		
+		local comingSoonLabel = Instance.new("TextLabel")
+		comingSoonLabel.Size = UDim2.new(1, 0, 1, 0)
+		comingSoonLabel.Position = UDim2.new(0, 0, 0, 0)
+		comingSoonLabel.BackgroundTransparency = 1
+		comingSoonLabel.Text = "Coming Soon"
+		comingSoonLabel.TextColor3 = Color3.new(1, 1, 1)
+		comingSoonLabel.TextScaled = true
+		comingSoonLabel.Font = Enum.Font.GothamBold
+		comingSoonLabel.Parent = comingSoonFrame
+		
+		-- Set canvas size to show the message
+		list.CanvasSize = UDim2.new(0, 0, 0, listHeight)
+	else
+		-- Get badges to display
+		local badgesToShow
+		if worldNumber then
+			badgesToShow = BadgeSystem.getBadgesByWorld(worldNumber)
+		else
+			badgesToShow = BadgeSystem.getAllBadges()
+		end
+		
+		for _, badge in ipairs(badgesToShow) do
+			local tile = BadgeSystem.createBadgeTile(badge, list, grid)
+			tile.Parent = list
+		end
+		
+		BadgeSystem.refreshCanvasSize(list, grid)
 	end
-	
-	BadgeSystem.refreshCanvasSize(list, grid)
 end
 
 return BadgeSystem

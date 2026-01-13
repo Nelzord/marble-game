@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -37,7 +38,7 @@ corner.Parent = label
 local quickBuyContainer = Instance.new("Frame")
 quickBuyContainer.Name = "QuickBuyContainer"
 quickBuyContainer.BackgroundTransparency = 1
-quickBuyContainer.Size = UDim2.fromOffset(70, 130)
+quickBuyContainer.Size = UDim2.fromOffset(70, 200) -- Increased height for new button
 quickBuyContainer.Position = UDim2.new(1, -20, 0, 65)
 quickBuyContainer.AnchorPoint = Vector2.new(1, 0)
 quickBuyContainer.Parent = screen
@@ -49,7 +50,43 @@ quickBuyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 quickBuyLayout.Padding = UDim.new(0, 6)
 quickBuyLayout.Parent = quickBuyContainer
 
--- Permanent 2x Luck Quick Buy Button (Robux item) - BIGGER, ON TOP
+-- Free Mythical Marble Button (above luck button)
+local freeMarbleButton = Instance.new("ImageButton")
+freeMarbleButton.Name = "FreeMythicalMarble"
+freeMarbleButton.Size = UDim2.fromOffset(60, 60)
+freeMarbleButton.BackgroundColor3 = Color3.fromRGB(150, 100, 200) -- Purple/mythical color
+freeMarbleButton.BorderSizePixel = 0
+freeMarbleButton.Image = "rbxassetid://94105658467584"
+freeMarbleButton.ScaleType = Enum.ScaleType.Fit
+freeMarbleButton.LayoutOrder = 0 -- Above luck button
+freeMarbleButton.Parent = quickBuyContainer
+
+local freeMarbleCorner = Instance.new("UICorner")
+freeMarbleCorner.CornerRadius = UDim.new(0, 10)
+freeMarbleCorner.Parent = freeMarbleButton
+
+-- Countdown label at bottom of button (small badge style)
+local freeMarbleCountdown = Instance.new("TextLabel")
+freeMarbleCountdown.Name = "Countdown"
+freeMarbleCountdown.Size = UDim2.new(1, -4, 0, 24) -- Full width minus padding, increased height for larger text
+freeMarbleCountdown.Position = UDim2.new(0, 2, 1, -2) -- At the very bottom with 2px margin
+freeMarbleCountdown.AnchorPoint = Vector2.new(0, 1) -- Anchor to bottom-left
+freeMarbleCountdown.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+freeMarbleCountdown.BackgroundTransparency = 0.4
+freeMarbleCountdown.BorderSizePixel = 0
+freeMarbleCountdown.TextColor3 = Color3.new(1, 1, 1)
+freeMarbleCountdown.Font = Enum.Font.GothamBold
+freeMarbleCountdown.TextSize = 16 -- Increased from 12 to 16 for larger text
+freeMarbleCountdown.Text = "10:00"
+freeMarbleCountdown.TextStrokeTransparency = 0.5
+freeMarbleCountdown.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+freeMarbleCountdown.Parent = freeMarbleButton
+
+local freeMarbleCountdownCorner = Instance.new("UICorner")
+freeMarbleCountdownCorner.CornerRadius = UDim.new(0, 4)
+freeMarbleCountdownCorner.Parent = freeMarbleCountdown
+
+-- Permanent 2x Luck Quick Buy Button (Robux item) - BELOW free marble button
 local luckButton = Instance.new("ImageButton")
 luckButton.Name = "LuckQuickBuy"
 luckButton.Size = UDim2.fromOffset(60, 60)
@@ -89,6 +126,7 @@ local function setupHoverEffects(button, normalColor, hoverColor)
     end)
 end
 
+setupHoverEffects(freeMarbleButton, Color3.fromRGB(150, 100, 200), Color3.fromRGB(180, 130, 230))
 setupHoverEffects(luckButton, Color3.fromRGB(100, 50, 150), Color3.fromRGB(140, 70, 190))
 setupHoverEffects(nukeButton, Color3.fromRGB(180, 60, 60), Color3.fromRGB(220, 80, 80))
 
@@ -108,7 +146,186 @@ nukeButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Luck timer label
+-- Free Mythical Marble countdown and claim logic (client-side only, resets on join)
+local COOLDOWN_DURATION = 600 -- 10 minutes (600 seconds)
+local freeMarbleTimeRemaining = COOLDOWN_DURATION -- Start at 10 minutes when joining
+local canClaim = false -- Track if player can claim
+
+-- Function to update free marble countdown display
+local function updateFreeMarbleDisplay()
+    if freeMarbleTimeRemaining > 0 then
+        local minutes = math.floor(freeMarbleTimeRemaining / 60)
+        local seconds = freeMarbleTimeRemaining % 60
+        freeMarbleCountdown.Text = string.format("%d:%02d", minutes, seconds)
+        freeMarbleCountdown.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black during countdown
+        freeMarbleCountdown.Visible = true
+        freeMarbleButton.Active = false -- Disable clicking during countdown
+        canClaim = false
+    else
+        freeMarbleCountdown.Text = "READY"
+        freeMarbleCountdown.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- Green when ready
+        freeMarbleCountdown.Visible = true
+        freeMarbleButton.Active = true -- Enable clicking when ready
+        canClaim = true
+    end
+end
+
+-- Initial display update
+updateFreeMarbleDisplay()
+
+-- Update countdown every second (client-side only)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if freeMarbleTimeRemaining > 0 then
+            freeMarbleTimeRemaining = math.max(0, freeMarbleTimeRemaining - 1)
+            updateFreeMarbleDisplay()
+        end
+    end
+end)
+
+-- Handle Free Mythical Marble button click
+freeMarbleButton.MouseButton1Click:Connect(function()
+    if not canClaim or freeMarbleTimeRemaining > 0 then
+        return -- Still on cooldown
+    end
+    
+    -- Reset timer after claiming
+    freeMarbleTimeRemaining = COOLDOWN_DURATION
+    canClaim = false
+    updateFreeMarbleDisplay()
+    
+    local claimRemote = remotes:FindFirstChild("ClaimFreeMythicalMarble")
+    if claimRemote then
+        claimRemote:FireServer()
+    end
+end)
+
+-- Create marble unlock popup
+local function createMarbleUnlockPopup()
+    local popup = Instance.new("Frame")
+    popup.Name = "MarbleUnlockPopup"
+    popup.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    popup.BorderSizePixel = 0
+    popup.Size = UDim2.fromOffset(400, 120)
+    popup.Position = UDim2.new(0.5, 0, 0.2, 0)
+    popup.AnchorPoint = Vector2.new(0.5, 0.5)
+    popup.Parent = screen
+    popup.ZIndex = 20
+    popup.Visible = false
+    popup.ClipsDescendants = false
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = popup
+    
+    -- Add border glow effect
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(255, 0, 0) -- Red color
+    border.Thickness = 3
+    border.Transparency = 0
+    border.Parent = popup
+    
+    -- Marble icon/emoji
+    local icon = Instance.new("TextLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.fromOffset(60, 60)
+    icon.Position = UDim2.new(0, 20, 0.5, 0)
+    icon.AnchorPoint = Vector2.new(0, 0.5)
+    icon.BackgroundTransparency = 1
+    icon.Text = "💎"
+    icon.TextScaled = true
+    icon.Font = Enum.Font.GothamBold
+    icon.TextColor3 = Color3.fromRGB(150, 100, 200)
+    icon.TextTransparency = 0
+    icon.TextXAlignment = Enum.TextXAlignment.Center
+    icon.TextYAlignment = Enum.TextYAlignment.Center
+    icon.ZIndex = 21
+    icon.Visible = true
+    icon.Parent = popup
+    
+    -- Marble name label
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Size = UDim2.new(1, -100, 0, 40)
+    nameLabel.Position = UDim2.new(0, 100, 0, 20)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = "Castle Marble"
+    nameLabel.TextScaled = true
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+    nameLabel.TextTransparency = 0
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.TextYAlignment = Enum.TextYAlignment.Center
+    nameLabel.ZIndex = 21
+    nameLabel.Visible = true
+    nameLabel.Parent = popup
+    
+    -- Status label (Unlocked X/200)
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "StatusLabel"
+    statusLabel.Size = UDim2.new(1, -100, 0, 30)
+    statusLabel.Position = UDim2.new(0, 100, 0, 60)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "Unlocked 1/200"
+    statusLabel.TextScaled = true
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
+    statusLabel.TextTransparency = 0
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    statusLabel.TextYAlignment = Enum.TextYAlignment.Center
+    statusLabel.ZIndex = 21
+    statusLabel.Visible = true
+    statusLabel.Parent = popup
+    
+    -- Function to show popup
+    local function showPopup(marbleName: string, ownedCount: number, totalCount: number)
+        nameLabel.Text = marbleName .. " Marble"
+        statusLabel.Text = string.format("Unlocked %d/%d", ownedCount, totalCount)
+        
+        -- Reset position and transparency
+        popup.Position = UDim2.new(0.5, 0, 0.1, -50)
+        popup.BackgroundTransparency = 0
+        popup.Visible = true
+        
+        -- Animate in
+        local slideIn = TweenService:Create(
+            popup,
+            TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+            {Position = UDim2.new(0.5, 0, 0.2, 0), BackgroundTransparency = 0}
+        )
+        slideIn:Play()
+        
+        -- Wait then animate out
+        task.wait(2.5)
+        
+        local slideOut = TweenService:Create(
+            popup,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+            {Position = UDim2.new(0.5, 0, 0.1, -50), BackgroundTransparency = 1}
+        )
+        slideOut:Play()
+        
+        slideOut.Completed:Connect(function()
+            popup.Visible = false
+        end)
+    end
+    
+    return showPopup
+end
+
+-- Create the popup and get the show function
+local showMarbleUnlockPopup = createMarbleUnlockPopup()
+
+-- Listen for marble unlock notifications
+local marbleUnlocked = remotes:WaitForChild("MarbleUnlocked", 10)
+if marbleUnlocked then
+    marbleUnlocked.OnClientEvent:Connect(function(marbleName: string, ownedCount: number, totalCount: number)
+        showMarbleUnlockPopup(marbleName, ownedCount, totalCount)
+    end)
+end
+
+-- Luck timer label (moved lower to avoid overlapping buttons)
 local luckLabel = Instance.new("TextLabel")
 luckLabel.BackgroundTransparency = 0.2
 luckLabel.BackgroundColor3 = Color3.fromRGB(100, 50, 150) -- Purple for luck
@@ -116,7 +333,7 @@ luckLabel.TextColor3 = Color3.new(1,1,1)
 luckLabel.Font = Enum.Font.GothamBold
 luckLabel.TextScaled = true
 luckLabel.Size = UDim2.fromOffset(160, 30)
-luckLabel.Position = UDim2.new(1, -20, 0, 200)
+luckLabel.Position = UDim2.new(1, -20, 0, 280) -- Moved lower to avoid overlapping buttons
 luckLabel.AnchorPoint = Vector2.new(1, 0)
 luckLabel.Text = "Luck: 1.0x"
 luckLabel.Visible = false -- Initially hidden
