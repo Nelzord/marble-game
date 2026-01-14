@@ -31,3 +31,7 @@ print("CoinDropEventService loaded successfully!")
 -- Initialize FreeMythicalMarbleService
 local FreeMythicalMarbleService = require(script.Parent.Parent.ServerScriptService.FreeMythicalMarbleService)
 print("FreeMythicalMarbleService loaded successfully!")
+
+-- Initialize DailyRewardService
+local DailyRewardService = require(script.Parent.Parent.ServerScriptService.DailyRewardService)
+print("DailyRewardService loaded successfully!")

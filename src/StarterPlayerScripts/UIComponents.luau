@@ -19,6 +19,7 @@ function UIComponents.createScreenGui()
 	screen.Name = "MarbleUI"
 	screen.ResetOnSpawn = false
 	screen.IgnoreGuiInset = false
+	screen.DisplayOrder = 110 -- Same as daily rewards to overlay roll button and other UI elements
 	return screen
 end
 

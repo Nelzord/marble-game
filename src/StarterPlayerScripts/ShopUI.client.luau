@@ -9,6 +9,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local shopGui = Instance.new("ScreenGui")
 shopGui.Name = "ShopGUI"
 shopGui.ResetOnSpawn = false
+shopGui.DisplayOrder = 110 -- Same as daily rewards to overlay roll button and other UI elements
 shopGui.Parent = playerGui
 
 -- Main frame (larger size)
