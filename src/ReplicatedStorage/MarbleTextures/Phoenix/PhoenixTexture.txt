@@ -1,0 +1,9 @@
+Phoenix Marble Texture Placeholder
+
+Asset ID: rbxassetid://124481451788068
+Color: Yellow-Orange with Blue accents (255, 200, 0) and (100, 180, 255)
+
+To add a custom texture:
+1. Upload your phoenix-themed image to Roblox
+2. Create a Decal instance in this folder
+3. Set the Texture property to your asset ID

@@ -961,6 +961,260 @@ local function setupMeteorFireEffect(character: Model, hrp: BasePart)
 	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateFireEffect)
 end
 
+local function createPhoenixGlowAura(character: Model, hrp: BasePart)
+	-- Remove existing effects if they exist
+	local existingAura = character:FindFirstChild("PhoenixGlowAura")
+	if existingAura then
+		existingAura:Destroy()
+	end
+	
+	-- Create aura container
+	local auraContainer = Instance.new("Model")
+	auraContainer.Name = "PhoenixGlowAura"
+	auraContainer.Parent = character
+	
+	-- Create yellow point light
+	local yellowLight = Instance.new("PointLight")
+	yellowLight.Name = "PhoenixYellowLight"
+	yellowLight.Color = Color3.fromRGB(255, 200, 0) -- Golden yellow
+	yellowLight.Brightness = 2.5
+	yellowLight.Range = 12
+	yellowLight.Parent = hrp
+	
+	-- Create blue point light
+	local blueLight = Instance.new("PointLight")
+	blueLight.Name = "PhoenixBlueLight"
+	blueLight.Color = Color3.fromRGB(100, 180, 255) -- Bright blue
+	blueLight.Brightness = 2.5
+	blueLight.Range = 12
+	blueLight.Parent = hrp
+	
+	-- Create yellow sparkle attachment
+	local yellowSparkleAttachment = Instance.new("Attachment")
+	yellowSparkleAttachment.Name = "PhoenixYellowSparkleAttachment"
+	yellowSparkleAttachment.Parent = hrp
+	
+	local yellowSparkles = Instance.new("ParticleEmitter")
+	yellowSparkles.Name = "PhoenixYellowSparkles"
+	yellowSparkles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	yellowSparkles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 200)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 0)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 150, 0))
+	})
+	yellowSparkles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.5, 0.4),
+		NumberSequenceKeypoint.new(1, 0.1)
+	})
+	yellowSparkles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.7, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	yellowSparkles.Rate = 50
+	yellowSparkles.Lifetime = NumberRange.new(0.8, 1.5)
+	yellowSparkles.Speed = NumberRange.new(1, 4)
+	yellowSparkles.SpreadAngle = Vector2.new(360, 360)
+	yellowSparkles.LightEmission = 1
+	yellowSparkles.Parent = yellowSparkleAttachment
+	
+	-- Create blue sparkle attachment
+	local blueSparkleAttachment = Instance.new("Attachment")
+	blueSparkleAttachment.Name = "PhoenixBlueSparkleAttachment"
+	blueSparkleAttachment.Parent = hrp
+	
+	local blueSparkles = Instance.new("ParticleEmitter")
+	blueSparkles.Name = "PhoenixBlueSparkles"
+	blueSparkles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	blueSparkles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 220, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(100, 180, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 150, 255))
+	})
+	blueSparkles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.5, 0.4),
+		NumberSequenceKeypoint.new(1, 0.1)
+	})
+	blueSparkles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.7, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	blueSparkles.Rate = 50
+	blueSparkles.Lifetime = NumberRange.new(0.8, 1.5)
+	blueSparkles.Speed = NumberRange.new(1, 4)
+	blueSparkles.SpreadAngle = Vector2.new(360, 360)
+	blueSparkles.LightEmission = 1
+	blueSparkles.Parent = blueSparkleAttachment
+	
+	-- Create aura flame particles (subtle)
+	local auraAttachment = Instance.new("Attachment")
+	auraAttachment.Name = "PhoenixAuraAttachment"
+	auraAttachment.Parent = hrp
+	
+	local auraParticles = Instance.new("ParticleEmitter")
+	auraParticles.Name = "PhoenixAuraParticles"
+	auraParticles.Texture = "rbxasset://textures/particles/fire_main.dds"
+	auraParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 150)), -- Yellow
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 0)), -- Golden
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(100, 180, 255)), -- Blue
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 150, 255)) -- Deep blue
+	})
+	auraParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.6),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	auraParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.4),
+		NumberSequenceKeypoint.new(0.5, 0.6),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	auraParticles.Rate = 20
+	auraParticles.Lifetime = NumberRange.new(1, 2)
+	auraParticles.Speed = NumberRange.new(0.5, 2)
+	auraParticles.SpreadAngle = Vector2.new(360, 360)
+	auraParticles.LightEmission = 0.8
+	auraParticles.Parent = auraAttachment
+	
+	-- Create left wing attachment (permanent light wings)
+	local leftWingAttachment = Instance.new("Attachment")
+	leftWingAttachment.Name = "PhoenixLeftWingAttachment"
+	leftWingAttachment.Position = Vector3.new(-2.5, 0, 0) -- Left side
+	leftWingAttachment.Parent = hrp
+	
+	local leftWingParticles = Instance.new("ParticleEmitter")
+	leftWingParticles.Name = "PhoenixLeftWingParticles"
+	leftWingParticles.Texture = "rbxasset://textures/particles/fire_main.dds"
+	leftWingParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 150)), -- Yellow
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 0)), -- Golden
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(100, 180, 255)), -- Blue
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 150, 255)) -- Deep blue
+	})
+	leftWingParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(0.3, 1.2),
+		NumberSequenceKeypoint.new(0.7, 1.5),
+		NumberSequenceKeypoint.new(1, 0.3)
+	})
+	leftWingParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	leftWingParticles.Rate = 60
+	leftWingParticles.Lifetime = NumberRange.new(0.8, 1.2)
+	leftWingParticles.Speed = NumberRange.new(3, 6)
+	leftWingParticles.SpreadAngle = Vector2.new(60, 45) -- Wing-like spread
+	leftWingParticles.Rotation = NumberRange.new(-45, 45)
+	leftWingParticles.LightEmission = 1
+	leftWingParticles.Parent = leftWingAttachment
+	
+	-- Create right wing attachment (permanent light wings)
+	local rightWingAttachment = Instance.new("Attachment")
+	rightWingAttachment.Name = "PhoenixRightWingAttachment"
+	rightWingAttachment.Position = Vector3.new(2.5, 0, 0) -- Right side
+	rightWingAttachment.Parent = hrp
+	
+	local rightWingParticles = Instance.new("ParticleEmitter")
+	rightWingParticles.Name = "PhoenixRightWingParticles"
+	rightWingParticles.Texture = "rbxasset://textures/particles/fire_main.dds"
+	rightWingParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 150)), -- Yellow
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 0)), -- Golden
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(100, 180, 255)), -- Blue
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 150, 255)) -- Deep blue
+	})
+	rightWingParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(0.3, 1.2),
+		NumberSequenceKeypoint.new(0.7, 1.5),
+		NumberSequenceKeypoint.new(1, 0.3)
+	})
+	rightWingParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	rightWingParticles.Rate = 60
+	rightWingParticles.Lifetime = NumberRange.new(0.8, 1.2)
+	rightWingParticles.Speed = NumberRange.new(3, 6)
+	rightWingParticles.SpreadAngle = Vector2.new(60, 45) -- Wing-like spread
+	rightWingParticles.Rotation = NumberRange.new(-45, 45)
+	rightWingParticles.LightEmission = 1
+	rightWingParticles.Parent = rightWingAttachment
+	
+	return auraContainer
+end
+
+local function removePhoenixGlowAura(character: Model)
+	local aura = character:FindFirstChild("PhoenixGlowAura")
+	if aura then
+		aura:Destroy()
+	end
+	
+	-- Clean up attachments and lights on HRP
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local yellowLight = hrp:FindFirstChild("PhoenixYellowLight")
+		if yellowLight then
+			yellowLight:Destroy()
+		end
+		
+		local blueLight = hrp:FindFirstChild("PhoenixBlueLight")
+		if blueLight then
+			blueLight:Destroy()
+		end
+		
+		local yellowSparkleAttachment = hrp:FindFirstChild("PhoenixYellowSparkleAttachment")
+		if yellowSparkleAttachment then
+			yellowSparkleAttachment:Destroy()
+		end
+		
+		local blueSparkleAttachment = hrp:FindFirstChild("PhoenixBlueSparkleAttachment")
+		if blueSparkleAttachment then
+			blueSparkleAttachment:Destroy()
+		end
+		
+		local auraAttachment = hrp:FindFirstChild("PhoenixAuraAttachment")
+		if auraAttachment then
+			auraAttachment:Destroy()
+		end
+		
+		local leftWingAttachment = hrp:FindFirstChild("PhoenixLeftWingAttachment")
+		if leftWingAttachment then
+			leftWingAttachment:Destroy()
+		end
+		
+		local rightWingAttachment = hrp:FindFirstChild("PhoenixRightWingAttachment")
+		if rightWingAttachment then
+			rightWingAttachment:Destroy()
+		end
+	end
+end
+
+local function setupPhoenixGlowEffect(character: Model, hrp: BasePart)
+	-- Function to update Phoenix glow based on equipped marble
+	local function updatePhoenixGlow()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Phoenix" then
+			createPhoenixGlowAura(character, hrp)
+		else
+			removePhoenixGlowAura(character)
+		end
+	end
+	
+	-- Initial check
+	updatePhoenixGlow()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updatePhoenixGlow)
+end
+
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
 	dprint("applyCosmeticColor", id)
@@ -1012,6 +1266,7 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Meteor = "rbxassetid://135554382256334", -- Meteor texture
 		Coin = "rbxassetid://98528749229098", -- Coin texture
 		Castle = "rbxassetid://136095563046974", -- Castle texture
+		Phoenix = "rbxassetid://124481451788068", -- Phoenix texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -1380,6 +1635,7 @@ local function setupController(character: Model)
 	setupPharaohGlowEffect(character, hrp)
 	setupTsunamiWaterGlowEffect(character, hrp)
 	setupMeteorFireEffect(character, hrp)
+	setupPhoenixGlowEffect(character, hrp)
 	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)
@@ -1781,6 +2037,8 @@ local function setupOtherPlayerVisuals(character: Model)
 	setupGoldGlowEffect(character, hrp)
 	setupPharaohGlowEffect(character, hrp)
 	setupTsunamiWaterGlowEffect(character, hrp)
+	setupMeteorFireEffect(character, hrp)
+	setupPhoenixGlowEffect(character, hrp)
 	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)

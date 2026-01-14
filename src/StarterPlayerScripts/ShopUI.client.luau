@@ -534,6 +534,7 @@ local function createShopItem(item, container, isRobuxItem)
             Tsunami = "rbxassetid://109162306563849", -- Tsunami marble texture
             Glass = "rbxassetid://101699002274981", -- Glass marble texture
             Castle = "rbxassetid://136095563046974", -- Castle marble texture
+            Phoenix = "rbxassetid://124481451788068", -- Phoenix marble texture
         }
         
         if #assets == 0 then
