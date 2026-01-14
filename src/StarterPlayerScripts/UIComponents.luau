@@ -31,7 +31,8 @@ function UIComponents.createPowerButton(screen: ScreenGui)
 	powerButton.Size = UDim2.fromOffset(150, 56)
 	powerButton.Position = UDim2.new(0.5, 80, 1, -24)
 	powerButton.AnchorPoint = Vector2.new(0.5, 1)
-	powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+	powerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as roll button
+	powerButton.BackgroundTransparency = 0.4 -- Semi-transparent like Marbles/Badges/Shop buttons
 	powerButton.TextColor3 = Color3.new(1, 1, 1)
 	powerButton.Font = Enum.Font.GothamBold
 	powerButton.Parent = screen
@@ -90,6 +91,7 @@ function UIComponents.createRollButton(screen: ScreenGui)
 	rollButton.Position = UDim2.new(0.5, -80, 1, -24)
 	rollButton.AnchorPoint = Vector2.new(0.5, 1)
 	rollButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	rollButton.BackgroundTransparency = 0.4 -- Semi-transparent like Marbles/Badges/Shop buttons
 	rollButton.TextColor3 = Color3.new(1, 1, 1)
 	rollButton.Font = Enum.Font.GothamBold
 	rollButton.Parent = screen
@@ -111,6 +113,7 @@ function UIComponents.createAutoRollButton(screen: ScreenGui)
 	autoButton.Position = UDim2.new(0.5, -193, 1, -24)
 	autoButton.AnchorPoint = Vector2.new(0.5, 1)
 	autoButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	autoButton.BackgroundTransparency = 0.4 -- Semi-transparent like Marbles/Badges/Shop buttons
 	autoButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 	autoButton.Font = Enum.Font.GothamBold
 	autoButton.Parent = screen
@@ -126,10 +129,11 @@ function UIComponents.createInventoryButton(screen: ScreenGui)
 	inventoryButton.Name = "InventoryButton"
 	inventoryButton.Text = "Marbles"
 	inventoryButton.TextScaled = true
-	inventoryButton.Size = UDim2.fromOffset(160, 40)
+	inventoryButton.Size = UDim2.fromOffset(120, 32) -- Smaller size
 	inventoryButton.Position = UDim2.new(0, 16, 0, 16)
 	inventoryButton.AnchorPoint = Vector2.new(0, 0)
 	inventoryButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	inventoryButton.BackgroundTransparency = 0.4 -- Semi-transparent so you can see through
 	inventoryButton.TextColor3 = Color3.new(1, 1, 1)
 	inventoryButton.Font = Enum.Font.GothamBold
 	inventoryButton.Parent = screen
@@ -145,10 +149,11 @@ function UIComponents.createBadgesButton(screen: ScreenGui)
 	badgesButton.Name = "BadgesButton"
 	badgesButton.Text = "Badges"
 	badgesButton.TextScaled = true
-	badgesButton.Size = UDim2.fromOffset(160, 40)
-	badgesButton.Position = UDim2.new(0, 16, 0, 64)
+	badgesButton.Size = UDim2.fromOffset(120, 32) -- Smaller size
+	badgesButton.Position = UDim2.new(0, 16, 0, 56) -- Adjusted position for smaller button
 	badgesButton.AnchorPoint = Vector2.new(0, 0)
 	badgesButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	badgesButton.BackgroundTransparency = 0.4 -- Semi-transparent so you can see through
 	badgesButton.TextColor3 = Color3.new(1, 1, 1)
 	badgesButton.Font = Enum.Font.GothamBold
 	badgesButton.Parent = screen
@@ -164,10 +169,11 @@ function UIComponents.createShopButton(screen: ScreenGui)
 	shopButton.Name = "ShopButton"
 	shopButton.Text = "Shop"
 	shopButton.TextScaled = true
-	shopButton.Size = UDim2.fromOffset(160, 40)
-	shopButton.Position = UDim2.new(0, 16, 0, 112)
+	shopButton.Size = UDim2.fromOffset(120, 32) -- Smaller size
+	shopButton.Position = UDim2.new(0, 16, 0, 96) -- Adjusted position for smaller button
 	shopButton.AnchorPoint = Vector2.new(0, 0)
 	shopButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	shopButton.BackgroundTransparency = 0.4 -- Semi-transparent so you can see through
 	shopButton.TextColor3 = Color3.new(1, 1, 1)
 	shopButton.Font = Enum.Font.GothamBold
 	shopButton.Parent = screen

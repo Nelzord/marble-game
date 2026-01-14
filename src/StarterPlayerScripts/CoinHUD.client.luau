@@ -25,7 +25,7 @@ label.TextColor3 = Color3.new(1,1,1)
 label.Font = Enum.Font.GothamBold
 label.TextScaled = true
 label.Size = UDim2.fromOffset(70, 40)
-label.Position = UDim2.new(1, -20, 0, 20)
+label.Position = UDim2.new(1, -20, 0, 5) -- Moved higher to avoid FREE MARBLE button
 label.AnchorPoint = Vector2.new(1, 0)
 label.Text = "$ 0"
 label.Parent = screen
@@ -39,7 +39,7 @@ local quickBuyContainer = Instance.new("Frame")
 quickBuyContainer.Name = "QuickBuyContainer"
 quickBuyContainer.BackgroundTransparency = 1
 quickBuyContainer.Size = UDim2.fromOffset(70, 200) -- Increased height for new button
-quickBuyContainer.Position = UDim2.new(1, -20, 0, 65)
+quickBuyContainer.Position = UDim2.new(1, -20, 0, 45) -- Moved up to avoid jump button
 quickBuyContainer.AnchorPoint = Vector2.new(1, 0)
 quickBuyContainer.Parent = screen
 
@@ -47,7 +47,7 @@ local quickBuyLayout = Instance.new("UIListLayout")
 quickBuyLayout.FillDirection = Enum.FillDirection.Vertical
 quickBuyLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 quickBuyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-quickBuyLayout.Padding = UDim.new(0, 6)
+quickBuyLayout.Padding = UDim.new(0, 12) -- Increased spacing between buttons
 quickBuyLayout.Parent = quickBuyContainer
 
 -- Free Mythical Marble Button (above luck button)

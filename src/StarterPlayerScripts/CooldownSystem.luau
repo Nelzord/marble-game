@@ -122,7 +122,8 @@ function CooldownSystem.updatePowerButtonCooldown(powerButton, powerCooldown, co
 		
 		-- Update button to normal state
 		if powerButton and powerButton.Parent then
-			powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+			powerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as roll button
+			powerButton.BackgroundTransparency = 0.4 -- Maintain transparency
 			powerButton.Text = "Power (E)"
 			powerButton.TextColor3 = Color3.new(1, 1, 1)
 		end
@@ -157,7 +158,8 @@ function CooldownSystem.updatePowerButtonCooldown(powerButton, powerCooldown, co
 		
 		-- Check if equipped marble has an ability
 		if powerButton and powerButton.Parent then
-			powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+			powerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as roll button
+			powerButton.BackgroundTransparency = 0.4 -- Maintain transparency
 			powerButton.Text = "Power (E)"
 			powerButton.TextColor3 = Color3.new(1, 1, 1)
 		end
@@ -188,6 +190,7 @@ function CooldownSystem.updatePowerButtonCooldown(powerButton, powerCooldown, co
 	end
 	if powerButton and powerButton.Parent then
 		powerButton.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+		powerButton.BackgroundTransparency = 0.4 -- Maintain transparency
 		powerButton.Text = timeText -- Show countdown on button instead of just "Cooldown"
 	end
 	

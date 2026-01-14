@@ -249,7 +249,8 @@ local function updatePowerButtonForMarble()
 	if equippedMarble and equippedMarble.abilityModule and equippedMarble.abilityModule ~= "Default" then
 		print("Setting power button to ENABLED")
 		if powerButton and powerButton.Parent then
-			powerButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+			powerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as roll button
+			powerButton.BackgroundTransparency = 0.4 -- Maintain transparency
 			powerButton.Text = "Power (E)"
 			powerButton.TextColor3 = Color3.new(1, 1, 1)
 		end
@@ -257,6 +258,7 @@ local function updatePowerButtonForMarble()
 		print("Setting power button to DISABLED")
 		if powerButton and powerButton.Parent then
 			powerButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			powerButton.BackgroundTransparency = 0.4 -- Maintain transparency
 			powerButton.Text = "Power (None)"
 			powerButton.TextColor3 = Color3.fromRGB(150, 150, 150)
 		end
@@ -337,10 +339,12 @@ local function setupEventHandlers()
 		if autoRollButton then
 			if isAutoRolling then
 				autoRollButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+				autoRollButton.BackgroundTransparency = 0.4 -- Maintain transparency
 				autoRollButton.TextColor3 = Color3.new(1, 1, 1)
 				autoRollButton.Text = "Auto\nON"
 			else
 				autoRollButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+				autoRollButton.BackgroundTransparency = 0.4 -- Maintain transparency
 				autoRollButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 				autoRollButton.Text = "Auto\nOFF"
 			end

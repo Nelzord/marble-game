@@ -5,8 +5,10 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
 local Marbles = require(ReplicatedStorage:WaitForChild("Marbles"):WaitForChild("MarblesModule"))
 
@@ -27,11 +29,16 @@ end
 local inputState = {
 	forward = 0,
 	right = 0,
+	jump = false, -- Track actual jump button input
 }
 
 local boundCharacters: { [Model]: boolean } = {}
 
 local baseSpeed = 35 -- movement magnitude; abilities can scale via SpeedMultiplier
+
+-- Custom jump button UI
+local jumpButtonGui = nil
+local jumpButton = nil
 
 -- Mobile/gamepad controls via PlayerModule
 local controlModule = nil
@@ -97,12 +104,29 @@ local function bindInputs()
 		if input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.Down then inputState.forward = -1 end
 		if input.KeyCode == Enum.KeyCode.D or input.KeyCode == Enum.KeyCode.Right then inputState.right = 1 end
 		if input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.Left then inputState.right = -1 end
+		if input.KeyCode == Enum.KeyCode.Space then 
+			inputState.jump = true
+		end
+		-- Handle mobile/touch jump button
+		if input.KeyCode == Enum.KeyCode.ButtonA or input.UserInputType == Enum.UserInputType.Touch then
+			-- Check if it's a jump action (mobile jump button)
+			if input.KeyCode == Enum.KeyCode.ButtonA then
+				inputState.jump = true
+			end
+		end
 	end)
 	UserInputService.InputEnded:Connect(function(input, _processed)
 		if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.Up then if inputState.forward == 1 then inputState.forward = 0 end end
 		if input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.Down then if inputState.forward == -1 then inputState.forward = 0 end end
 		if input.KeyCode == Enum.KeyCode.D or input.KeyCode == Enum.KeyCode.Right then if inputState.right == 1 then inputState.right = 0 end end
 		if input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.Left then if inputState.right == -1 then inputState.right = 0 end end
+		if input.KeyCode == Enum.KeyCode.Space then 
+			inputState.jump = false
+		end
+		-- Handle mobile/touch jump button release
+		if input.KeyCode == Enum.KeyCode.ButtonA then
+			inputState.jump = false
+		end
 	end)
 end
 
@@ -1316,6 +1340,14 @@ local function setupController(character: Model)
 		cam.CameraType = Enum.CameraType.Custom
 		cam.CameraSubject = hum
 	end
+	
+	-- Disable Humanoid's automatic jumping - we handle jumps manually via velocity
+	if hum then
+		hum.UseJumpPower = false
+		hum.JumpPower = 0
+		hum.JumpHeight = 0
+		print("[MarbleClient] Disabled Humanoid automatic jumping")
+	end
 
 	-- Make physical root invisible; cosmetic ball will be visible
 	hrp.Transparency = 1
@@ -1406,6 +1438,11 @@ local function setupController(character: Model)
 		return typeof(jumpBoost) == "boolean" and jumpBoost
 	end
 	
+	local function shouldApplyLaunch(): boolean
+		local launchActive = character:GetAttribute("LaunchActive")
+		return typeof(launchActive) == "boolean" and launchActive
+	end
+	
 	local function shouldApplyMoonGravity(): boolean
 		local moonGravity = character:GetAttribute("MoonGravityActive")
 		return typeof(moonGravity) == "boolean" and moonGravity
@@ -1416,6 +1453,10 @@ local function setupController(character: Model)
 	local prevIsInput = false
 	local glideHoriz = Vector3.zero
 	local jumpStuckTimer = 0 -- Track how long jump has been active while on ground and moving
+	local lastJumpState = false -- Track jump state for safeguard
+	local lastYVelocity = 0 -- Track previous Y velocity to detect unexpected changes
+	local lastJumpInput = false -- Track previous jump input state
+	local jumpCooldown = 0 -- Cooldown to prevent jump spam
 	local stepConn
 	stepConn = RunService.RenderStepped:Connect(function(dt)
 		if not hrp or not hrp.Parent then
@@ -1449,6 +1490,22 @@ local function setupController(character: Model)
 		local targetHoriz = dir * speed
 		local currentVel = hrp.AssemblyLinearVelocity
 		local horiz = Vector3.new(currentVel.X, 0, currentVel.Z)
+		
+		-- Track unexpected Y velocity changes (check BEFORE we modify velocity)
+		local yVelChange = currentVel.Y - lastYVelocity
+		if math.abs(yVelChange) > 5 and yVelChange > 0 then -- Significant upward velocity change
+			local jumpBoostActive = character:GetAttribute("JumpBoostActive")
+			local launchActive = character:GetAttribute("LaunchActive")
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			local isOnGround = humanoid and humanoid.FloorMaterial ~= Enum.Material.Air or false
+			local humanoidJump = humanoid and humanoid.Jump or false
+			
+			-- If this is an unexpected jump, try to cancel it
+			-- Allow launches from launch pads (LaunchActive attribute)
+			if not jumpBoostActive and not launchActive and not humanoidJump and not inputState.jump then
+				hrp.AssemblyLinearVelocity = Vector3.new(currentVel.X, math.min(currentVel.Y, 0), currentVel.Z) -- Clamp to 0 or negative
+			end
+		end
 
 		-- Deceleration-only: instant target when input; otherwise, glide velocity decays
 		local isInput = targetHoriz.Magnitude > 0.01
@@ -1481,14 +1538,70 @@ local function setupController(character: Model)
 			end
 		end
 		
-		-- Apply jump boost if active
+		-- Manual jump system: Handle spacebar and jump button input
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			local isOnGround = humanoid.FloorMaterial ~= Enum.Material.Air
+			local velBeforeJump = hrp.AssemblyLinearVelocity
+			-- More lenient check: only consider it "jumping upward" if velocity is significantly upward (like from an actual jump)
+			-- Increased threshold to allow jumps on inclines where small upward velocity is normal
+			local isJumpingUpward = velBeforeJump.Y > 20 -- Higher threshold to allow jumps on inclines
+			
+			-- Check for jump input from spacebar, mobile button, or Humanoid.Jump
+			local humanoidJump = humanoid.Jump
+			local currentJumpInput = inputState.jump or humanoidJump
+			
+			-- Update jump cooldown
+			if jumpCooldown > 0 then
+				jumpCooldown = jumpCooldown - dt
+			end
+			
+			-- Detect jump button press (transition from false to true)
+			if currentJumpInput and not lastJumpInput and jumpCooldown <= 0 then
+				-- User just pressed jump button
+				-- Allow jump if on ground, even with small upward velocity (for inclines)
+				-- Only block if already in a significant jump (velocity > 20)
+				if isOnGround and not isJumpingUpward then
+					-- Apply jump force
+					local jumpForce = 75 -- 1.5x higher jump (was 50)
+					hrp.AssemblyLinearVelocity = Vector3.new(velBeforeJump.X, jumpForce, velBeforeJump.Z)
+					wrote = true
+					lastYVelocity = jumpForce
+					jumpCooldown = 0.1 -- Small cooldown to prevent spam
+				end
+			end
+			lastJumpInput = currentJumpInput
+			
+			-- Reset Humanoid.Jump after processing to prevent it from interfering
+			if humanoidJump then
+				humanoid.Jump = false
+			end
+		end
+		
+		-- Apply jump boost if active (ability-based jump)
 		if shouldApplyJumpBoost() then
 			-- Apply upward velocity boost for jump/launch effect
-			local jumpForce = 50 -- Half the original force (was 50)
+			local jumpForce = 75 -- 1.5x higher jump (was 50)
 			local newVel = hrp.AssemblyLinearVelocity
 			hrp.AssemblyLinearVelocity = Vector3.new(newVel.X, jumpForce, newVel.Z)
 			wrote = true
-			print("[MarbleClient] Applied jump boost - velocity set to:", hrp.AssemblyLinearVelocity)
+			lastYVelocity = jumpForce -- Update tracked velocity
+		elseif shouldApplyLaunch() then
+			-- Apply launch pad force (multiplied by launch number)
+			local launchForce = character:GetAttribute("LaunchForce")
+			-- Default to base jump force if LaunchForce attribute is not set
+			if typeof(launchForce) ~= "number" or launchForce <= 0 then
+				launchForce = 75 -- Fallback to base jump force
+			end
+			local newVel = hrp.AssemblyLinearVelocity
+			hrp.AssemblyLinearVelocity = Vector3.new(newVel.X, launchForce, newVel.Z)
+			wrote = true
+			lastYVelocity = launchForce -- Update tracked velocity
+		else
+			-- Update lastYVelocity after all our modifications
+			if not currentJumpInput or not isOnGround then
+				lastYVelocity = hrp.AssemblyLinearVelocity.Y
+			end
 		end
 		
 		-- Apply Moon gravity reduction if active
@@ -1500,16 +1613,38 @@ local function setupController(character: Model)
 				local newYVel = currentVel.Y * gravityReduction
 				hrp.AssemblyLinearVelocity = Vector3.new(currentVel.X, newYVel, currentVel.Z)
 				wrote = true
+				lastYVelocity = newYVel -- Update tracked velocity
 			end
 		end
 		
-		-- Fix for mobile jump button getting stuck: reset Humanoid.Jump when moving on ground
-		-- This prevents continuous jumping on iPhone/iPad when the jump button is pressed while moving
+		-- Update lastYVelocity at the end of the frame if we didn't modify it
+		if not shouldApplyJumpBoost() and not shouldApplyLaunch() then
+			lastYVelocity = hrp.AssemblyLinearVelocity.Y
+		end
+		
+		-- Logging and monitoring (humanoid already processed above)
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
 		if humanoid then
 			local currentVel = hrp.AssemblyLinearVelocity
-			local isJumpingUpward = currentVel.Y > 5 -- If moving upward faster than 5 studs/sec, they're actively jumping
+			local isJumpingUpward = currentVel.Y > 20 -- Increased threshold to match jump logic (allows jumps on inclines)
 			local isOnGround = humanoid.FloorMaterial ~= Enum.Material.Air
+			
+			-- Track jump state for safeguard
+			local currentJumpState = humanoid.Jump
+			if currentJumpState ~= lastJumpState then
+				if currentJumpState then
+					-- Jump button was just pressed
+					local userPressedJump = inputState.jump
+					local jumpBoostActive = character:GetAttribute("JumpBoostActive")
+					
+					-- SAFEGUARD: If humanoid.Jump is true but user didn't press spacebar, block it
+					if not userPressedJump and not jumpBoostActive then
+						humanoid.Jump = false
+						currentJumpState = false
+					end
+				end
+			end
+			lastJumpState = currentJumpState
 			
 			if isInput and humanoid.Jump and isOnGround and not isJumpingUpward then
 				-- Player is on ground, moving, and jump is active - increment timer
@@ -1716,6 +1851,174 @@ local function onOtherPlayerAdded(otherPlayer: Player)
 		setupOtherPlayerVisuals(character)
 	end)
 end
+
+-- Create custom jump button UI (only for mobile/touch devices)
+local function createJumpButton()
+	-- Check if device is mobile/touch
+	local isTouchDevice = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	local isGamepadDevice = UserInputService.GamepadEnabled and not UserInputService.KeyboardEnabled
+	
+	-- Only create button for touch or gamepad devices (not PC with keyboard/mouse)
+	if not isTouchDevice and not isGamepadDevice then
+		return
+	end
+	
+	-- Determine button size based on device type
+	local buttonSize = 120 -- Default size for gamepad
+	if isTouchDevice then
+		-- Get screen size to scale button appropriately
+		local camera = workspace.CurrentCamera
+		local viewportSize = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+		local screenWidth = viewportSize.X
+		
+		-- Scale button size based on screen width (larger screens get larger buttons)
+		-- Minimum 140px, maximum 180px, scales with screen width
+		buttonSize = math.clamp(screenWidth * 0.08, 140, 180)
+	end
+	
+	-- Create ScreenGui for jump button
+	jumpButtonGui = Instance.new("ScreenGui")
+	jumpButtonGui.Name = "CustomJumpButton"
+	jumpButtonGui.ResetOnSpawn = false
+	jumpButtonGui.IgnoreGuiInset = true
+	jumpButtonGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	jumpButtonGui.Parent = playerGui
+	
+	-- Create the jump button
+	jumpButton = Instance.new("ImageButton")
+	jumpButton.Name = "JumpButton"
+	jumpButton.Size = UDim2.new(0, buttonSize, 0, buttonSize) -- Dynamic size based on device
+	-- Position scales with button size to maintain proper spacing
+	local offsetX = math.max(145, buttonSize / 2 + 85) -- Ensure minimum spacing from right edge
+	local offsetY = math.max(70, buttonSize / 2 + 20) -- Ensure minimum spacing from bottom edge
+	jumpButton.Position = UDim2.new(1, -offsetX, 1, -offsetY) -- Bottom right, moved left to avoid nuke button
+	jumpButton.AnchorPoint = Vector2.new(0.5, 0.5)
+	jumpButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as Roll for Marble
+	jumpButton.BackgroundTransparency = 0.4 -- Same as Roll for Marble
+	jumpButton.BorderSizePixel = 0
+	jumpButton.Parent = jumpButtonGui
+	
+	-- Add rounded corners (fully circular)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, buttonSize / 2) -- Fully circular based on button size
+	corner.Parent = jumpButton
+	
+	-- Add jump icon (upward arrow)
+	local jumpIcon = Instance.new("TextLabel")
+	jumpIcon.Name = "JumpIcon"
+	jumpIcon.Size = UDim2.new(1, -20, 1, -20)
+	jumpIcon.Position = UDim2.new(0, 10, 0, 10)
+	jumpIcon.BackgroundTransparency = 1
+	jumpIcon.Text = "↑" -- Upward arrow
+	jumpIcon.TextScaled = true
+	jumpIcon.TextColor3 = Color3.new(1, 1, 1)
+	jumpIcon.Font = Enum.Font.GothamBold
+	jumpIcon.Parent = jumpButton
+	
+	-- Add shadow/glow effect
+	local shadow = Instance.new("Frame")
+	shadow.Name = "Shadow"
+	shadow.Size = UDim2.new(1, 10, 1, 10)
+	shadow.Position = UDim2.new(0, -5, 0, -5)
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = 0.7
+	shadow.BorderSizePixel = 0
+	shadow.ZIndex = jumpButton.ZIndex - 1
+	shadow.Parent = jumpButton
+	
+	local shadowCorner = Instance.new("UICorner")
+	shadowCorner.CornerRadius = UDim.new(0, (buttonSize / 2) + 5) -- Slightly larger than button corner
+	shadowCorner.Parent = shadow
+	
+	-- Add stroke for better visibility (scales with button size)
+	local stroke = Instance.new("UIStroke")
+	stroke.Name = "Stroke"
+	stroke.Color = Color3.new(1, 1, 1)
+	stroke.Thickness = math.max(2, buttonSize / 40) -- Scales proportionally (min 2px)
+	stroke.Transparency = 0.3
+	stroke.Parent = jumpButton
+	
+	-- Button press animation (scales to 83% of original size)
+	local function animatePress()
+		local pressedSize = math.floor(buttonSize * 0.83)
+		local pressTween = TweenService:Create(jumpButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, pressedSize, 0, pressedSize)
+		})
+		pressTween:Play()
+		pressTween.Completed:Connect(function()
+			local releaseTween = TweenService:Create(jumpButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, buttonSize, 0, buttonSize)
+			})
+			releaseTween:Play()
+		end)
+	end
+	
+	-- Track button state
+	local isButtonPressed = false
+	
+	-- Function to handle button press
+	local function onButtonPress()
+		if isButtonPressed then return end
+		isButtonPressed = true
+		animatePress()
+		inputState.jump = true
+		
+		-- Visual feedback: brighten the button
+		jumpButton.BackgroundTransparency = 0
+		jumpIcon.TextColor3 = Color3.fromRGB(255, 255, 150) -- Yellow when pressed
+	end
+	
+	-- Function to handle button release
+	local function onButtonRelease()
+		if not isButtonPressed then return end
+		isButtonPressed = false
+		inputState.jump = false
+		
+		-- Visual feedback: return to normal
+		jumpButton.BackgroundTransparency = 0.4
+		jumpIcon.TextColor3 = Color3.new(1, 1, 1) -- White when released
+	end
+	
+	-- Connect button events (mouse)
+	jumpButton.MouseButton1Down:Connect(onButtonPress)
+	jumpButton.MouseButton1Up:Connect(onButtonRelease)
+	jumpButton.MouseLeave:Connect(onButtonRelease)
+	
+	-- Connect touch events (mobile)
+	jumpButton.TouchTap:Connect(function()
+		onButtonPress()
+		task.wait(0.1) -- Brief delay for visual feedback
+		onButtonRelease()
+	end)
+	
+	-- Add hover effect (desktop only)
+	jumpButton.MouseEnter:Connect(function()
+		if not isButtonPressed then
+			local hoverTween = TweenService:Create(jumpButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 0.3
+			})
+			hoverTween:Play()
+		end
+	end)
+	
+	jumpButton.MouseLeave:Connect(function()
+		if not isButtonPressed then
+			local leaveTween = TweenService:Create(jumpButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 0.4
+			})
+			leaveTween:Play()
+		end
+	end)
+	
+	-- Add pulsing animation when idle
+	local pulseTween = TweenService:Create(jumpButton, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+		BackgroundTransparency = 0.35
+	})
+	pulseTween:Play()
+end
+
+-- Initialize jump button UI
+createJumpButton()
 
 bindInputs()
 

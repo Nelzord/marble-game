@@ -24,13 +24,13 @@ screenGui.Parent = playerGui
 -- Countdown label (positioned over coin counter at top-right)
 local countdownLabel = Instance.new("TextLabel")
 countdownLabel.Name = "CountdownLabel"
-countdownLabel.BackgroundTransparency = 0.1
-countdownLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background
+countdownLabel.BackgroundTransparency = 0.4 -- Same as Roll for Marble button
+countdownLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as Roll for Marble button
 countdownLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
 countdownLabel.Font = Enum.Font.GothamBold
 countdownLabel.TextScaled = true
-countdownLabel.Size = UDim2.new(0, 300, 0, 45)
-countdownLabel.Position = UDim2.new(1, -20, 0, 20) -- Top-right, same position as coin counter
+	countdownLabel.Size = UDim2.new(0, 240, 0, 35) -- Smaller banner
+	countdownLabel.Position = UDim2.new(1, -20, 0, 10) -- Top-right, moved up
 countdownLabel.AnchorPoint = Vector2.new(1, 0) -- Anchor at top-right
 countdownLabel.Text = ""
 countdownLabel.Visible = false
@@ -47,15 +47,15 @@ corner.Parent = countdownLabel
 -- Event active label (shows during the event)
 local eventActiveLabel = Instance.new("TextLabel")
 eventActiveLabel.Name = "EventActiveLabel"
-eventActiveLabel.BackgroundTransparency = 0.1
-eventActiveLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background
+eventActiveLabel.BackgroundTransparency = 0.4 -- Same as Roll for Marble button
+eventActiveLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as Roll for Marble button
 eventActiveLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
 eventActiveLabel.Font = Enum.Font.GothamBold
 eventActiveLabel.TextScaled = true
-eventActiveLabel.Size = UDim2.new(0, 320, 0, 45)
-eventActiveLabel.Position = UDim2.new(1, -20, 0, 20) -- Top-right, same position as coin counter
+	eventActiveLabel.Size = UDim2.new(0, 260, 0, 35) -- Smaller banner
+	eventActiveLabel.Position = UDim2.new(1, -20, 0, 10) -- Top-right, moved up
 eventActiveLabel.AnchorPoint = Vector2.new(1, 0) -- Anchor at top-right
-eventActiveLabel.Text = "💰 Coin Drop Active!"
+	eventActiveLabel.Text = "Coin Drop Active!"
 eventActiveLabel.Visible = false
 eventActiveLabel.ZIndex = 10
 eventActiveLabel.Parent = screenGui
@@ -69,14 +69,14 @@ eventCorner.Parent = eventActiveLabel
 -- Event ended label
 local eventEndedLabel = Instance.new("TextLabel")
 eventEndedLabel.Name = "EventEndedLabel"
-eventEndedLabel.BackgroundTransparency = 0.1
-eventEndedLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background
+eventEndedLabel.BackgroundTransparency = 0.4 -- Same as Roll for Marble button
+eventEndedLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Same as Roll for Marble button
 eventEndedLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
 eventEndedLabel.Font = Enum.Font.GothamBold
 eventEndedLabel.TextSize = 24
 eventEndedLabel.TextScaled = false
-eventEndedLabel.Size = UDim2.new(0, 280, 0, 40)
-eventEndedLabel.Position = UDim2.new(1, -20, 0, 20) -- Top-right, same position as coin counter
+	eventEndedLabel.Size = UDim2.new(0, 220, 0, 32) -- Smaller banner
+	eventEndedLabel.Position = UDim2.new(1, -20, 0, 10) -- Top-right, moved up
 eventEndedLabel.AnchorPoint = Vector2.new(1, 0) -- Anchor at top-right
 eventEndedLabel.Text = "Coin Drop Event Ended"
 eventEndedLabel.Visible = false
@@ -107,7 +107,7 @@ local function showCountdown(seconds: number)
 	print("[CoinDropCountdown] Showing countdown:", seconds)
 	currentCountdown = seconds
 	countdownLabel.Visible = true
-	countdownLabel.Text = string.format("💰 Coin Drop in %s", formatTime(seconds))
+	countdownLabel.Text = string.format("Coin Drop: %s", formatTime(seconds))
 	
 	-- Update countdown every second (no animation, static text)
 	if countdownThread then
@@ -120,7 +120,7 @@ local function showCountdown(seconds: number)
 			task.wait(1)
 			currentCountdown = currentCountdown - 1
 			if currentCountdown > 0 then
-				countdownLabel.Text = string.format("💰 Coin Drop in %s", formatTime(currentCountdown))
+				countdownLabel.Text = string.format("Coin Drop: %s", formatTime(currentCountdown))
 			else
 				countdownLabel.Visible = false
 			end
@@ -140,7 +140,7 @@ local function showEventActive(duration: number)
 	
 	eventActiveLabel.Visible = true
 	local timeLeft = duration
-	eventActiveLabel.Text = string.format("💰 Coin Drop Active! (%s)", formatTime(timeLeft))
+	eventActiveLabel.Text = string.format("Coin Drop Active! (%s)", formatTime(timeLeft))
 	
 	-- Update timer every second to show countdown during event
 	if eventThread then
@@ -153,9 +153,9 @@ local function showEventActive(duration: number)
 			task.wait(1)
 			timeLeft = timeLeft - 1
 			if timeLeft > 0 then
-				eventActiveLabel.Text = string.format("💰 Coin Drop Active! (%s)", formatTime(timeLeft))
+				eventActiveLabel.Text = string.format("Coin Drop Active! (%s)", formatTime(timeLeft))
 			else
-				eventActiveLabel.Text = "💰 Coin Drop Active! (0:00)"
+				eventActiveLabel.Text = "Coin Drop Active! (0:00)"
 			end
 		end
 		eventActiveLabel.Visible = false

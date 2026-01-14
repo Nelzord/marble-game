@@ -682,6 +682,146 @@ end
 -- Initialize hazard system
 setupHazardSystem()
 
+-- Launch pad system: Detects parts named "Launch", "Launch2", "Launch3", etc. and launches players upward
+local function setupLaunchSystem()
+	print("[LaunchSystem] Initializing launch pad system...")
+	
+	local BASE_JUMP_FORCE = 75 -- Base jump force (will be multiplied by launch number)
+	
+	-- Extract launch multiplier from part name (e.g., "Launch2" -> 2, "Launch" -> 1)
+	local function getLaunchMultiplier(partName: string): number
+		-- Check if name starts with "Launch"
+		if not partName:match("^Launch") then
+			return 0 -- Not a launch part
+		end
+		
+		-- Extract number after "Launch" (e.g., "Launch2" -> 2, "Launch" -> 1)
+		local numberStr = partName:match("^Launch(%d+)$")
+		if numberStr then
+			return tonumber(numberStr) or 1
+		elseif partName == "Launch" then
+			return 1 -- "Launch" with no number = multiplier of 1
+		else
+			return 0 -- Invalid format
+		end
+	end
+	
+	-- Find all parts named "Launch", "Launch2", "Launch3", etc. in workspace
+	local function setupLaunchPart(part: Part)
+		local multiplier = getLaunchMultiplier(part.Name)
+		if multiplier > 0 and part:IsA("Part") then
+			-- Ensure the part can be touched
+			part.CanTouch = true
+			part.CanCollide = true
+			
+			-- Track recent launches to prevent spam (per part, not global)
+			local recentLaunches: { [Player]: number } = {}
+			local LAUNCH_COOLDOWN = 0.5 -- 0.5 second cooldown between launches
+			
+			local launchForce = BASE_JUMP_FORCE * multiplier
+			print("[LaunchSystem] Setting up Launch part:", part:GetFullName(), "Multiplier:", multiplier, "Force:", launchForce)
+			
+			part.Touched:Connect(function(hit)
+				-- Debug: log that touch was detected
+				print("[LaunchSystem] Launch part touched by:", hit:GetFullName(), "Type:", hit.ClassName)
+				
+				-- Find the character from the hit part
+				local character = hit:FindFirstAncestorOfClass("Model")
+				if not character then 
+					print("[LaunchSystem] No character found for hit:", hit:GetFullName())
+					return 
+				end
+				
+				print("[LaunchSystem] Found character:", character.Name)
+				
+				local player = Players:GetPlayerFromCharacter(character)
+				if not player then 
+					print("[LaunchSystem] No player found for character:", character.Name)
+					return 
+				end
+				
+				print("[LaunchSystem] Found player:", player.Name)
+				
+				-- Check if this is a marble character
+				local isMarble = character:GetAttribute("IsMarbleCharacter")
+				print("[LaunchSystem] IsMarbleCharacter attribute:", isMarble)
+				if not isMarble then 
+					print("[LaunchSystem] Character is not a marble character:", character.Name)
+					return 
+				end
+				
+				-- Check cooldown to prevent spam
+				local lastLaunch = recentLaunches[player]
+				local currentTime = tick()
+				if lastLaunch and (currentTime - lastLaunch) < LAUNCH_COOLDOWN then
+					print("[LaunchSystem] Launch on cooldown for player:", player.Name, "Time remaining:", LAUNCH_COOLDOWN - (currentTime - lastLaunch))
+					return
+				end
+				recentLaunches[player] = currentTime
+				
+				-- Set attribute to tell client to apply launch force (client handles velocity in RenderStepped)
+				local hrp = character:FindFirstChild("HumanoidRootPart")
+				if hrp and hrp:IsA("BasePart") then
+					local currentVel = hrp.AssemblyLinearVelocity
+					
+					print("[LaunchSystem] Applying launch to player:", player.Name, "Current Y velocity:", currentVel.Y, "Launch force:", launchForce, "Multiplier:", multiplier)
+					
+					-- Set attributes to tell client this is an intentional launch with specific force
+					-- Client will handle the actual velocity application in RenderStepped (like jump boost)
+					character:SetAttribute("LaunchActive", true)
+					character:SetAttribute("LaunchForce", launchForce)
+					
+					-- Clear the attributes after launch completes (0.1 seconds - just enough for client to apply it)
+					task.spawn(function()
+						task.wait(0.1)
+						if character and character.Parent then
+							character:SetAttribute("LaunchActive", false)
+							character:SetAttribute("LaunchForce", nil)
+						end
+					end)
+					
+					print("[LaunchSystem] SUCCESS: Player", player.Name, "touched launch pad", part.Name, "- LaunchActive attribute set with force", launchForce)
+				else
+					print("[LaunchSystem] ERROR: No HumanoidRootPart found for character:", character.Name, "HRP:", hrp)
+				end
+			end)
+			
+			print("[LaunchSystem] Launch part setup complete:", part:GetFullName())
+		end
+	end
+	
+	-- Setup existing launch parts
+	local foundCount = 0
+	for _, part in ipairs(workspace:GetDescendants()) do
+		if part:IsA("Part") then
+			local multiplier = getLaunchMultiplier(part.Name)
+			if multiplier > 0 then
+				print("[LaunchSystem] Found Launch part:", part:GetFullName(), "Multiplier:", multiplier)
+				setupLaunchPart(part)
+				foundCount = foundCount + 1
+			end
+		end
+	end
+	print("[LaunchSystem] Found", foundCount, "Launch parts in workspace")
+	
+	-- Monitor for new launch parts
+	workspace.DescendantAdded:Connect(function(descendant)
+		if descendant:IsA("Part") then
+			local multiplier = getLaunchMultiplier(descendant.Name)
+			if multiplier > 0 then
+				print("[LaunchSystem] New Launch part detected:", descendant:GetFullName(), "Multiplier:", multiplier)
+				task.wait(0.1) -- Small delay to ensure part is fully loaded
+				setupLaunchPart(descendant)
+			end
+		end
+	end)
+end
+
+-- Initialize launch system
+print("[MarbleService] Calling setupLaunchSystem()...")
+setupLaunchSystem()
+print("[MarbleService] setupLaunchSystem() completed")
+
 -- Void detection system: Respawn players who fall below the map
 local VOID_Y_THRESHOLD = -100 -- Players below this Y coordinate are considered "in the void"
 
