@@ -1,0 +1,9 @@
+Hacker Marble Texture Placeholder
+
+Asset ID: rbxassetid://115836576619858
+Color: Green/Black hacker theme (0, 200, 0)
+
+To add a custom texture:
+1. Upload your hacker-themed image to Roblox
+2. Create a Decal instance in this folder
+3. Set the Texture property to your asset ID

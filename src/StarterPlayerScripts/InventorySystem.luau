@@ -55,6 +55,8 @@ local FALLBACK_DECALS: { [string]: string } = {
 		Coin = "rbxassetid://98528749229098", -- Coin texture
 		Castle = "rbxassetid://136095563046974", -- Castle texture
 		Phoenix = "rbxassetid://124481451788068", -- Phoenix texture
+		Space = "rbxassetid://119305575673092", -- Space texture
+		Hacker = "rbxassetid://115836576619858", -- Hacker texture
 	}
 
 -- Function to apply textures to a part

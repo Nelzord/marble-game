@@ -1,0 +1,9 @@
+Space Marble Texture Placeholder
+
+Asset ID: rbxassetid://119305575673092
+Color: Purple/Space theme (100, 50, 200)
+
+To add a custom texture:
+1. Upload your space-themed image to Roblox
+2. Create a Decal instance in this folder
+3. Set the Texture property to your asset ID

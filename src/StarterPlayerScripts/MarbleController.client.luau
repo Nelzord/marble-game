@@ -1215,6 +1215,345 @@ local function setupPhoenixGlowEffect(character: Model, hrp: BasePart)
 	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updatePhoenixGlow)
 end
 
+local function createSpaceRainbowEffects(character: Model, hrp: BasePart)
+	-- Remove existing effects if they exist
+	local existingEffects = character:FindFirstChild("SpaceRainbowEffects")
+	if existingEffects then
+		existingEffects:Destroy()
+	end
+	
+	-- Create effects container
+	local effectsContainer = Instance.new("Model")
+	effectsContainer.Name = "SpaceRainbowEffects"
+	effectsContainer.Parent = character
+	
+	-- Create rainbow sparkle attachment
+	local sparkleAttachment = Instance.new("Attachment")
+	sparkleAttachment.Name = "SpaceRainbowSparkleAttachment"
+	sparkleAttachment.Parent = hrp
+	
+	local rainbowSparkles = Instance.new("ParticleEmitter")
+	rainbowSparkles.Name = "SpaceRainbowSparkles"
+	rainbowSparkles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	rainbowSparkles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), -- Red
+		ColorSequenceKeypoint.new(0.14, Color3.fromRGB(255, 127, 0)), -- Orange
+		ColorSequenceKeypoint.new(0.28, Color3.fromRGB(255, 255, 0)), -- Yellow
+		ColorSequenceKeypoint.new(0.42, Color3.fromRGB(0, 255, 0)), -- Green
+		ColorSequenceKeypoint.new(0.57, Color3.fromRGB(0, 0, 255)), -- Blue
+		ColorSequenceKeypoint.new(0.71, Color3.fromRGB(75, 0, 130)), -- Indigo
+		ColorSequenceKeypoint.new(0.85, Color3.fromRGB(148, 0, 211)), -- Violet
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) -- Back to red
+	})
+	rainbowSparkles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.6),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	rainbowSparkles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.7, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	rainbowSparkles.Rate = 80
+	rainbowSparkles.Lifetime = NumberRange.new(0.8, 1.5)
+	rainbowSparkles.Speed = NumberRange.new(2, 6)
+	rainbowSparkles.SpreadAngle = Vector2.new(360, 360)
+	rainbowSparkles.LightEmission = 1
+	rainbowSparkles.Parent = sparkleAttachment
+	
+	-- Create rainbow trail
+	local trail = Instance.new("Trail")
+	trail.Name = "SpaceRainbowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "SpaceTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "SpaceTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure rainbow trail appearance
+	trail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), -- Red
+		ColorSequenceKeypoint.new(0.14, Color3.fromRGB(255, 127, 0)), -- Orange
+		ColorSequenceKeypoint.new(0.28, Color3.fromRGB(255, 255, 0)), -- Yellow
+		ColorSequenceKeypoint.new(0.42, Color3.fromRGB(0, 255, 0)), -- Green
+		ColorSequenceKeypoint.new(0.57, Color3.fromRGB(0, 0, 255)), -- Blue
+		ColorSequenceKeypoint.new(0.71, Color3.fromRGB(75, 0, 130)), -- Indigo
+		ColorSequenceKeypoint.new(0.85, Color3.fromRGB(148, 0, 211)), -- Violet
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) -- Back to red
+	})
+	trail.Transparency = NumberSequence.new(0.1, 0.8)
+	trail.Lifetime = 3.0
+	trail.MinLength = 2.0
+	trail.MaxLength = 25
+	trail.WidthScale = NumberSequence.new(0.8, 2.5)
+	trail.FaceCamera = true
+	trail.Parent = character
+	
+	-- Create rainbow point light
+	local rainbowLight = Instance.new("PointLight")
+	rainbowLight.Name = "SpaceRainbowLight"
+	rainbowLight.Color = Color3.fromRGB(255, 100, 255) -- Magenta/pink for rainbow effect
+	rainbowLight.Brightness = 2
+	rainbowLight.Range = 10
+	rainbowLight.Parent = hrp
+	
+	-- Create rainbow glow aura attachment
+	local glowAttachment = Instance.new("Attachment")
+	glowAttachment.Name = "SpaceRainbowGlowAttachment"
+	glowAttachment.Parent = hrp
+	
+	local rainbowGlow = Instance.new("ParticleEmitter")
+	rainbowGlow.Name = "SpaceRainbowGlow"
+	rainbowGlow.Texture = "rbxasset://textures/particles/fire_main.dds"
+	rainbowGlow.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), -- Red
+		ColorSequenceKeypoint.new(0.14, Color3.fromRGB(255, 127, 0)), -- Orange
+		ColorSequenceKeypoint.new(0.28, Color3.fromRGB(255, 255, 0)), -- Yellow
+		ColorSequenceKeypoint.new(0.42, Color3.fromRGB(0, 255, 0)), -- Green
+		ColorSequenceKeypoint.new(0.57, Color3.fromRGB(0, 0, 255)), -- Blue
+		ColorSequenceKeypoint.new(0.71, Color3.fromRGB(75, 0, 130)), -- Indigo
+		ColorSequenceKeypoint.new(0.85, Color3.fromRGB(148, 0, 211)), -- Violet
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) -- Back to red
+	})
+	rainbowGlow.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.8),
+		NumberSequenceKeypoint.new(0.5, 1.5),
+		NumberSequenceKeypoint.new(1, 0.5)
+	})
+	rainbowGlow.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	rainbowGlow.Rate = 100
+	rainbowGlow.Lifetime = NumberRange.new(1, 2)
+	rainbowGlow.Speed = NumberRange.new(0.5, 2)
+	rainbowGlow.SpreadAngle = Vector2.new(360, 360)
+	rainbowGlow.LightEmission = 1
+	rainbowGlow.Parent = glowAttachment
+	
+	return effectsContainer
+end
+
+local function removeSpaceRainbowEffects(character: Model)
+	local effects = character:FindFirstChild("SpaceRainbowEffects")
+	if effects then
+		effects:Destroy()
+	end
+	
+	-- Clean up attachments and lights on HRP
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local sparkleAttachment = hrp:FindFirstChild("SpaceRainbowSparkleAttachment")
+		if sparkleAttachment then
+			sparkleAttachment:Destroy()
+		end
+		
+		local rainbowLight = hrp:FindFirstChild("SpaceRainbowLight")
+		if rainbowLight then
+			rainbowLight:Destroy()
+		end
+		
+		local glowAttachment = hrp:FindFirstChild("SpaceRainbowGlowAttachment")
+		if glowAttachment then
+			glowAttachment:Destroy()
+		end
+	end
+	
+	-- Clean up trail
+	local trail = character:FindFirstChild("SpaceRainbowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
+local function setupSpaceRainbowEffect(character: Model, hrp: BasePart)
+	-- Function to update Space rainbow effects based on equipped marble
+	local function updateSpaceRainbow()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Space" then
+			createSpaceRainbowEffects(character, hrp)
+		else
+			removeSpaceRainbowEffects(character)
+		end
+	end
+	
+	-- Initial check
+	updateSpaceRainbow()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateSpaceRainbow)
+end
+
+local function createHackerBlackGreenEffects(character: Model, hrp: BasePart)
+	-- Remove existing effects if they exist
+	local existingEffects = character:FindFirstChild("HackerBlackGreenEffects")
+	if existingEffects then
+		existingEffects:Destroy()
+	end
+	
+	-- Create effects container
+	local effectsContainer = Instance.new("Model")
+	effectsContainer.Name = "HackerBlackGreenEffects"
+	effectsContainer.Parent = character
+	
+	-- Create black and green sparkle attachment
+	local sparkleAttachment = Instance.new("Attachment")
+	sparkleAttachment.Name = "HackerSparkleAttachment"
+	sparkleAttachment.Parent = hrp
+	
+	local hackerSparkles = Instance.new("ParticleEmitter")
+	hackerSparkles.Name = "HackerSparkles"
+	hackerSparkles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	hackerSparkles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 0)), -- Bright green
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 200, 0)), -- Medium green
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)) -- Black
+	})
+	hackerSparkles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.6),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	hackerSparkles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.7, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	hackerSparkles.Rate = 70
+	hackerSparkles.Lifetime = NumberRange.new(0.8, 1.5)
+	hackerSparkles.Speed = NumberRange.new(2, 6)
+	hackerSparkles.SpreadAngle = Vector2.new(360, 360)
+	hackerSparkles.LightEmission = 1
+	hackerSparkles.Parent = sparkleAttachment
+	
+	-- Create black and green trail
+	local trail = Instance.new("Trail")
+	trail.Name = "HackerBlackGreenTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "HackerTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "HackerTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure black and green trail appearance
+	trail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 0)), -- Bright green
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 150, 0)), -- Dark green
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)) -- Black
+	})
+	trail.Transparency = NumberSequence.new(0.1, 0.8)
+	trail.Lifetime = 2.5
+	trail.MinLength = 1.5
+	trail.MaxLength = 20
+	trail.WidthScale = NumberSequence.new(0.8, 2.0)
+	trail.FaceCamera = true
+	trail.Parent = character
+	
+	-- Create black and green glow
+	local glowAttachment = Instance.new("Attachment")
+	glowAttachment.Name = "HackerGlowAttachment"
+	glowAttachment.Parent = hrp
+	
+	local hackerGlow = Instance.new("ParticleEmitter")
+	hackerGlow.Name = "HackerGlow"
+	hackerGlow.Texture = "rbxasset://textures/particles/fire_main.dds"
+	hackerGlow.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 0)), -- Bright green
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 150, 0)), -- Medium green
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)) -- Black
+	})
+	hackerGlow.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.6),
+		NumberSequenceKeypoint.new(0.5, 1.2),
+		NumberSequenceKeypoint.new(1, 0.4)
+	})
+	hackerGlow.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	hackerGlow.Rate = 80
+	hackerGlow.Lifetime = NumberRange.new(1, 2)
+	hackerGlow.Speed = NumberRange.new(0.5, 2)
+	hackerGlow.SpreadAngle = Vector2.new(360, 360)
+	hackerGlow.LightEmission = 1
+	hackerGlow.Parent = glowAttachment
+	
+	-- Create green point light
+	local greenLight = Instance.new("PointLight")
+	greenLight.Name = "HackerGreenLight"
+	greenLight.Color = Color3.fromRGB(0, 255, 0) -- Bright green
+	greenLight.Brightness = 2.5
+	greenLight.Range = 10
+	greenLight.Parent = hrp
+	
+	return effectsContainer
+end
+
+local function removeHackerBlackGreenEffects(character: Model)
+	local effects = character:FindFirstChild("HackerBlackGreenEffects")
+	if effects then
+		effects:Destroy()
+	end
+	
+	-- Clean up attachments and lights on HRP
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local sparkleAttachment = hrp:FindFirstChild("HackerSparkleAttachment")
+		if sparkleAttachment then
+			sparkleAttachment:Destroy()
+		end
+		
+		local glowAttachment = hrp:FindFirstChild("HackerGlowAttachment")
+		if glowAttachment then
+			glowAttachment:Destroy()
+		end
+		
+		local greenLight = hrp:FindFirstChild("HackerGreenLight")
+		if greenLight then
+			greenLight:Destroy()
+		end
+	end
+	
+	-- Clean up trail
+	local trail = character:FindFirstChild("HackerBlackGreenTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
+local function setupHackerBlackGreenEffect(character: Model, hrp: BasePart)
+	-- Function to update Hacker black/green effects based on equipped marble
+	local function updateHackerEffects()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Hacker" then
+			createHackerBlackGreenEffects(character, hrp)
+		else
+			removeHackerBlackGreenEffects(character)
+		end
+	end
+	
+	-- Initial check
+	updateHackerEffects()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateHackerEffects)
+end
+
 local function applyCosmeticColorFromEquipped(character: Model, cosmetic: BasePart)
 	local id = character:GetAttribute("EquippedMarbleId")
 	dprint("applyCosmeticColor", id)
@@ -1267,6 +1606,8 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Coin = "rbxassetid://98528749229098", -- Coin texture
 		Castle = "rbxassetid://136095563046974", -- Castle texture
 		Phoenix = "rbxassetid://124481451788068", -- Phoenix texture
+		Space = "rbxassetid://119305575673092", -- Space texture
+		Hacker = "rbxassetid://115836576619858", -- Hacker texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -1636,6 +1977,8 @@ local function setupController(character: Model)
 	setupTsunamiWaterGlowEffect(character, hrp)
 	setupMeteorFireEffect(character, hrp)
 	setupPhoenixGlowEffect(character, hrp)
+	setupSpaceRainbowEffect(character, hrp)
+	setupHackerBlackGreenEffect(character, hrp)
 	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)
@@ -2039,6 +2382,8 @@ local function setupOtherPlayerVisuals(character: Model)
 	setupTsunamiWaterGlowEffect(character, hrp)
 	setupMeteorFireEffect(character, hrp)
 	setupPhoenixGlowEffect(character, hrp)
+	setupSpaceRainbowEffect(character, hrp)
+	setupHackerBlackGreenEffect(character, hrp)
 	
 	-- Setup Red marble permanent fire effects
 	setupRedFireEffect(character, cosmetic)
