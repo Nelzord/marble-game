@@ -85,10 +85,15 @@ local abilityCooldowns: { [Player]: number } = {}
 
 -- Position recording for time travel ability
 local positionRecordingEnabled = true
-local positionRecordingInterval = 0.016 -- ~60fps
+local positionRecordingInterval = 0.1 -- Record every 0.1 seconds (10fps) instead of every frame to reduce data ping
+local lastPositionRecordTime: { [Player]: number } = {}
 
--- Function to save player data to DataStore
-local function savePlayerData(player: Player)
+-- Debounce DataStore saves to prevent throttling during rapid changes
+local saveDebounce: { [Player]: thread? } = {}
+local SAVE_DEBOUNCE_TIME = 2 -- Save after 2 seconds of no changes
+
+-- Function to immediately save player data to DataStore (used for player leave)
+local function savePlayerDataImmediate(player: Player)
 	local data = playerData[player]
 	if not data then return end
 	
@@ -113,6 +118,24 @@ local function savePlayerData(player: Player)
 		if not success then
 			warn("[MarbleService] Failed to save data for " .. player.Name .. ": " .. tostring(errorMsg))
 		end
+	end)
+end
+
+-- Function to save player data to DataStore (with debouncing to reduce data ping)
+local function savePlayerData(player: Player)
+	local data = playerData[player]
+	if not data then return end
+	
+	-- Cancel previous save attempt for this player
+	if saveDebounce[player] then
+		task.cancel(saveDebounce[player])
+		saveDebounce[player] = nil
+	end
+	
+	-- Schedule new save after debounce time
+	saveDebounce[player] = task.delay(SAVE_DEBOUNCE_TIME, function()
+		saveDebounce[player] = nil
+		savePlayerDataImmediate(player)
 	end)
 end
 
@@ -247,6 +270,14 @@ end
 
 -- Record player positions for time travel ability
 local function recordPlayerPosition(player: Player)
+	-- Throttle recording based on interval
+	local lastRecord = lastPositionRecordTime[player]
+	local currentTime = tick()
+	if lastRecord and (currentTime - lastRecord) < positionRecordingInterval then
+		return -- Skip if not enough time has passed
+	end
+	lastPositionRecordTime[player] = currentTime
+	
 	local character = player.Character
 	if not character then return end
 	
@@ -824,10 +855,18 @@ print("[MarbleService] setupLaunchSystem() completed")
 
 -- Void detection system: Respawn players who fall below the map
 local VOID_Y_THRESHOLD = -100 -- Players below this Y coordinate are considered "in the void"
+local VOID_CHECK_INTERVAL = 0.5 -- Check every 0.5 seconds instead of every frame to reduce data ping
 
 local function setupVoidDetection()
-	-- Check all players periodically for void detection
+	-- Check all players periodically for void detection (throttled to reduce data ping)
+	local lastVoidCheckTime = 0
 	RunService.Heartbeat:Connect(function()
+		local currentTime = tick()
+		if (currentTime - lastVoidCheckTime) < VOID_CHECK_INTERVAL then
+			return -- Skip if not enough time has passed
+		end
+		lastVoidCheckTime = currentTime
+		
 		for _, player in ipairs(Players:GetPlayers()) do
 			local character = player.Character
 			if not character then continue end
@@ -1073,9 +1112,15 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-	-- Save data before player leaves
+	-- Cancel any pending debounced save
+	if saveDebounce[player] then
+		task.cancel(saveDebounce[player])
+		saveDebounce[player] = nil
+	end
+	
+	-- Force immediate save before player leaves (no debounce)
 	if playerData[player] then
-		savePlayerData(player)
+		savePlayerDataImmediate(player)
 	end
 	
 	-- Deactivate any active ability before player leaves
@@ -1103,15 +1148,34 @@ Players.PlayerRemoving:Connect(function(player)
 	spawningFlag[player] = nil
 	abilityCooldowns[player] = nil
 	dataStoreCache[player] = nil
+	lastPositionRecordTime[player] = nil -- Clean up position recording time
+	saveDebounce[player] = nil -- Clean up save debounce
 end)
 
 -- Start position recording loop for time travel ability
+-- Use a throttled approach to reduce data ping
+local lastPositionLoopTime = 0
 RunService.Heartbeat:Connect(function()
 	if not positionRecordingEnabled then return end
 	
+	-- Only run position recording at the specified interval
+	local currentTime = tick()
+	if (currentTime - lastPositionLoopTime) < positionRecordingInterval then
+		return
+	end
+	lastPositionLoopTime = currentTime
+	
+	-- Only check players who might have TimeTravel equipped
 	for player, _ in pairs(playerData) do
 		if player and player.Parent then
-			recordPlayerPosition(player)
+			-- Quick check: only record if player has TimeTravel equipped
+			local data = playerData[player]
+			if data and data.equipped then
+				local def = Marbles.getById(data.equipped)
+				if def and def.abilityModule == "TimeTravel" then
+					recordPlayerPosition(player)
+				end
+			end
 		end
 	end
 end)

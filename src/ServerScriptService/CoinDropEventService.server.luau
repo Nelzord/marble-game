@@ -56,6 +56,10 @@ local Remotes = getOrCreateRemotes()
 -- Get CoinService
 local CoinService = require(script.Parent.CoinService)
 
+-- Track active event coins for efficient batch updates (reduces data ping)
+local activeEventCoins: { { coin: Model, root: BasePart, sensor: BasePart, startTime: number } } = {}
+local coinUpdateConnection: RBXScriptConnection? = nil
+
 -- Helper function to get center of map
 local function getMapCenter(): Vector3
 	local baseplate = workspace:FindFirstChild("Baseplate")
@@ -153,18 +157,41 @@ local function createCoinAtPosition(position: Vector3)
 	sensor.CFrame = root.CFrame -- Start at coin position
 	sensor.Parent = coin
 	
-	-- Continuously update sensor position to follow the coin (works immediately)
-	local sensorConnection
-	sensorConnection = RunService.Heartbeat:Connect(function()
-		if not coin or not coin.Parent or not root or not root.Parent then
-			if sensorConnection then
-				sensorConnection:Disconnect()
+	-- Add to active coins list for batch updates (reduces data ping from individual connections)
+	table.insert(activeEventCoins, {
+		coin = coin,
+		root = root,
+		sensor = sensor,
+		startTime = os.clock(),
+	})
+	
+	-- Start batch update loop if not already running
+	if not coinUpdateConnection then
+		coinUpdateConnection = RunService.Heartbeat:Connect(function()
+			for i = #activeEventCoins, 1, -1 do
+				local coinData = activeEventCoins[i]
+				if not coinData.coin or not coinData.coin.Parent or not coinData.root or not coinData.root.Parent then
+					-- Coin was destroyed, remove from list
+					table.remove(activeEventCoins, i)
+				else
+					-- Update sensor position to match coin position
+					coinData.sensor.CFrame = coinData.root.CFrame
+					
+					-- Rotate coin (visual only)
+					local t = os.clock() - coinData.startTime
+					local rot = CFrame.Angles(0, (t * 2) % (math.pi * 2), 0)
+					local currentCFrame = coinData.root.CFrame
+					coinData.root.CFrame = CFrame.new(currentCFrame.Position) * rot
+				end
 			end
-			return
-		end
-		-- Update sensor position to match coin position
-		sensor.CFrame = root.CFrame
-	end)
+			
+			-- Disconnect if no coins left
+			if #activeEventCoins == 0 and coinUpdateConnection then
+				coinUpdateConnection:Disconnect()
+				coinUpdateConnection = nil
+			end
+		end)
+	end
 
 	-- Track if coin has been collected to prevent double collection
 	local collected = false
@@ -233,42 +260,29 @@ local function createCoinAtPosition(position: Vector3)
 			if sfxPart then sfxPart:Destroy() end
 		end)
 		
-		-- Clean up sensor connection
-		if sensorConnection then
-			sensorConnection:Disconnect()
-			sensorConnection = nil
+		-- Remove from active coins list (batch update loop will handle cleanup)
+		for i = #activeEventCoins, 1, -1 do
+			if activeEventCoins[i].coin == coin then
+				table.remove(activeEventCoins, i)
+				break
+			end
 		end
 		
 		-- Destroy the coin
 		coin:Destroy()
 	end)
 	
-	-- Animate the coin (rotate only, since it's falling)
-	local startTime = os.clock()
-	local connection
-	connection = RunService.Heartbeat:Connect(function()
-		if not coin.Parent or not root.Parent then
-			connection:Disconnect()
-			return
-		end
-		-- Only rotate, don't move (physics handles movement)
-		local t = os.clock() - startTime
-		local rot = CFrame.Angles(0, (t * 2) % (math.pi * 2), 0)
-		-- Apply rotation relative to current position
-		local currentCFrame = root.CFrame
-		root.CFrame = CFrame.new(currentCFrame.Position) * rot
-	end)
-	
 	-- Despawn coin after 2 minutes if not collected
 	task.delay(120, function()
 		if coin and coin.Parent then
+			-- Remove from active coins list
+			for i = #activeEventCoins, 1, -1 do
+				if activeEventCoins[i].coin == coin then
+					table.remove(activeEventCoins, i)
+					break
+				end
+			end
 			coin:Destroy()
-		end
-		if connection then
-			connection:Disconnect()
-		end
-		if sensorConnection then
-			sensorConnection:Disconnect()
 		end
 	end)
 	
@@ -304,8 +318,10 @@ local function startCoinDropEvent()
 	local eventEndTime = os.clock() + DROP_DURATION
 	local lastSpawnTime = os.clock()
 	
-	-- Spawn loop
+	-- Spawn loop (throttled to reduce data ping - only check spawn timing, not every frame)
 	local spawnConnection
+	local lastSpawnCheckTime = os.clock()
+	local SPAWN_CHECK_INTERVAL = 0.1 -- Check every 0.1 seconds instead of every frame
 	spawnConnection = RunService.Heartbeat:Connect(function()
 		local currentTime = os.clock()
 		
@@ -327,6 +343,12 @@ local function startCoinDropEvent()
 			dlog("Coin drop event ended, starting next countdown")
 			return
 		end
+		
+		-- Only check spawn timing at intervals (reduces data ping)
+		if currentTime - lastSpawnCheckTime < SPAWN_CHECK_INTERVAL then
+			return
+		end
+		lastSpawnCheckTime = currentTime
 		
 		-- Update remaining time for event
 		currentEventState.timeRemaining = math.max(0, eventEndTime - currentTime)
