@@ -30,6 +30,8 @@ local ABILITY_DESCRIPTIONS: { [string]: string } = {
 	Tsunami = "Tsunami: Summon a massive wave from below that launches you skyward with ocean sparkles.",
 	Meteor = "Meteor: Teleport high into the sky as meteors rain down around you.",
 	Coin = "Coin: Drops coins behind you as you move.",
+	Flash = "Flash: Temporarily increases movement speed by 7x for 5 seconds.",
+	["67"] = "67: Creates a big 6 and 7 next to each other that disappear after 6 seconds.",
 }
 
 -- Texture fallbacks (should match controller)
@@ -57,6 +59,8 @@ local FALLBACK_DECALS: { [string]: string } = {
 		Phoenix = "rbxassetid://124481451788068", -- Phoenix texture
 		Space = "rbxassetid://119305575673092", -- Space texture
 		Hacker = "rbxassetid://115836576619858", -- Hacker texture
+		Flash = "rbxassetid://105677188379071", -- Flash texture
+		["67"] = "rbxassetid://93952266843954", -- 67 texture
 	}
 
 -- Function to apply textures to a part
@@ -240,29 +244,38 @@ function InventorySystem.createMarbleTile(def, list, grid, EquipMarble)
 	sphere.Position = center
 	cam.CFrame = CFrame.new(center + Vector3.new(0, 0, 12), center)
 
-	-- Name label (show name even when locked)
+	-- Name label (show name when owned, "Locked (Rating)" when not owned)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Size = UDim2.new(1, -16, 0, 16)
 	nameLabel.Position = UDim2.new(0, 8, 1, -44)
-	nameLabel.Text = def.name -- Always show the marble name
-	nameLabel.TextColor3 = isOwned and Color3.new(1, 1, 1) or Color3.fromRGB(150, 150, 150) -- Dimmed when locked
+	if isOwned then
+		nameLabel.Text = def.name
+		nameLabel.TextColor3 = Color3.new(1, 1, 1)
+	else
+		local rating = getRarityOnly(def)
+		if rating ~= "" then
+			nameLabel.Text = "Locked (" .. rating .. ")"
+		else
+			nameLabel.Text = "Locked"
+		end
+		nameLabel.TextColor3 = Color3.fromRGB(150, 150, 150) -- Dimmed when locked
+	end
 	nameLabel.TextScaled = true
 	nameLabel.Parent = tile
 
-	-- Rarity label (show odds even when locked, but indicate it's locked)
+	-- Rarity label (show odds when owned, empty when locked since rating is in name)
 	local rarityLabel = Instance.new("TextLabel")
 	rarityLabel.BackgroundTransparency = 1
 	rarityLabel.Size = UDim2.new(1, -16, 0, 20)
 	rarityLabel.Position = UDim2.new(0, 8, 1, -24)
 	rarityLabel.TextScaled = true
-	rarityLabel.TextColor3 = isOwned and getRarityColor(def) or Color3.fromRGB(220, 180, 180)
-	-- Show odds and "Locked" text when not owned
 	if isOwned then
 		rarityLabel.Text = getRarityText(def)
+		rarityLabel.TextColor3 = getRarityColor(def)
 	else
-		local oddsText = getRarityText(def)
-		rarityLabel.Text = oddsText .. " (Locked)"
+		rarityLabel.Text = "" -- Empty when locked since rating is shown in name label
+		rarityLabel.TextColor3 = Color3.fromRGB(220, 180, 180)
 	end
 	rarityLabel.Parent = tile
 

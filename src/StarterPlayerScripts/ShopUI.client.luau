@@ -537,6 +537,8 @@ local function createShopItem(item, container, isRobuxItem)
             Phoenix = "rbxassetid://124481451788068", -- Phoenix marble texture
             Space = "rbxassetid://119305575673092", -- Space marble texture
             Hacker = "rbxassetid://115836576619858", -- Hacker marble texture
+            Flash = "rbxassetid://105677188379071", -- Flash marble texture
+            ["67"] = "rbxassetid://93952266843954", -- 67 marble texture
         }
         
         if #assets == 0 then

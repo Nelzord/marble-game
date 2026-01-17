@@ -406,11 +406,61 @@ local function removeMoonGlowTrail(character: Model)
 end
 
 local function createBlueGlowTrail(character: Model, hrp: BasePart)
-	-- Remove existing trail if it exists
+	-- Remove existing effects if they exist
 	local existingTrail = character:FindFirstChild("BlueGlowTrail")
 	if existingTrail then
 		existingTrail:Destroy()
 	end
+	
+	local existingGlow = character:FindFirstChild("BlueGlowAura")
+	if existingGlow then
+		existingGlow:Destroy()
+	end
+	
+	-- Create glow aura container
+	local glowContainer = Instance.new("Model")
+	glowContainer.Name = "BlueGlowAura"
+	glowContainer.Parent = character
+	
+	-- Create blue point light for glow
+	local blueLight = Instance.new("PointLight")
+	blueLight.Name = "BlueGlowLight"
+	blueLight.Color = Color3.fromRGB(60, 120, 220) -- Blue color
+	blueLight.Brightness = 2.5
+	blueLight.Range = 12
+	blueLight.Parent = hrp
+	
+	-- Create attachment for water particles
+	local waterAttachment = Instance.new("Attachment")
+	waterAttachment.Name = "BlueWaterAttachment"
+	waterAttachment.Parent = hrp
+	
+	-- Create water particle emitter
+	local waterParticles = Instance.new("ParticleEmitter")
+	waterParticles.Name = "BlueWaterParticles"
+	waterParticles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	waterParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)), -- White
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(200, 230, 255)), -- Light blue
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(100, 180, 255)), -- Blue
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 120, 220)) -- Dark blue
+	})
+	waterParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.4),
+		NumberSequenceKeypoint.new(0.5, 1.0),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	waterParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.7, 0.6),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	waterParticles.Rate = 40
+	waterParticles.Lifetime = NumberRange.new(1, 2)
+	waterParticles.Speed = NumberRange.new(2, 5)
+	waterParticles.SpreadAngle = Vector2.new(360, 360)
+	waterParticles.Acceleration = Vector3.new(0, -2, 0) -- Slight downward drift
+	waterParticles.Parent = waterAttachment
 	
 	-- Create new trail
 	local trail = Instance.new("Trail")
@@ -445,14 +495,95 @@ local function removeBlueGlowTrail(character: Model)
 	if trail then
 		trail:Destroy()
 	end
+	
+	local glowAura = character:FindFirstChild("BlueGlowAura")
+	if glowAura then
+		glowAura:Destroy()
+	end
+	
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local blueLight = hrp:FindFirstChild("BlueGlowLight")
+		if blueLight then
+			blueLight:Destroy()
+		end
+		
+		local waterAttachment = hrp:FindFirstChild("BlueWaterAttachment")
+		if waterAttachment then
+			waterAttachment:Destroy()
+		end
+		
+		-- Clean up trail attachments
+		local trailAttachment0 = hrp:FindFirstChild("BlueTrailAttachment0")
+		if trailAttachment0 then
+			trailAttachment0:Destroy()
+		end
+		
+		local trailAttachment1 = hrp:FindFirstChild("BlueTrailAttachment1")
+		if trailAttachment1 then
+			trailAttachment1:Destroy()
+		end
+	end
 end
 
 local function createGreenGlowTrail(character: Model, hrp: BasePart)
-	-- Remove existing trail if it exists
+	-- Remove existing effects if they exist
 	local existingTrail = character:FindFirstChild("GreenGlowTrail")
 	if existingTrail then
 		existingTrail:Destroy()
 	end
+	
+	local existingGlow = character:FindFirstChild("GreenGlowAura")
+	if existingGlow then
+		existingGlow:Destroy()
+	end
+	
+	-- Create glow aura container
+	local glowContainer = Instance.new("Model")
+	glowContainer.Name = "GreenGlowAura"
+	glowContainer.Parent = character
+	
+	-- Create green point light for glow
+	local greenLight = Instance.new("PointLight")
+	greenLight.Name = "GreenGlowLight"
+	greenLight.Color = Color3.fromRGB(70, 200, 90) -- Green color
+	greenLight.Brightness = 2.5
+	greenLight.Range = 12
+	greenLight.Parent = hrp
+	
+	-- Create attachment for leaf particles
+	local leafAttachment = Instance.new("Attachment")
+	leafAttachment.Name = "GreenLeafAttachment"
+	leafAttachment.Parent = hrp
+	
+	-- Create leaf particle emitter
+	local leafParticles = Instance.new("ParticleEmitter")
+	leafParticles.Name = "GreenLeafParticles"
+	leafParticles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	leafParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 139, 34)), -- Forest green
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(50, 205, 50)), -- Lime green
+		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(154, 205, 50)), -- Yellow green
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 200, 90)) -- Bright green
+	})
+	leafParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.6),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	leafParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.7, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	leafParticles.Rate = 50
+	leafParticles.Lifetime = NumberRange.new(0.8, 1.5)
+	leafParticles.Speed = NumberRange.new(2, 6)
+	leafParticles.SpreadAngle = Vector2.new(360, 360)
+	leafParticles.RotSpeed = NumberRange.new(-180, 180)
+	leafParticles.Rotation = NumberRange.new(0, 360)
+	leafParticles.Acceleration = Vector3.new(0, 1, 0) -- Slight upward drift
+	leafParticles.Parent = leafAttachment
 	
 	-- Create new trail
 	local trail = Instance.new("Trail")
@@ -486,6 +617,35 @@ local function removeGreenGlowTrail(character: Model)
 	local trail = character:FindFirstChild("GreenGlowTrail")
 	if trail then
 		trail:Destroy()
+	end
+	
+	local glowAura = character:FindFirstChild("GreenGlowAura")
+	if glowAura then
+		glowAura:Destroy()
+	end
+	
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local greenLight = hrp:FindFirstChild("GreenGlowLight")
+		if greenLight then
+			greenLight:Destroy()
+		end
+		
+		local leafAttachment = hrp:FindFirstChild("GreenLeafAttachment")
+		if leafAttachment then
+			leafAttachment:Destroy()
+		end
+		
+		-- Clean up trail attachments
+		local trailAttachment0 = hrp:FindFirstChild("GreenTrailAttachment0")
+		if trailAttachment0 then
+			trailAttachment0:Destroy()
+		end
+		
+		local trailAttachment1 = hrp:FindFirstChild("GreenTrailAttachment1")
+		if trailAttachment1 then
+			trailAttachment1:Destroy()
+		end
 	end
 end
 
@@ -532,11 +692,55 @@ local function removeGoldGlowTrail(character: Model)
 end
 
 local function createPharaohGlowTrail(character: Model, hrp: BasePart)
-	-- Remove existing trail if it exists
+	-- Remove existing effects if they exist
 	local existingTrail = character:FindFirstChild("PharaohGlowTrail")
 	if existingTrail then
 		existingTrail:Destroy()
 	end
+	
+	local existingGlow = character:FindFirstChild("PharaohGlowAura")
+	if existingGlow then
+		existingGlow:Destroy()
+	end
+	
+	-- Create glow aura container
+	local glowContainer = Instance.new("Model")
+	glowContainer.Name = "PharaohGlowAura"
+	glowContainer.Parent = character
+	
+	-- Create attachment for sand particles
+	local sandAttachment = Instance.new("Attachment")
+	sandAttachment.Name = "PharaohSandAttachment"
+	sandAttachment.Parent = hrp
+	
+	-- Create sand particle emitter
+	local sandParticles = Instance.new("ParticleEmitter")
+	sandParticles.Name = "PharaohSandParticles"
+	sandParticles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	sandParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 240, 200)), -- Light sand/beige
+		ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 215, 0)), -- Gold
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(218, 165, 32)), -- Goldenrod
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(184, 134, 11)) -- Dark goldenrod
+	})
+	sandParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.8),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	sandParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.7, 0.6),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	sandParticles.Rate = 60
+	sandParticles.Lifetime = NumberRange.new(1, 2)
+	sandParticles.Speed = NumberRange.new(2, 6)
+	sandParticles.SpreadAngle = Vector2.new(360, 360)
+	sandParticles.RotSpeed = NumberRange.new(-90, 90)
+	sandParticles.Rotation = NumberRange.new(0, 360)
+	sandParticles.Acceleration = Vector3.new(0, -1, 0) -- Slight downward drift like sand
+	sandParticles.Parent = sandAttachment
 	
 	-- Create new trail
 	local trail = Instance.new("Trail")
@@ -573,6 +777,30 @@ local function removePharaohGlowTrail(character: Model)
 	local trail = character:FindFirstChild("PharaohGlowTrail")
 	if trail then
 		trail:Destroy()
+	end
+	
+	local glowAura = character:FindFirstChild("PharaohGlowAura")
+	if glowAura then
+		glowAura:Destroy()
+	end
+	
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local sandAttachment = hrp:FindFirstChild("PharaohSandAttachment")
+		if sandAttachment then
+			sandAttachment:Destroy()
+		end
+		
+		-- Clean up trail attachments
+		local trailAttachment0 = hrp:FindFirstChild("PharaohTrailAttachment0")
+		if trailAttachment0 then
+			trailAttachment0:Destroy()
+		end
+		
+		local trailAttachment1 = hrp:FindFirstChild("PharaohTrailAttachment1")
+		if trailAttachment1 then
+			trailAttachment1:Destroy()
+		end
 	end
 end
 
@@ -795,21 +1023,209 @@ local function setupGoldGlowEffect(character: Model, hrp: BasePart)
 end
 
 local function setupPharaohGlowEffect(character: Model, hrp: BasePart)
-	-- Monitor PharaohGlowActive attribute changes
-	character:GetAttributeChangedSignal("PharaohGlowActive"):Connect(function()
-		local isActive = character:GetAttribute("PharaohGlowActive")
-		if isActive then
+	-- Function to update Pharaoh glow based on equipped marble
+	local function updatePharaohGlow()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Pharaoh" then
 			createPharaohGlowTrail(character, hrp)
 		else
 			removePharaohGlowTrail(character)
 		end
-	end)
-	
-	-- Check initial state
-	local initialGlow = character:GetAttribute("PharaohGlowActive")
-	if initialGlow then
-		createPharaohGlowTrail(character, hrp)
 	end
+	
+	-- Initial check
+	updatePharaohGlow()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updatePharaohGlow)
+	
+	-- Also monitor PharaohGlowActive for enhanced effects when ability is active
+	character:GetAttributeChangedSignal("PharaohGlowActive"):Connect(function()
+		local isActive = character:GetAttribute("PharaohGlowActive")
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Pharaoh" then
+			-- Enhance sand particles when ability is active
+			local hrp = character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local sandAttachment = hrp:FindFirstChild("PharaohSandAttachment")
+				if sandAttachment then
+					local sandParticles = sandAttachment:FindFirstChild("PharaohSandParticles")
+					if sandParticles then
+						sandParticles.Rate = isActive and 100 or 60
+					end
+				end
+			end
+		end
+	end)
+end
+
+local function createFlashGlowAura(character: Model, hrp: BasePart)
+	-- Remove existing effects if they exist
+	local existingAura = character:FindFirstChild("FlashGlowAura")
+	if existingAura then
+		existingAura:Destroy()
+	end
+	
+	-- Create aura container
+	local auraContainer = Instance.new("Model")
+	auraContainer.Name = "FlashGlowAura"
+	auraContainer.Parent = character
+	
+	-- Create yellow point light for glow
+	local yellowLight = Instance.new("PointLight")
+	yellowLight.Name = "FlashYellowLight"
+	yellowLight.Color = Color3.fromRGB(255, 220, 100) -- Bright yellow
+	yellowLight.Brightness = 2.5
+	yellowLight.Range = 12
+	yellowLight.Parent = hrp
+	
+	-- Create sparkle attachment
+	local sparkleAttachment = Instance.new("Attachment")
+	sparkleAttachment.Name = "FlashSparkleAttachment"
+	sparkleAttachment.Parent = hrp
+	
+	-- Yellow sparkles
+	local yellowSparkles = Instance.new("ParticleEmitter")
+	yellowSparkles.Name = "FlashYellowSparkles"
+	yellowSparkles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	yellowSparkles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 150)), -- Bright yellow
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 50)), -- Yellow-orange
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 150, 0))   -- Orange
+	})
+	yellowSparkles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.5, 0.4),
+		NumberSequenceKeypoint.new(1, 0.1)
+	})
+	yellowSparkles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.7, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	yellowSparkles.Rate = 50
+	yellowSparkles.Lifetime = NumberRange.new(0.8, 1.5)
+	yellowSparkles.Speed = NumberRange.new(1, 4)
+	yellowSparkles.SpreadAngle = Vector2.new(360, 360)
+	yellowSparkles.LightEmission = 1
+	yellowSparkles.Parent = sparkleAttachment
+	
+	-- Create trail with yellow/red gradient
+	local trail = Instance.new("Trail")
+	trail.Name = "FlashGlowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "FlashTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "FlashTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments with separation for longer trail effect
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure trail appearance with yellow/red gradient
+	trail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 100)), -- Bright yellow
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(255, 200, 50)), -- Yellow-orange
+		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 120, 0)), -- Orange
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 50, 0))     -- Red
+	})
+	trail.Transparency = NumberSequence.new(0.1, 0.95) -- More opaque at start, fade to transparent
+	trail.Lifetime = 4.0 -- Trail duration
+	trail.MinLength = 1.5 -- Trail length
+	trail.MaxLength = 15 -- Maximum trail length
+	trail.WidthScale = NumberSequence.new(0.8, 2.0) -- Trail width
+	trail.FaceCamera = true -- Trail faces the camera
+	trail.Parent = character
+	
+	return auraContainer
+end
+
+local function removeFlashGlowAura(character: Model)
+	local aura = character:FindFirstChild("FlashGlowAura")
+	if aura then
+		aura:Destroy()
+	end
+	
+	local trail = character:FindFirstChild("FlashGlowTrail")
+	if trail then
+		trail:Destroy()
+	end
+	
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local yellowLight = hrp:FindFirstChild("FlashYellowLight")
+		if yellowLight then
+			yellowLight:Destroy()
+		end
+		
+		local sparkleAttachment = hrp:FindFirstChild("FlashSparkleAttachment")
+		if sparkleAttachment then
+			sparkleAttachment:Destroy()
+		end
+		
+		-- Clean up trail attachments
+		local trailAttachment0 = hrp:FindFirstChild("FlashTrailAttachment0")
+		if trailAttachment0 then
+			trailAttachment0:Destroy()
+		end
+		
+		local trailAttachment1 = hrp:FindFirstChild("FlashTrailAttachment1")
+		if trailAttachment1 then
+			trailAttachment1:Destroy()
+		end
+	end
+end
+
+local function setupFlashGlowEffect(character: Model, hrp: BasePart)
+	-- Function to update Flash glow based on equipped marble
+	local function updateFlashGlow()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Flash" then
+			createFlashGlowAura(character, hrp)
+		else
+			removeFlashGlowAura(character)
+		end
+	end
+	
+	-- Initial check
+	updateFlashGlow()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateFlashGlow)
+	
+	-- Also monitor FlashGlowActive for enhanced effects when ability is active
+	character:GetAttributeChangedSignal("FlashGlowActive"):Connect(function()
+		local isActive = character:GetAttribute("FlashGlowActive")
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Flash" then
+			-- Enhance effects when ability is active (increase brightness, sparkle rate, etc.)
+			local hrp = character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local yellowLight = hrp:FindFirstChild("FlashYellowLight")
+				if yellowLight then
+					yellowLight.Brightness = isActive and 4.0 or 2.5
+					yellowLight.Range = isActive and 18 or 12
+				end
+				
+				local sparkleAttachment = hrp:FindFirstChild("FlashSparkleAttachment")
+				if sparkleAttachment then
+					local yellowSparkles = sparkleAttachment:FindFirstChild("FlashYellowSparkles")
+					if yellowSparkles then
+						yellowSparkles.Rate = isActive and 100 or 50
+					end
+				end
+				
+				local trail = character:FindFirstChild("FlashGlowTrail")
+				if trail then
+					trail.Lifetime = isActive and 7.0 or 4.0
+					trail.MaxLength = isActive and 25 or 15
+				end
+			end
+		end
+	end)
 end
 
 local function setupTsunamiWaterGlowEffect(character: Model, hrp: BasePart)
@@ -1392,6 +1808,277 @@ local function setupSpaceRainbowEffect(character: Model, hrp: BasePart)
 	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateSpaceRainbow)
 end
 
+local function createDiamondRainbowEffects(character: Model, hrp: BasePart)
+	-- Remove existing effects if they exist
+	local existingEffects = character:FindFirstChild("DiamondRainbowEffects")
+	if existingEffects then
+		existingEffects:Destroy()
+	end
+	
+	-- Create effects container
+	local effectsContainer = Instance.new("Model")
+	effectsContainer.Name = "DiamondRainbowEffects"
+	effectsContainer.Parent = character
+	
+	-- Create rainbow sparkle attachment
+	local sparkleAttachment = Instance.new("Attachment")
+	sparkleAttachment.Name = "DiamondRainbowSparkleAttachment"
+	sparkleAttachment.Parent = hrp
+	
+	local rainbowSparkles = Instance.new("ParticleEmitter")
+	rainbowSparkles.Name = "DiamondRainbowSparkles"
+	rainbowSparkles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	rainbowSparkles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), -- Red
+		ColorSequenceKeypoint.new(0.14, Color3.fromRGB(255, 127, 0)), -- Orange
+		ColorSequenceKeypoint.new(0.28, Color3.fromRGB(255, 255, 0)), -- Yellow
+		ColorSequenceKeypoint.new(0.42, Color3.fromRGB(0, 255, 0)), -- Green
+		ColorSequenceKeypoint.new(0.57, Color3.fromRGB(0, 0, 255)), -- Blue
+		ColorSequenceKeypoint.new(0.71, Color3.fromRGB(75, 0, 130)), -- Indigo
+		ColorSequenceKeypoint.new(0.85, Color3.fromRGB(148, 0, 211)), -- Violet
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) -- Back to red
+	})
+	rainbowSparkles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.6),
+		NumberSequenceKeypoint.new(1, 0.2)
+	})
+	rainbowSparkles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.7, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	rainbowSparkles.Rate = 100 -- More sparkles for Diamond
+	rainbowSparkles.Lifetime = NumberRange.new(0.8, 1.5)
+	rainbowSparkles.Speed = NumberRange.new(2, 6)
+	rainbowSparkles.SpreadAngle = Vector2.new(360, 360)
+	rainbowSparkles.LightEmission = 1
+	rainbowSparkles.Parent = sparkleAttachment
+	
+	-- Create rainbow trail
+	local trail = Instance.new("Trail")
+	trail.Name = "DiamondRainbowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "DiamondTrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "DiamondTrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments
+	trail.Attachment0.Position = Vector3.new(0, 1, 0)
+	trail.Attachment1.Position = Vector3.new(0, -1, 0)
+	
+	-- Configure rainbow trail appearance
+	trail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), -- Red
+		ColorSequenceKeypoint.new(0.14, Color3.fromRGB(255, 127, 0)), -- Orange
+		ColorSequenceKeypoint.new(0.28, Color3.fromRGB(255, 255, 0)), -- Yellow
+		ColorSequenceKeypoint.new(0.42, Color3.fromRGB(0, 255, 0)), -- Green
+		ColorSequenceKeypoint.new(0.57, Color3.fromRGB(0, 0, 255)), -- Blue
+		ColorSequenceKeypoint.new(0.71, Color3.fromRGB(75, 0, 130)), -- Indigo
+		ColorSequenceKeypoint.new(0.85, Color3.fromRGB(148, 0, 211)), -- Violet
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) -- Back to red
+	})
+	trail.Transparency = NumberSequence.new(0.1, 0.8)
+	trail.Lifetime = 4.0 -- Longer trail for Diamond
+	trail.MinLength = 2.0
+	trail.MaxLength = 30 -- Longer max length
+	trail.WidthScale = NumberSequence.new(1.0, 3.0) -- Wider trail
+	trail.FaceCamera = true
+	trail.Parent = character
+	
+	-- Create rainbow point light
+	local rainbowLight = Instance.new("PointLight")
+	rainbowLight.Name = "DiamondRainbowLight"
+	rainbowLight.Color = Color3.fromRGB(255, 100, 255) -- Magenta/pink for rainbow effect
+	rainbowLight.Brightness = 3.0 -- Brighter for Diamond
+	rainbowLight.Range = 15 -- Larger range
+	rainbowLight.Parent = hrp
+	
+	-- Create rainbow glow aura attachment
+	local glowAttachment = Instance.new("Attachment")
+	glowAttachment.Name = "DiamondRainbowGlowAttachment"
+	glowAttachment.Parent = hrp
+	
+	local rainbowGlow = Instance.new("ParticleEmitter")
+	rainbowGlow.Name = "DiamondRainbowGlow"
+	rainbowGlow.Texture = "rbxasset://textures/particles/fire_main.dds"
+	rainbowGlow.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), -- Red
+		ColorSequenceKeypoint.new(0.14, Color3.fromRGB(255, 127, 0)), -- Orange
+		ColorSequenceKeypoint.new(0.28, Color3.fromRGB(255, 255, 0)), -- Yellow
+		ColorSequenceKeypoint.new(0.42, Color3.fromRGB(0, 255, 0)), -- Green
+		ColorSequenceKeypoint.new(0.57, Color3.fromRGB(0, 0, 255)), -- Blue
+		ColorSequenceKeypoint.new(0.71, Color3.fromRGB(75, 0, 130)), -- Indigo
+		ColorSequenceKeypoint.new(0.85, Color3.fromRGB(148, 0, 211)), -- Violet
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) -- Back to red
+	})
+	rainbowGlow.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1.0),
+		NumberSequenceKeypoint.new(0.5, 2.0),
+		NumberSequenceKeypoint.new(1, 0.8)
+	})
+	rainbowGlow.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.5, 0.4),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	rainbowGlow.Rate = 120 -- More particles for Diamond
+	rainbowGlow.Lifetime = NumberRange.new(1, 2)
+	rainbowGlow.Speed = NumberRange.new(0.5, 2)
+	rainbowGlow.SpreadAngle = Vector2.new(360, 360)
+	rainbowGlow.LightEmission = 1
+	rainbowGlow.Parent = glowAttachment
+	
+	return effectsContainer
+end
+
+local function removeDiamondRainbowEffects(character: Model)
+	local effects = character:FindFirstChild("DiamondRainbowEffects")
+	if effects then
+		effects:Destroy()
+	end
+	
+	-- Clean up attachments and lights on HRP
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local sparkleAttachment = hrp:FindFirstChild("DiamondRainbowSparkleAttachment")
+		if sparkleAttachment then
+			sparkleAttachment:Destroy()
+		end
+		
+		local rainbowLight = hrp:FindFirstChild("DiamondRainbowLight")
+		if rainbowLight then
+			rainbowLight:Destroy()
+		end
+		
+		local glowAttachment = hrp:FindFirstChild("DiamondRainbowGlowAttachment")
+		if glowAttachment then
+			glowAttachment:Destroy()
+		end
+		
+		-- Clean up trail attachments
+		local trailAttachment0 = hrp:FindFirstChild("DiamondTrailAttachment0")
+		if trailAttachment0 then
+			trailAttachment0:Destroy()
+		end
+		
+		local trailAttachment1 = hrp:FindFirstChild("DiamondTrailAttachment1")
+		if trailAttachment1 then
+			trailAttachment1:Destroy()
+		end
+	end
+	
+	-- Clean up trail
+	local trail = character:FindFirstChild("DiamondRainbowTrail")
+	if trail then
+		trail:Destroy()
+	end
+end
+
+local function setupDiamondRainbowEffect(character: Model, hrp: BasePart)
+	-- Function to update Diamond rainbow effects based on equipped marble
+	local function updateDiamondRainbow()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "Diamond" then
+			createDiamondRainbowEffects(character, hrp)
+		else
+			removeDiamondRainbowEffects(character)
+		end
+	end
+	
+	-- Initial check
+	updateDiamondRainbow()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(updateDiamondRainbow)
+end
+
+local function create67RainbowTrail(character: Model, hrp: BasePart)
+	-- Remove existing trail if it exists
+	local existingTrail = character:FindFirstChild("67RainbowTrail")
+	if existingTrail then
+		existingTrail:Destroy()
+	end
+	
+	-- Create rainbow trail positioned behind the marble
+	local trail = Instance.new("Trail")
+	trail.Name = "67RainbowTrail"
+	trail.Attachment0 = Instance.new("Attachment")
+	trail.Attachment0.Name = "67TrailAttachment0"
+	trail.Attachment0.Parent = hrp
+	
+	trail.Attachment1 = Instance.new("Attachment")
+	trail.Attachment1.Name = "67TrailAttachment1"
+	trail.Attachment1.Parent = hrp
+	
+	-- Position attachments behind the marble (negative Z)
+	trail.Attachment0.Position = Vector3.new(0, 1, -1.5)
+	trail.Attachment1.Position = Vector3.new(0, -1, -1.5)
+	
+	-- Configure rainbow trail appearance
+	trail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), -- Red
+		ColorSequenceKeypoint.new(0.14, Color3.fromRGB(255, 127, 0)), -- Orange
+		ColorSequenceKeypoint.new(0.28, Color3.fromRGB(255, 255, 0)), -- Yellow
+		ColorSequenceKeypoint.new(0.42, Color3.fromRGB(0, 255, 0)), -- Green
+		ColorSequenceKeypoint.new(0.57, Color3.fromRGB(0, 0, 255)), -- Blue
+		ColorSequenceKeypoint.new(0.71, Color3.fromRGB(75, 0, 130)), -- Indigo
+		ColorSequenceKeypoint.new(0.85, Color3.fromRGB(148, 0, 211)), -- Violet
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) -- Back to red
+	})
+	trail.Transparency = NumberSequence.new(0.1, 0.8)
+	trail.Lifetime = 4.0
+	trail.MinLength = 2.0
+	trail.MaxLength = 25
+	trail.WidthScale = NumberSequence.new(0.8, 2.5)
+	trail.FaceCamera = true
+	trail.Parent = character
+	
+	return trail
+end
+
+local function remove67RainbowTrail(character: Model)
+	local trail = character:FindFirstChild("67RainbowTrail")
+	if trail then
+		trail:Destroy()
+	end
+	
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		-- Clean up trail attachments
+		local trailAttachment0 = hrp:FindFirstChild("67TrailAttachment0")
+		if trailAttachment0 then
+			trailAttachment0:Destroy()
+		end
+		
+		local trailAttachment1 = hrp:FindFirstChild("67TrailAttachment1")
+		if trailAttachment1 then
+			trailAttachment1:Destroy()
+		end
+	end
+end
+
+local function setup67RainbowTrail(character: Model, hrp: BasePart)
+	-- Function to update 67 rainbow trail based on equipped marble
+	local function update67RainbowTrail()
+		local equippedId = character:GetAttribute("EquippedMarbleId")
+		if equippedId == "67" then
+			create67RainbowTrail(character, hrp)
+		else
+			remove67RainbowTrail(character)
+		end
+	end
+	
+	-- Initial check
+	update67RainbowTrail()
+	
+	-- Monitor for marble changes
+	character:GetAttributeChangedSignal("EquippedMarbleId"):Connect(update67RainbowTrail)
+end
+
 local function createHackerBlackGreenEffects(character: Model, hrp: BasePart)
 	-- Remove existing effects if they exist
 	local existingEffects = character:FindFirstChild("HackerBlackGreenEffects")
@@ -1608,6 +2295,8 @@ local function applyCosmeticTexturesFromEquipped(character: Model, cosmetic: Bas
 		Phoenix = "rbxassetid://124481451788068", -- Phoenix texture
 		Space = "rbxassetid://119305575673092", -- Space texture
 		Hacker = "rbxassetid://115836576619858", -- Hacker texture
+		Flash = "rbxassetid://105677188379071", -- Flash texture
+		["67"] = "rbxassetid://93952266843954", -- 67 texture
 	}
 	if #assets == 0 then
 		local fallback = DEFAULT_DECALS[id]
@@ -1684,6 +2373,8 @@ local function setupNameplateScaling(character: Model)
 end
 
 -- Enhanced nameplate styling based on rarity
+local nameplateTweens: { [Model]: { [string]: Tween } } = {}
+
 local function setupEnhancedNameplate(character: Model)
 	local gui = character:FindFirstChild("Nameplate")
 	if not gui or not gui:IsA("BillboardGui") then return end
@@ -1691,8 +2382,43 @@ local function setupEnhancedNameplate(character: Model)
 	local label = gui:FindFirstChild("Label")
 	if not label or not label:IsA("TextLabel") then return end
 	
+	-- Clean up all existing tweens for this character
+	if nameplateTweens[character] then
+		for _, tween in pairs(nameplateTweens[character]) do
+			if tween then
+				tween:Cancel()
+			end
+		end
+		nameplateTweens[character] = {}
+	end
+	
 	-- Function to apply rarity-based styling
 	local function applyRarityStyling()
+		-- Clean up all existing effects and tweens first
+		local effectsToRemove = {"RarityGlow", "RainbowGlow", "EpicStar", "RareDiamond", "LegendarySparkle", "UncommonLeaf"}
+		for _, effectName in ipairs(effectsToRemove) do
+			local existingEffect = gui:FindFirstChild(effectName)
+			if existingEffect then
+				existingEffect:Destroy()
+			end
+		end
+		
+		-- Cancel any existing tweens on the gui and label
+		if nameplateTweens[character] then
+			for _, tween in pairs(nameplateTweens[character]) do
+				if tween then
+					tween:Cancel()
+				end
+			end
+			nameplateTweens[character] = {}
+		end
+		
+		-- Reset gui and label properties to defaults
+		local baseSize = UDim2.fromOffset(180, 36)
+		gui.Size = baseSize
+		gui.StudsOffset = Vector3.new(0, 3.5, 0)
+		label.Size = UDim2.fromScale(1, 1)
+		
 		local rarityTier = character:GetAttribute("NameplateRarityTier")
 		local fontName = character:GetAttribute("NameplateFont")
 		local textColor = character:GetAttribute("NameplateTextColor")
@@ -1726,8 +2452,7 @@ local function setupEnhancedNameplate(character: Model)
 		end
 		
 		-- Apply rarity-based scaling
-		local baseSize = gui.Size
-		gui.Size = UDim2.fromOffset(baseSize.X.Offset * rarityScale, baseSize.Y.Offset * rarityScale)
+		gui.Size = UDim2.fromOffset(180 * rarityScale, 36 * rarityScale)
 		
 		-- Add subtle floating animation for epic+ rarities
 		if rarityTier == "Epic" or rarityTier == "Legendary" then
@@ -1737,25 +2462,23 @@ local function setupEnhancedNameplate(character: Model)
 				StudsOffset = Vector3.new(originalOffset.X, originalOffset.Y + 0.3, originalOffset.Z)
 			})
 			floatTween:Play()
+			if not nameplateTweens[character] then
+				nameplateTweens[character] = {}
+			end
+			nameplateTweens[character]["float"] = floatTween
 		end
 		
 		-- Add text scaling animation for legendary marbles
 		if rarityTier == "Legendary" then
-			local originalSize = label.Size
 			local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
 			local scaleTween = game:GetService("TweenService"):Create(label, tweenInfo, {
 				Size = UDim2.fromScale(1.05, 1.05)
 			})
 			scaleTween:Play()
-		end
-		
-		-- Remove existing rarity effects
-		local effectsToRemove = {"RarityGlow", "RainbowGlow", "EpicStar", "RareDiamond", "LegendarySparkle", "UncommonLeaf"}
-		for _, effectName in ipairs(effectsToRemove) do
-			local existingEffect = gui:FindFirstChild(effectName)
-			if existingEffect then
-				existingEffect:Destroy()
+			if not nameplateTweens[character] then
+				nameplateTweens[character] = {}
 			end
+			nameplateTweens[character]["scale"] = scaleTween
 		end
 		
 		-- Add glow effect for uncommon+ rarities
@@ -1780,6 +2503,10 @@ local function setupEnhancedNameplate(character: Model)
 					TextTransparency = 0.3
 				})
 				tween:Play()
+				if not nameplateTweens[character] then
+					nameplateTweens[character] = {}
+				end
+				nameplateTweens[character]["glow"] = tween
 			end
 			
 			-- Add rainbow effect for legendary marbles
@@ -1788,6 +2515,10 @@ local function setupEnhancedNameplate(character: Model)
 					TextColor3 = Color3.fromRGB(255, 100, 100)
 				})
 				rainbowTween:Play()
+				if not nameplateTweens[character] then
+					nameplateTweens[character] = {}
+				end
+				nameplateTweens[character]["rainbow1"] = rainbowTween
 				
 				-- Create a second rainbow layer for extra effect
 				local rainbowGlow = glow:Clone()
@@ -1802,6 +2533,7 @@ local function setupEnhancedNameplate(character: Model)
 					TextColor3 = Color3.fromRGB(100, 255, 100)
 				})
 				rainbowTween2:Play()
+				nameplateTweens[character]["rainbow2"] = rainbowTween2
 			end
 		end
 		
@@ -1829,6 +2561,10 @@ local function setupEnhancedNameplate(character: Model)
 				Rotation = 360
 			})
 			tween:Play()
+			if not nameplateTweens[character] then
+				nameplateTweens[character] = {}
+			end
+			nameplateTweens[character]["star"] = tween
 		elseif rarityTier == "Rare" then
 			-- Add rare diamond effect
 			local diamond = Instance.new("Frame")
@@ -1852,6 +2588,10 @@ local function setupEnhancedNameplate(character: Model)
 				Size = UDim2.fromOffset(18, 18)
 			})
 			tween:Play()
+			if not nameplateTweens[character] then
+				nameplateTweens[character] = {}
+			end
+			nameplateTweens[character]["diamond"] = tween
 		elseif rarityTier == "Uncommon" then
 			-- Add uncommon leaf effect
 			local leaf = Instance.new("Frame")
@@ -1875,6 +2615,10 @@ local function setupEnhancedNameplate(character: Model)
 				Rotation = 15
 			})
 			tween:Play()
+			if not nameplateTweens[character] then
+				nameplateTweens[character] = {}
+			end
+			nameplateTweens[character]["leaf"] = tween
 		elseif rarityTier == "Legendary" then
 			-- Add legendary sparkle effect
 			local sparkle = Instance.new("Frame")
@@ -1898,6 +2642,10 @@ local function setupEnhancedNameplate(character: Model)
 				Rotation = 360
 			})
 			tween:Play()
+			if not nameplateTweens[character] then
+				nameplateTweens[character] = {}
+			end
+			nameplateTweens[character]["sparkle"] = tween
 		end
 	end
 	
@@ -1910,6 +2658,20 @@ local function setupEnhancedNameplate(character: Model)
 	character:GetAttributeChangedSignal("NameplateTextColor"):Connect(applyRarityStyling)
 	character:GetAttributeChangedSignal("NameplateGlowColor"):Connect(applyRarityStyling)
 	character:GetAttributeChangedSignal("NameplateScale"):Connect(applyRarityStyling)
+	
+	-- Clean up tweens when character is removed
+	character.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			if nameplateTweens[character] then
+				for _, tween in pairs(nameplateTweens[character]) do
+					if tween then
+						tween:Cancel()
+					end
+				end
+				nameplateTweens[character] = nil
+			end
+		end
+	end)
 end
 
 local function setupController(character: Model)
@@ -1974,6 +2736,9 @@ local function setupController(character: Model)
 	setupGreenGlowEffect(character, hrp)
 	setupGoldGlowEffect(character, hrp)
 	setupPharaohGlowEffect(character, hrp)
+	setupFlashGlowEffect(character, hrp)
+	setupDiamondRainbowEffect(character, hrp)
+	setup67RainbowTrail(character, hrp)
 	setupTsunamiWaterGlowEffect(character, hrp)
 	setupMeteorFireEffect(character, hrp)
 	setupPhoenixGlowEffect(character, hrp)
@@ -2322,6 +3087,9 @@ local function setupController(character: Model)
 	-- Setup PharaohGlowTrail effect
 	setupPharaohGlowEffect(character, hrp)
 	
+	-- Setup FlashGlowTrail effect
+	setupFlashGlowEffect(character, hrp)
+	
 	-- Setup TsunamiWaterGlow effect
 	setupTsunamiWaterGlowEffect(character, hrp)
 	
@@ -2379,6 +3147,9 @@ local function setupOtherPlayerVisuals(character: Model)
 	setupGreenGlowEffect(character, hrp)
 	setupGoldGlowEffect(character, hrp)
 	setupPharaohGlowEffect(character, hrp)
+	setupFlashGlowEffect(character, hrp)
+	setupDiamondRainbowEffect(character, hrp)
+	setup67RainbowTrail(character, hrp)
 	setupTsunamiWaterGlowEffect(character, hrp)
 	setupMeteorFireEffect(character, hrp)
 	setupPhoenixGlowEffect(character, hrp)

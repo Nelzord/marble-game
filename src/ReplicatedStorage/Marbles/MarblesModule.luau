@@ -204,6 +204,22 @@ local DEFINITIONS: { [string]: MarbleDefinition } = {
 		abilityModule = "Hacker",
 		color = Color3.fromRGB(0, 200, 0), -- Green color for hacker theme
 	},
+	Flash = {
+		id = "Flash",
+		name = "Flash Marble",
+		dropDenominator = 670, -- 1/670 rarity
+		rollable = true,
+		abilityModule = "Flash",
+		color = Color3.fromRGB(255, 255, 200), -- Bright yellow/white color for flash theme
+	},
+	["67"] = {
+		id = "67",
+		name = "67 Marble",
+		dropDenominator = 67, -- 1/67 rarity
+		rollable = true,
+		abilityModule = "67",
+		color = Color3.fromRGB(255, 255, 0), -- Yellow color for 67 theme
+	},
 }
 
 function MarblesModule.getById(id: string): MarbleDefinition?

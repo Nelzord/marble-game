@@ -483,6 +483,13 @@ local function ensureNameplate(character: Model, player: Player, marbleId: strin
 	local rarityInfo = getRarityTier(def)
 	local text = string.format("%s (%s)", player.Name, getRarityText(def))
 
+	-- Remove all existing nameplates to prevent duplicates
+	for _, child in ipairs(character:GetChildren()) do
+		if child.Name == "Nameplate" and child:IsA("BillboardGui") then
+			child:Destroy()
+		end
+	end
+
 	local gui = character:FindFirstChild("Nameplate")
 	if not gui or not gui:IsA("BillboardGui") then
 		gui = Instance.new("BillboardGui")
@@ -566,6 +573,7 @@ local function buildMarbleCharacter(player: Player, marbleId: string)
 	character:SetAttribute("MoonGravityActive", false)
 	character:SetAttribute("MoonGlowActive", false)
 	character:SetAttribute("PharaohGlowActive", false)
+	character:SetAttribute("FlashGlowActive", false)
 	
 	-- Set coin multipliers for Gold and Diamond marbles (passive effect)
 	if marbleId == "Gold" then
