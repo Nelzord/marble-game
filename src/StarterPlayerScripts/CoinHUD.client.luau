@@ -189,9 +189,9 @@ daysLayout.Parent = daysContainer
 -- Define rewards for each day
 local dailyRewards = {
 	[1] = { type = "coins", amount = 100, display = "100 Gold" },
-	[2] = { type = "marble", id = "Gold", display = "Legendary Marble" },
+	[2] = { type = "marble", id = "Phoenix", display = "Legendary Marble" },
 	[3] = { type = "luck", display = "2x Luck Potion" },
-	[4] = { type = "marble", id = "Diamond", display = "Mythical Marble" },
+	[4] = { type = "marble", id = "Flash", display = "Mythical Marble" },
 	[5] = { type = "coins", amount = 500, display = "500 Gold" },
 	[6] = { type = "coins", amount = 1000, display = "1000 Gold" },
 }

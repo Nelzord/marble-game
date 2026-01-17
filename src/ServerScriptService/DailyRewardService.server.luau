@@ -336,8 +336,10 @@ Remotes.ClaimDailyReward.OnServerEvent:Connect(function(player: Player, day: num
 		-- Define unlock counts for each marble
 		local unlockCounts = {
 			Coin = 20000,
-			Diamond = 2500,
-			Gold = 1000,
+			Diamond = 5000,
+			Gold = 1500,
+			Phoenix = 500,
+			Flash = 670,
 		}
 		local totalCount = unlockCounts[rewardId] or 200 -- Default to 200 if not specified
 		
